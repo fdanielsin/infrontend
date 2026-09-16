@@ -4,12 +4,9 @@ on:
   push:
     branches: [main, develop]
     paths:
-      - "infrontend/**"
-      - ".github/workflows/frontend.yml"
   pull_request:
     branches: [main, develop]
     paths:
-      - "infrontend/**"
 
 jobs:
   build:

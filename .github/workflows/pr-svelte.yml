@@ -4,8 +4,6 @@ on:
   pull_request:
     branches: [main, develop]
     paths:
-      - 'infrontend/**'
-      - '.github/workflows/pr-svelte.yml'
 
 jobs:
   lint-and-format:
