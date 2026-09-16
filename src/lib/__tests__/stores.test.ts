@@ -1,15 +1,15 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { get } from 'svelte/store';
-import { userStore, taskStore } from '../stores';
+import { users, userTasks } from '../stores';
 
 describe('Stores', () => {
 	beforeEach(() => {
-		userStore.set([]);
-		taskStore.set([]);
+		users.set([]);
+		userTasks.set([]);
 	});
 
 	it('should initialize with empty arrays', () => {
-		expect(get(userStore)).toEqual([]);
-		expect(get(taskStore)).toEqual([]);
+		expect(get(users)).toEqual([]);
+		expect(get(userTasks)).toEqual([]);
 	});
 });
