@@ -17,7 +17,7 @@
 		<div class="mb-4 rounded bg-red-100 p-3 text-red-700">{$error}</div>
 	{/if}
 
-	<form on:submit|preventDefault={handleSubmit} class="space-y-4">
+	<form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="space-y-4">
 		<div>
 			<label for="name" class="block text-sm font-medium text-gray-700">Name</label>
 			<input

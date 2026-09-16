@@ -29,7 +29,7 @@
 				<div class="mb-4 rounded bg-red-100 p-3 text-red-700">{$error}</div>
 			{/if}
 
-			<form on:submit|preventDefault={handleAddTask} class="mb-6 space-y-4">
+			<form onsubmit={(e) => { e.preventDefault(); handleAddTask(); }} class="mb-6 space-y-4">
 				<div>
 					<label for="title" class="block text-sm font-medium text-gray-700">Task Title</label>
 					<input
@@ -50,7 +50,7 @@
 						bind:value={taskDescription}
 						class="mt-1 w-full rounded border border-gray-300 px-3 py-2"
 						rows="3"
-					/>
+					></textarea>
 				</div>
 
 				<button
@@ -73,7 +73,7 @@
 								<input
 									type="checkbox"
 									checked={task.completed}
-									on:change={() => toggleTask(task.id, !task.completed)}
+									onchange={() => toggleTask(task.id, !task.completed)}
 									class="mt-1 mr-3"
 								/>
 								<div class="flex-1">
@@ -83,7 +83,7 @@
 									<p class="text-sm text-gray-600">{task.description}</p>
 								</div>
 								<button
-									on:click={() => removeTask(task.id)}
+									onclick={() => removeTask(task.id)}
 									class="ml-2 text-red-600 hover:text-red-800"
 								>
 									×
