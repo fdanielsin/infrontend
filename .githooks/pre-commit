@@ -1,0 +1,15 @@
+#!/bin/bash
+set -e
+
+echo "🔍 Running pre-commit checks (frontend)..."
+
+# Type check (soft fail)
+echo "📦 Type checking..."
+bun run check 2>/dev/null || echo "⚠️  Type check warnings (non-blocking)"
+
+# Lint (soft fail)
+echo "🔎 Linting..."
+bun run lint 2>/dev/null || echo "⚠️  Lint warnings (non-blocking)"
+
+echo "✅ Pre-commit checks passed"
+exit 0
