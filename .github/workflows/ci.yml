@@ -8,6 +8,7 @@ on:
 
 env:
   BUN_VERSION: "1.1.0"
+  PUBLIC_API_URL: "http://localhost:8080"
 
 jobs:
   # ========== STAGE 1: FORMAT & LINT ==========
