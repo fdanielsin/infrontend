@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import * as apiClient from '$lib/api/client';
 
 describe('API Client', () => {

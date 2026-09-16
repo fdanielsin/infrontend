@@ -55,7 +55,7 @@
 			<p class="text-gray-500">No users yet</p>
 		{:else}
 			<ul class="space-y-2">
-				{#each $users as user}
+				{#each $users as user (user.id)}
 					<li class="rounded bg-gray-100 p-3">
 						<p class="font-medium">{user.name}</p>
 						<p class="text-sm text-gray-600">{user.email}</p>

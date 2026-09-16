@@ -68,7 +68,7 @@
 					<p class="text-gray-500">No tasks yet</p>
 				{:else}
 					<ul class="space-y-2">
-						{#each $userTasks as task}
+						{#each $userTasks as task (task.id)}
 							<li class="flex items-start rounded bg-gray-100 p-3">
 								<input
 									type="checkbox"

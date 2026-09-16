@@ -96,7 +96,7 @@ export class ApiClient {
 	}
 
 	// Health
-	async health(): Promise<ApiResponse<any>> {
+	async health(): Promise<ApiResponse<Record<string, unknown>>> {
 		return this.request('/health');
 	}
 }
