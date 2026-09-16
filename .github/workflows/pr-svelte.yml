@@ -1,0 +1,103 @@
+name: PR Validation (feature branches)
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'infrontend/**'
+      - '.github/workflows/pr-svelte.yml'
+
+jobs:
+  lint-and-format:
+    runs-on: ubuntu-latest
+    name: Lint & Format Check
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: cd infrontend && bun install --frozen-lockfile
+
+      - name: Type check
+        run: cd infrontend && bun run check
+
+      - name: Lint
+        run: cd infrontend && bun run lint
+
+      - name: Format check
+        run: cd infrontend && bun run format -- --check
+
+  test-unit:
+    runs-on: ubuntu-latest
+    name: Unit Tests
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: cd infrontend && bun install --frozen-lockfile
+
+      - name: Run unit tests
+        run: cd infrontend && bun run test:unit
+
+  build:
+    runs-on: ubuntu-latest
+    name: Build Verification
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: cd infrontend && bun install --frozen-lockfile
+
+      - name: Build
+        run: cd infrontend && bun run build
+
+      - name: Check build size
+        run: |
+          SIZE=$(du -sh infrontend/.svelte-kit/output | cut -f1)
+          echo "Build size: $SIZE"
+
+  e2e:
+    runs-on: ubuntu-latest
+    name: E2E Tests
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: cd infrontend && bun install --frozen-lockfile
+
+      - name: Install Playwright
+        run: cd infrontend && bun x playwright install --with-deps
+
+      - name: Run E2E tests
+        run: cd infrontend && bun x playwright test
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: playwright-report
+          path: infrontend/playwright-report/
+          retention-days: 30
