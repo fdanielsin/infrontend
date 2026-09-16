@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 
-	let stats: { users: number; tasks: number } | null = null;
-	let loading = true;
-	let error: string | null = null;
+	let stats = $state<{ users: number; tasks: number } | null>(null);
+	let loading = $state(true);
+	let error = $state<string | null>(null);
 
 	onMount(async () => {
 		try {
