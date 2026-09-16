@@ -18,6 +18,11 @@
 		<header class="mb-8 text-center">
 			<h1 class="text-4xl font-bold text-gray-900">📋 Task Manager</h1>
 			<p class="mt-2 text-gray-600">Manage users and their tasks</p>
+			<div class="mt-4">
+				<a href="/stats" class="inline-block px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+					📊 View Statistics
+				</a>
+			</div>
 		</header>
 
 		<div class="grid gap-8 lg:grid-cols-2">
