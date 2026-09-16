@@ -1,5 +1,5 @@
 // src/lib/stores/user.ts
-import { writable, derived } from 'svelte/store';
+import { writable } from 'svelte/store';
 import { api, type User, type Task } from '$lib/api/client';
 
 export const users = writable<User[]>([]);
