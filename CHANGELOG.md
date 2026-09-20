@@ -12,6 +12,8 @@
 - Added the Vitest V8 coverage provider.
 - Cleaned up obsolete root files and documented the frontend architecture.
 - Centralized unit and component tests under the root `tests/` directory.
+- Updated GitHub Actions to Checkout v5 on Ubuntu 24.04 to avoid deprecated
+  runner warnings.
 
 ## 1.0.0
 
