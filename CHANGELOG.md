@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Completed task management with task editing, completion toggling, deletion,
+  API-aligned updates, and focused success/failure coverage.
 - Workspace documentation now defines how frontend work will be coordinated
   with the backend.
 - Standardized frontend commands, CI and deployment configuration on Bun.

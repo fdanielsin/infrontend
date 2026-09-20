@@ -30,8 +30,21 @@ test.describe('Task management', () => {
 		await page.getByLabel('Description').fill('Created by the frontend E2E test');
 		await page.getByRole('button', { name: 'Add Task' }).click();
 
-		// THEN: The task is displayed and statistics are available.
+		// THEN: The task is displayed and can be edited, completed and deleted.
 		await expect(page.getByText(taskTitle)).toBeVisible();
+		await page.getByRole('button', { name: `Edit ${taskTitle}` }).click();
+		await page.getByLabel('Task Title').nth(1).fill(`${taskTitle} updated`);
+		await page.getByLabel('Description').nth(1).fill('Updated by the frontend E2E test');
+		await page.getByRole('button', { name: 'Save' }).click();
+		await expect(page.getByText(`${taskTitle} updated`)).toBeVisible();
+		await page.getByRole('checkbox', { name: `Mark ${taskTitle} updated as complete` }).check();
+		await expect(
+			page.getByRole('checkbox', { name: `Mark ${taskTitle} updated as incomplete` })
+		).toBeChecked();
+		await page.getByRole('button', { name: `Delete ${taskTitle} updated` }).click();
+		await expect(page.getByText(`${taskTitle} updated`)).not.toBeVisible();
+
+		// Statistics remain available after task management operations.
 		await page.getByRole('link', { name: /View Statistics/ }).click();
 		await expect(page.getByRole('heading', { name: 'Statistiques' })).toBeVisible();
 		await expect(page.getByText("Total d'utilisateurs créés:")).toBeVisible();

@@ -1,5 +1,13 @@
 <script lang="ts">
-	import { userTasks, loading, error, addTask, toggleTask, removeTask } from '$lib/stores/user';
+	import {
+		userTasks,
+		loading,
+		error,
+		addTask,
+		editTask,
+		toggleTask,
+		removeTask
+	} from '$lib/stores/user';
 	import type { User } from '$lib/api/client';
 	import { TaskSchema } from '$lib/validation/schemas';
 
@@ -8,6 +16,46 @@
 	let taskTitle = $state('');
 	let taskDescription = $state('');
 	let fieldErrors = $state<{ title?: string; description?: string }>({});
+	let editingTaskId = $state<number | null>(null);
+	let editingTitle = $state('');
+	let editingDescription = $state('');
+	let editErrors = $state<{ title?: string; description?: string }>({});
+
+	function startEditing(task: { id: number; title: string; description: string }) {
+		editingTaskId = task.id;
+		editingTitle = task.title;
+		editingDescription = task.description;
+		editErrors = {};
+	}
+
+	function cancelEditing() {
+		editingTaskId = null;
+		editingTitle = '';
+		editingDescription = '';
+		editErrors = {};
+	}
+
+	async function handleEditTask() {
+		if (editingTaskId === null) return;
+
+		editErrors = {};
+		const result = TaskSchema.safeParse({
+			title: editingTitle,
+			description: editingDescription,
+			user_id: user?.id ?? 0,
+			completed: false
+		});
+		if (!result.success) {
+			for (const issue of result.error.issues) {
+				const field = issue.path[0];
+				if (field === 'title' || field === 'description') editErrors[field] = issue.message;
+			}
+			return;
+		}
+
+		const updated = await editTask(editingTaskId, result.data.title, result.data.description);
+		if (updated) cancelEditing();
+	}
 
 	async function handleAddTask() {
 		if (user) {
@@ -111,12 +159,68 @@
 									aria-label={`Mark ${task.title} as ${task.completed ? 'incomplete' : 'complete'}`}
 									class="mt-1 mr-3"
 								/>
-								<div class="flex-1">
-									<p class={task.completed ? 'text-gray-500 line-through' : 'font-medium'}>
-										{task.title}
-									</p>
-									<p class="text-sm text-gray-600">{task.description}</p>
-								</div>
+								{#if editingTaskId === task.id}
+									<form
+										class="flex-1 space-y-2"
+										onsubmit={(e) => {
+											e.preventDefault();
+											handleEditTask();
+										}}
+									>
+										<label class="sr-only" for={`edit-title-${task.id}`}>Task Title</label>
+										<input
+											id={`edit-title-${task.id}`}
+											type="text"
+											bind:value={editingTitle}
+											aria-invalid={!!editErrors.title}
+											class="w-full rounded border border-gray-300 px-2 py-1"
+										/>
+										{#if editErrors.title}<p class="text-sm text-red-600">
+												{editErrors.title}
+											</p>{/if}
+										<label class="sr-only" for={`edit-description-${task.id}`}>Description</label>
+										<textarea
+											id={`edit-description-${task.id}`}
+											bind:value={editingDescription}
+											aria-invalid={!!editErrors.description}
+											class="w-full rounded border border-gray-300 px-2 py-1"
+											rows="2"></textarea>
+										{#if editErrors.description}<p class="text-sm text-red-600">
+												{editErrors.description}
+											</p>{/if}
+										<div class="flex gap-2">
+											<button
+												type="submit"
+												disabled={$loading}
+												class="rounded bg-blue-600 px-2 py-1 text-sm text-white"
+											>
+												Save
+											</button>
+											<button
+												type="button"
+												onclick={cancelEditing}
+												class="rounded border px-2 py-1 text-sm"
+											>
+												Cancel
+											</button>
+										</div>
+									</form>
+								{:else}
+									<div class="flex-1">
+										<p class={task.completed ? 'text-gray-500 line-through' : 'font-medium'}>
+											{task.title}
+										</p>
+										<p class="text-sm text-gray-600">{task.description}</p>
+									</div>
+									<button
+										type="button"
+										onclick={() => startEditing(task)}
+										aria-label={`Edit ${task.title}`}
+										class="ml-2 text-blue-600 hover:text-blue-800"
+									>
+										Edit
+									</button>
+								{/if}
 								<button
 									type="button"
 									onclick={() => removeTask(task.id)}

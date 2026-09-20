@@ -1,7 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { get } from 'svelte/store';
 import { api } from '$lib/api/client';
-import { addTask, removeTask, selectUser, toggleTask, userTasks, users } from '$lib/stores/user';
+import {
+	addTask,
+	editTask,
+	removeTask,
+	selectUser,
+	toggleTask,
+	userTasks,
+	users
+} from '$lib/stores/user';
 import {
 	addUser,
 	error,
@@ -125,6 +133,53 @@ describe('user and task stores', () => {
 
 		// THEN: The task is no longer present.
 		expect(get(userTasks)).toEqual([]);
+	});
+
+	it('edits a task and preserves its completion state (happy path)', async () => {
+		// GIVEN: A completed task exists and the API accepts the edit.
+		const task = {
+			id: 10,
+			title: 'Review',
+			description: 'Review code',
+			user_id: 1,
+			completed: true
+		};
+		userTasks.set([task]);
+		vi.mocked(api.updateTask).mockResolvedValue({ success: true });
+
+		// WHEN: The task title and description are edited.
+		const result = await editTask(task.id, 'Review again', 'Review the updated code');
+
+		// THEN: The content changes while completion remains unchanged.
+		expect(result).toBe(true);
+		expect(api.updateTask).toHaveBeenCalledWith(task.id, {
+			title: 'Review again',
+			description: 'Review the updated code'
+		});
+		expect(get(userTasks)).toEqual([
+			{ ...task, title: 'Review again', description: 'Review the updated code' }
+		]);
+	});
+
+	it('reports an edit failure without changing the task (sad path)', async () => {
+		// GIVEN: The API rejects an edit.
+		const task = {
+			id: 10,
+			title: 'Review',
+			description: 'Review code',
+			user_id: 1,
+			completed: false
+		};
+		userTasks.set([task]);
+		vi.mocked(api.updateTask).mockResolvedValue({ success: false, error: 'Task not found' });
+
+		// WHEN: The task is edited.
+		const result = await editTask(task.id, 'Changed', 'Changed description');
+
+		// THEN: The original task and error remain available.
+		expect(result).toBe(false);
+		expect(get(userTasks)).toEqual([task]);
+		expect(get(error)).toBe('Task not found');
 	});
 
 	it('stores fetched tasks and reports task loading errors (sad path)', async () => {

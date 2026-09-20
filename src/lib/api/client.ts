@@ -22,6 +22,19 @@ export interface Task {
 	completed: boolean;
 }
 
+export interface UpdatedTask {
+	id: number;
+	title: string;
+	description: string;
+	completed: boolean;
+}
+
+export interface UpdateTaskRequest {
+	title?: string;
+	description?: string;
+	completed?: boolean;
+}
+
 export interface Stats {
 	users: number;
 	tasks: number;
@@ -88,8 +101,8 @@ export class ApiClient {
 		});
 	}
 
-	async updateTask(id: number, task: Partial<Task>): Promise<ApiResponse<Task>> {
-		return this.request<Task>(`/api/v1/tasks/${id}`, {
+	async updateTask(id: number, task: UpdateTaskRequest): Promise<ApiResponse<UpdatedTask>> {
+		return this.request<UpdatedTask>(`/api/v1/tasks/${id}`, {
 			method: 'PUT',
 			body: JSON.stringify(task)
 		});

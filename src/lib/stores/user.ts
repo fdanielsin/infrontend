@@ -59,6 +59,27 @@ export async function toggleTask(id: number, completed: boolean) {
 	}
 }
 
+export async function editTask(id: number, title: string, description: string) {
+	loading.set(true);
+	error.set(null);
+	try {
+		const response = await api.updateTask(id, { title, description });
+		if (response.success) {
+			userTasks.update((tasks) =>
+				tasks.map((task) => (task.id === id ? { ...task, title, description } : task))
+			);
+			return true;
+		}
+		error.set(response.error || 'Failed to update task');
+		return false;
+	} catch (err) {
+		error.set(err instanceof Error ? err.message : 'Unknown error');
+		return false;
+	} finally {
+		loading.set(false);
+	}
+}
+
 export async function removeTask(id: number) {
 	try {
 		const response = await api.deleteTask(id);
