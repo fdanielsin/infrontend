@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { api } from '../api';
+import { api } from '$lib/api';
 
 describe('ApiClient', () => {
 	it('should create instance with base URL', () => {

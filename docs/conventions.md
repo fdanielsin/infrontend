@@ -65,6 +65,14 @@ Les erreurs de validation doivent :
 
 ## Tests et portes
 
+Tous les tests frontend vivent sous `tests/` à la racine du projet :
+
+- `tests/unit/` pour les tests unitaires et composants ;
+- `tests/e2e/` pour les scénarios Playwright.
+
+Les dossiers `__tests__` et les fichiers de test ne doivent pas être placés
+dans `src/`.
+
 Une porte n'est utile que si elle est exécutée. Toute commande de validation
 doit échouer lorsque le contrôle correspondant échoue ; les `|| true` ne
 doivent pas masquer les erreurs des contrôles obligatoires.

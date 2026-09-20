@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { get } from 'svelte/store';
-import { users, userTasks } from '../stores';
+import { users, userTasks } from '$lib/stores';
 
 describe('Stores', () => {
 	beforeEach(() => {
