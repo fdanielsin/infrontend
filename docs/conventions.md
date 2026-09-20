@@ -70,7 +70,8 @@ Tous les tests frontend vivent sous `tests/` à la racine du projet :
 - `tests/unit/api/` pour les tests du client et des façades API ;
 - `tests/unit/stores/` pour les tests des stores ;
 - `tests/unit/components/` pour les tests de composants ;
-- `tests/e2e/` pour les scénarios Playwright.
+- `tests/e2e/` pour les scénarios Playwright contre l'application et l'API
+  `inbackend`.
 
 Les dossiers `__tests__` et les fichiers de test ne doivent pas être placés
 dans `src/`.

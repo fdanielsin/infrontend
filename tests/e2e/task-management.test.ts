@@ -1,0 +1,62 @@
+import { expect, test } from '@playwright/test';
+
+test.describe('Task management', () => {
+	test('creates a user and task and displays updated statistics (happy path)', async ({ page }) => {
+		// GIVEN: The frontend is connected to a running inbackend API.
+		const userName = `E2E User ${Date.now()}`;
+		const userEmail = `e2e-${Date.now()}@example.com`;
+		const taskTitle = `E2E Task ${Date.now()}`;
+
+		// WHEN: Create a user from the home page.
+		const usersResponse = page.waitForResponse(
+			(response) =>
+				response.url().endsWith('/api/v1/users') && response.request().method() === 'GET'
+		);
+		await page.goto('/');
+		await usersResponse;
+		await expect(page.getByRole('heading', { name: 'Task Manager' })).toBeVisible();
+		await expect(page.getByRole('button', { name: 'Create User' })).toBeEnabled();
+		await page.getByLabel('Name').fill(userName);
+		await page.getByLabel('Email').fill(userEmail);
+		await page.getByRole('button', { name: 'Create User' }).click();
+
+		// THEN: The new user is displayed and can be selected.
+		await expect(page.getByText(userEmail)).toBeVisible();
+		await page.getByRole('button', { name: new RegExp(userName) }).click();
+		await expect(page.getByRole('heading', { name: `Tasks for ${userName}` })).toBeVisible();
+
+		// WHEN: Create a task for the selected user.
+		await page.getByLabel('Task Title').fill(taskTitle);
+		await page.getByLabel('Description').fill('Created by the frontend E2E test');
+		await page.getByRole('button', { name: 'Add Task' }).click();
+
+		// THEN: The task is displayed and statistics are available.
+		await expect(page.getByText(taskTitle)).toBeVisible();
+		await page.getByRole('link', { name: /View Statistics/ }).click();
+		await expect(page.getByRole('heading', { name: 'Statistiques' })).toBeVisible();
+		await expect(page.getByText("Total d'utilisateurs créés:")).toBeVisible();
+		await expect(page.getByText('Total de tâches créées:')).toBeVisible();
+	});
+
+	test('shows a validation error for an invalid user name (sad path)', async ({ page }) => {
+		// GIVEN: The user form is empty.
+		const usersResponse = page.waitForResponse(
+			(response) =>
+				response.url().endsWith('/api/v1/users') && response.request().method() === 'GET'
+		);
+		await page.goto('/');
+		await usersResponse;
+		await expect(page.getByRole('button', { name: 'Create User' })).toBeEnabled();
+		const usersHeading = page.getByRole('heading', { name: /Users \(\d+\)/ });
+		const initialUsersHeading = await usersHeading.textContent();
+
+		// WHEN: Submit a name that violates the frontend validation rule.
+		await page.getByLabel('Name').fill('A');
+		await page.getByLabel('Email').fill('invalid@example.com');
+		await page.getByRole('button', { name: 'Create User' }).click();
+
+		// THEN: The validation error is shown and no user is created.
+		await expect(page.getByText('Name must be at least 2 characters')).toBeVisible();
+		await expect(usersHeading).toHaveText(initialUsersHeading ?? '');
+	});
+});

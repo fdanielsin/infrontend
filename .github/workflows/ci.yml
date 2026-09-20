@@ -120,8 +120,55 @@ jobs:
     name: '6️⃣ E2E Tests'
     runs-on: ubuntu-24.04
     needs: [component-tests]
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: testdb
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/testdb?sslmode=disable
     steps:
       - uses: actions/checkout@v5
+
+      - name: 'Checkout backend'
+        uses: actions/checkout@v5
+        with:
+          repository: fdanielsin/inbackend
+          ref: develop
+          path: inbackend
+
+      - name: 'Setup Go'
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.25.0'
+          cache: false
+
+      - name: 'Start backend API'
+        working-directory: inbackend
+        run: |
+          go run main.go > "$RUNNER_TEMP/inbackend.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/inbackend.pid"
+
+      - name: 'Wait for backend API'
+        run: |
+          for attempt in {1..30}; do
+            if curl --fail --silent http://localhost:8080/health > /dev/null; then
+              echo "✅ Backend API is ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          cat "$RUNNER_TEMP/inbackend.log"
+          exit 1
 
       - name: 'Setup Bun'
         uses: oven-sh/setup-bun@v2
@@ -131,10 +178,12 @@ jobs:
       - name: 'Install dependencies'
         run: bun install --frozen-lockfile
 
-      - name: 'Build & E2E tests'
+      - name: 'Install Chromium'
+        run: bun x playwright install --with-deps chromium
+
+      - name: 'Run E2E tests'
         run: |
-          bun run build
-          echo "✅ E2E ready (optional)"
+          bun run test:e2e -- --project=chromium
 
   # ========== STAGE 7: COVERAGE CHECK ==========
   coverage:

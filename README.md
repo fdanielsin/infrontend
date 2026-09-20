@@ -37,6 +37,13 @@ bun run preview
 bun run test
 ```
 
+Les tests de bout en bout nécessitent un backend `inbackend` disponible sur
+`http://localhost:8080` :
+
+```bash
+bun run test:e2e -- --project=chromium
+```
+
 ## Vérification complète
 
 ```bash
