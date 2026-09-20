@@ -14,6 +14,7 @@
 - Centralized unit and component tests under the root `tests/` directory.
 - Organized tests by domain under `tests/unit/api/` and `tests/unit/stores/`.
 - Separated Vitest unit discovery from Playwright E2E discovery.
+- Added behavioral store tests for users, tasks and notifications.
 - Added a real Playwright happy-path and sad-path flow against `inbackend`.
 - Made the CI E2E job start PostgreSQL and `inbackend` before running Chromium.
 - Updated GitHub Actions to Checkout v5 on Ubuntu 24.04 to avoid deprecated
