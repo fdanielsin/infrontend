@@ -74,6 +74,9 @@ Tous les tests frontend vivent sous `tests/` à la racine du projet :
 
 Les dossiers `__tests__` et les fichiers de test ne doivent pas être placés
 dans `src/`.
+Les noms de scénarios doivent décrire le comportement attendu et préciser le
+`happy path` ou le `sad path` lorsque cette distinction est utile.
+Chaque scénario suit les étapes `GIVEN`, `WHEN` et `THEN`.
 
 Une porte n'est utile que si elle est exécutée. Toute commande de validation
 doit échouer lorsque le contrôle correspondant échoue ; les `|| true` ne

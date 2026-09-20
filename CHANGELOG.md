@@ -15,6 +15,8 @@
 - Organized tests by domain under `tests/unit/api/` and `tests/unit/stores/`.
 - Updated GitHub Actions to Checkout v5 on Ubuntu 24.04 to avoid deprecated
   runner warnings.
+- Aligned frontend tests with explicit Given/When/Then and happy/sad path
+  naming conventions.
 
 ## 1.0.0
 

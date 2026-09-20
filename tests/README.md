@@ -11,5 +11,16 @@ Tous les tests du frontend vivent sous `tests/`.
 
 Chaque fichier de test utilise le suffixe `.test.ts` ou `.test.svelte`.
 
+Les scénarios suivent une structure explicite :
+
+```ts
+// GIVEN: Préconditions et données de test.
+// WHEN: Action testée.
+// THEN: Résultat attendu.
+```
+
+Les noms distinguent le chemin nominal (`happy path`) du chemin d'erreur ou
+limite (`sad path`) et décrivent le comportement attendu.
+
 Les fichiers de production ne doivent pas contenir de fichiers `*.test.*`,
 `*.spec.*` ou de dossiers `__tests__/`.
