@@ -1,7 +1,8 @@
 <script lang="ts">
-	import UserForm from '$lib/components/UserForm.svelte';
+	import UserForm from '$lib/features/users/UserForm.svelte';
 	import TaskForm from '$lib/components/TaskForm.svelte';
-	import { fetchUsers, selectedUser } from '$lib/stores/user';
+	import { fetchUsers, selectedUser } from '$lib/features/users/store';
+	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
 
 	onMount(() => {
@@ -19,7 +20,10 @@
 			<h1 class="text-4xl font-bold text-gray-900">📋 Task Manager</h1>
 			<p class="mt-2 text-gray-600">Manage users and their tasks</p>
 			<div class="mt-4">
-				<a href="/stats" class="inline-block px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+				<a
+					href={resolve('/stats')}
+					class="inline-block rounded-lg bg-indigo-600 px-4 py-2 text-white transition hover:bg-indigo-700"
+				>
 					📊 View Statistics
 				</a>
 			</div>

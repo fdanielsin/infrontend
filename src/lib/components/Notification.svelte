@@ -2,9 +2,10 @@
 	import { notifications } from '$lib/stores/notification';
 </script>
 
-<div class="fixed right-0 top-0 z-50 space-y-2 p-4">
+<div class="fixed top-0 right-0 z-50 space-y-2 p-4" aria-live="polite" aria-atomic="true">
 	{#each $notifications as notif (notif.id)}
 		<div
+			role={notif.type === 'error' ? 'alert' : 'status'}
 			class="animate-slide-in rounded-lg px-4 py-3 text-white shadow-lg"
 			class:bg-green-500={notif.type === 'success'}
 			class:bg-red-500={notif.type === 'error'}

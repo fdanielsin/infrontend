@@ -41,15 +41,12 @@ bun run test
 
 ```
 src/
-├── routes/       # File-based routing
-├── lib/          # Components & utils
-└── app.css       # Tailwind styles
+├── routes/       # File-based routing and screen composition
+├── lib/          # API, features, stores, UI and validation
+└── app.html      # HTML shell
 ```
 
-## Next Steps
+## Documentation
 
-- Build UI components
-- Connect to backend API (`http://localhost:8080`)
-- Add form validation & error handling
-- Set up Svelte stores for state management
-- Deploy to Vercel/Netlify
+- [Global workspace context](../docs/README.md)
+- [Frontend documentation](./docs/README.md)
