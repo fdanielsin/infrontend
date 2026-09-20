@@ -22,13 +22,15 @@ export interface Task {
 	completed: boolean;
 }
 
+export interface Stats {
+	users: number;
+	tasks: number;
+}
+
 const API_BASE = PUBLIC_API_URL || 'http://localhost:8080';
 
 export class ApiClient {
-	private async request<T>(
-		endpoint: string,
-		options: RequestInit = {}
-	): Promise<ApiResponse<T>> {
+	private async request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
 		const url = `${API_BASE}${endpoint}`;
 		const headers = {
 			'Content-Type': 'application/json',
@@ -43,6 +45,10 @@ export class ApiClient {
 
 			if (!response.ok) {
 				throw new Error(`HTTP ${response.status}`);
+			}
+
+			if (response.status === 204) {
+				return { success: true };
 			}
 
 			return response.json();
@@ -93,6 +99,10 @@ export class ApiClient {
 		return this.request<void>(`/api/v1/tasks/${id}`, {
 			method: 'DELETE'
 		});
+	}
+
+	async getStats(): Promise<ApiResponse<Stats>> {
+		return this.request<Stats>('/api/v1/stats');
 	}
 
 	// Health

@@ -18,7 +18,7 @@ export function addNotification(message: string, type: NotificationType = 'info'
 	const notifId = `notif-${++id}`;
 	const notification: Notification = { id: notifId, message, type, duration };
 
-	notifications.update(n => [...n, notification]);
+	notifications.update((n) => [...n, notification]);
 
 	if (duration) {
 		setTimeout(() => {
@@ -30,5 +30,5 @@ export function addNotification(message: string, type: NotificationType = 'info'
 }
 
 export function removeNotification(id: string) {
-	notifications.update(n => n.filter(notif => notif.id !== id));
+	notifications.update((n) => n.filter((notif) => notif.id !== id));
 }

@@ -2,193 +2,181 @@ name: Frontend CI/CD Pipeline
 
 on:
   push:
-    branches: [main, develop, "feature/**", "bugfix/**"]
+    branches: [main, develop, 'feature/**', 'bugfix/**']
   pull_request:
     branches: [main, develop]
 
 env:
-  BUN_VERSION: "1.1.0"
-  PUBLIC_API_URL: "http://localhost:8080"
+  BUN_VERSION: '1.1.0'
+  PUBLIC_API_URL: 'http://localhost:8080'
 
 jobs:
   # ========== STAGE 1: FORMAT & LINT ==========
   lint:
-    name: "1️⃣ Format & Lint"
+    name: '1️⃣ Format & Lint'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           cache: false
-      
-      - name: "Setup Bun"
+
+      - name: 'Setup Bun'
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: ${{ env.BUN_VERSION }}
-      
-      - name: "Install dependencies"
-        run: bun install --allow-scripts --no-save-lockfile
-      
-      - name: "Prettier check"
-        run: |
-          bun run lint || true
-          echo "✅ Format check completed"
-      
-      - name: "ESLint check"
-        run: |
-          bun exec eslint src --max-warnings 10 || true
-          echo "✅ ESLint check completed"
+
+      - name: 'Install dependencies'
+        run: bun install --frozen-lockfile
+
+      - name: 'Prettier check'
+        run: bun run format:check
+
+      - name: 'ESLint check'
+        run: bun exec eslint src --max-warnings 10
 
   # ========== STAGE 2: TYPE CHECK & BUILD ==========
   build:
-    name: "2️⃣ Build"
+    name: '2️⃣ Build'
     runs-on: ubuntu-latest
     needs: [lint]
     steps:
       - uses: actions/checkout@v4
         with:
           cache: false
-      
-      - name: "Setup Bun"
+
+      - name: 'Setup Bun'
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: ${{ env.BUN_VERSION }}
-      
-      - name: "Install dependencies"
-        run: bun install --allow-scripts --no-save-lockfile
-      
-      - name: "Type check"
-        run: |
-          bun run check || true
-          echo "✅ Type check completed"
-      
-      - name: "Build"
+
+      - name: 'Install dependencies'
+        run: bun install --frozen-lockfile
+
+      - name: 'Type check'
+        run: bun run check
+
+      - name: 'Build'
         run: |
           bun run build
           echo "✅ Build successful"
 
   # ========== STAGE 3: UNIT TESTS ==========
   unit-tests:
-    name: "3️⃣ Unit Tests"
+    name: '3️⃣ Unit Tests'
     runs-on: ubuntu-latest
     needs: [build]
     steps:
       - uses: actions/checkout@v4
         with:
           cache: false
-      
-      - name: "Setup Bun"
+
+      - name: 'Setup Bun'
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: ${{ env.BUN_VERSION }}
-      
-      - name: "Install dependencies"
-        run: bun install --allow-scripts --no-save-lockfile
-      
-      - name: "Run unit tests"
-        run: |
-          bun run test || true
-          echo "✅ Unit tests completed"
+
+      - name: 'Install dependencies'
+        run: bun install --frozen-lockfile
+
+      - name: 'Run unit tests'
+        run: bun run test
 
   # ========== STAGE 4: SECURITY CHECK ==========
   security:
-    name: "4️⃣ Security Check"
+    name: '4️⃣ Security Check'
     runs-on: ubuntu-latest
     needs: [build]
     steps:
       - uses: actions/checkout@v4
         with:
           cache: false
-      
-      - name: "Setup Bun"
+
+      - name: 'Setup Bun'
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: ${{ env.BUN_VERSION }}
-      
-      - name: "Install dependencies"
-        run: bun install --allow-scripts --no-save-lockfile
-      
-      - name: "Audit dependencies"
+
+      - name: 'Install dependencies'
+        run: bun install --frozen-lockfile
+
+      - name: 'Audit dependencies'
         run: |
           bun audit || echo "⚠️ Dependencies checked (non-blocking)"
           echo "✅ Security check completed"
 
   # ========== STAGE 5: COMPONENT TESTS ==========
   component-tests:
-    name: "5️⃣ Component Tests"
+    name: '5️⃣ Component Tests'
     runs-on: ubuntu-latest
     needs: [unit-tests, security]
     steps:
       - uses: actions/checkout@v4
         with:
           cache: false
-      
-      - name: "Setup Bun"
+
+      - name: 'Setup Bun'
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: ${{ env.BUN_VERSION }}
-      
-      - name: "Install dependencies"
-        run: bun install --allow-scripts --no-save-lockfile
-      
-      - name: "Run component tests"
-        run: |
-          bun run test || true
-          echo "✅ Component tests completed"
+
+      - name: 'Install dependencies'
+        run: bun install --frozen-lockfile
+
+      - name: 'Run component tests'
+        run: bun run test
 
   # ========== STAGE 6: E2E TESTS ==========
   e2e-tests:
-    name: "6️⃣ E2E Tests"
+    name: '6️⃣ E2E Tests'
     runs-on: ubuntu-latest
     needs: [component-tests]
     steps:
       - uses: actions/checkout@v4
         with:
           cache: false
-      
-      - name: "Setup Bun"
+
+      - name: 'Setup Bun'
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: ${{ env.BUN_VERSION }}
-      
-      - name: "Install dependencies"
-        run: bun install --allow-scripts --no-save-lockfile
-      
-      - name: "Build & E2E tests"
+
+      - name: 'Install dependencies'
+        run: bun install --frozen-lockfile
+
+      - name: 'Build & E2E tests'
         run: |
-          bun run build || true
+          bun run build
           echo "✅ E2E ready (optional)"
 
   # ========== STAGE 7: COVERAGE CHECK ==========
   coverage:
-    name: "7️⃣ Coverage Check"
+    name: '7️⃣ Coverage Check'
     runs-on: ubuntu-latest
     needs: [e2e-tests]
     steps:
       - uses: actions/checkout@v4
         with:
           cache: false
-      
-      - name: "Setup Bun"
+
+      - name: 'Setup Bun'
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: ${{ env.BUN_VERSION }}
-      
-      - name: "Install dependencies"
-        run: bun install --allow-scripts --no-save-lockfile
-      
-      - name: "Generate coverage"
-        run: |
-          bun run test -- --coverage || true
-          echo "✅ Coverage generated"
+
+      - name: 'Install dependencies'
+        run: bun install --frozen-lockfile
+
+      - name: 'Generate coverage'
+        run: bun run test -- --coverage
 
   # ========== FINAL: SUMMARY ==========
   summary:
-    name: "✅ All Checks Passed"
+    name: '✅ All Checks Passed'
     runs-on: ubuntu-latest
     needs: [lint, build, unit-tests, security, component-tests, e2e-tests, coverage]
     if: always()
     steps:
-      - name: "Verify all jobs passed"
+      - name: 'Verify all jobs passed'
         run: |
           if [ "${{ needs.lint.result }}" != "success" ] && \
              [ "${{ needs.build.result }}" != "success" ]; then
