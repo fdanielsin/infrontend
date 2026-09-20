@@ -2,7 +2,7 @@
 
 ## Statut
 
-proposed
+accepted
 
 ## Date
 

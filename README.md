@@ -37,12 +37,24 @@ bun run preview
 bun run test
 ```
 
+## Vérification complète
+
+```bash
+bun run verify
+```
+
+Cette commande vérifie le formatage, le lint, le typage, les tests et le build.
+La CI ajoute les contrôles de sécurité, E2E et couverture.
+
 ## Project Structure
 
 ```
 src/
 ├── routes/       # File-based routing and screen composition
 ├── lib/          # API, features, stores, UI and validation
+│   ├── api/      # Shared HTTP client
+│   ├── features/ # Feature-specific components and stores
+│   └── stores/   # Shared cross-feature state
 └── app.html      # HTML shell
 ```
 

@@ -2,9 +2,9 @@
 
 ## Statut
 
-Architecture cible proposée pour une première phase de modularisation.
-Elle doit être validée avant l'implémentation. Celle-ci sera progressive et ne
-doit pas modifier le comportement fonctionnel sans décision séparée.
+Architecture retenue pour une première phase de modularisation.
+L'implémentation est progressive et ne doit pas modifier le comportement
+fonctionnel sans décision séparée.
 
 ## Cible
 

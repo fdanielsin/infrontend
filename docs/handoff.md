@@ -9,19 +9,25 @@ backend.
 Les validations suivantes passent au moment de la rédaction :
 
 ```text
+bun run verify
 bun run check
 bun run test
 bun run build
 ```
 
-Le lint comporte encore des écarts de formatage Prettier à traiter dans une
-phase dédiée.
+La CI frontend vérifie également le formatage, le lint, le typage, le build, les
+tests unitaires, les tests composants, la sécurité, les E2E et la couverture.
+La couverture utilise `@vitest/coverage-v8`.
 
-## Prochaine étape
+## État de la structure
 
-Faire valider l'architecture et ces conventions avant de déplacer les fichiers.
-Après validation, commencer par la porte de vérification Bun, puis modulariser
-une fonctionnalité à la fois sans changement fonctionnel.
+- La fonctionnalité `users` possède son composant et son store dédiés dans
+  `src/lib/features/users/`.
+- Les stores transversaux restent dans `src/lib/stores/`.
+- Le client HTTP partagé reste dans `src/lib/api/`.
+- Les routes composent les écrans sans déplacer la logique backend.
+- Le workflow frontend unique est
+  `.github/workflows/ci.yml`.
 
 ## Contraintes
 
@@ -29,3 +35,8 @@ une fonctionnalité à la fois sans changement fonctionnel.
 - Ne pas introduire plusieurs applications ou packages sans consommateur réel.
 - Utiliser Bun dans les commandes, la documentation et la CI frontend.
 - Ne pas considérer un contrôle comme valide s'il est masqué par `|| true`.
+
+## Prochaine étape
+
+Poursuivre la modularisation de `tasks` puis de `stats` uniquement lorsqu'une
+extraction apporte une séparation claire et sans changement fonctionnel.

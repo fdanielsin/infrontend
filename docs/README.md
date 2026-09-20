@@ -26,7 +26,11 @@ Le runtime et le gestionnaire de dépendances du projet sont Bun.
 
 ```bash
 bun install
+bun run verify
 bun run check
 bun run test
 bun run build
 ```
+
+`bun run verify` est la porte locale complète : formatage, lint, typage, tests
+et build. La CI frontend ajoute les contrôles de sécurité, E2E et couverture.
