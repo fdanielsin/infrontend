@@ -30,7 +30,7 @@ jobs:
         run: bun run format:check
 
       - name: 'ESLint check'
-        run: bun exec eslint src --max-warnings 10
+        run: bun run eslint -- src --max-warnings 10
 
   # ========== STAGE 2: TYPE CHECK & BUILD ==========
   build:
