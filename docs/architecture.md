@@ -2,9 +2,13 @@
 
 ## Statut
 
-Architecture retenue pour une première phase de modularisation.
-L'implémentation est progressive et ne doit pas modifier le comportement
-fonctionnel sans décision séparée.
+Architecture retenue pour une modularisation progressive. `users` et `tasks`
+sont réellement modularisés (composant et store dédiés chacun) ; `stats`
+reste dans sa route (`routes/stats/+page.svelte`), rien n'y justifie encore
+un dossier de fonctionnalité séparé. `loading`/`error` sont un store
+transversal (`lib/stores/request-status.ts`), partagé entre `users` et
+`tasks` — ce partage cause un bug de contamination croisée entre les deux
+formulaires (voir `handoff.md`), non traité par cette architecture.
 
 ## Cible
 
@@ -41,7 +45,8 @@ Règles :
 - `api` ne dépend jamais de `routes` ni d'une fonctionnalité ;
 - `ui` ne dépend jamais d'une fonctionnalité métier ;
 - une fonctionnalité ne dépend pas d'une autre fonctionnalité sans raison
-  documentée ;
+  documentée (ex. `features/users` dépend de `features/tasks` : sélectionner
+  un utilisateur charge ses tâches) ;
 - les modules réutilisables ne lisent pas directement les variables
   d'environnement SvelteKit ;
 - l'URL backend et les dépendances externes sont injectées aux clients ;

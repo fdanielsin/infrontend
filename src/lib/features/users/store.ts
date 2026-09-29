@@ -1,9 +1,9 @@
 import { writable } from 'svelte/store';
-import { api, type Task, type User } from '$lib/api/client';
+import { api, type User } from '$lib/api/client';
+import { userTasks } from '$lib/features/tasks/store';
+import { error, loading } from '$lib/stores/request-status';
 
 export const users = writable<User[]>([]);
-export const loading = writable(false);
-export const error = writable<string | null>(null);
 export const selectedUser = writable<User | null>(null);
 
 let selectionRequest = 0;
@@ -44,6 +44,7 @@ export async function addUser(name: string, email: string) {
 }
 
 export async function selectUser(id: number) {
+	// Selecting a user also loads their tasks, owned by the tasks feature.
 	const requestId = ++selectionRequest;
 	loading.set(true);
 	error.set(null);
@@ -70,18 +71,3 @@ export async function selectUser(id: number) {
 		if (requestId === selectionRequest) loading.set(false);
 	}
 }
-
-export async function fetchUserTasks(userId: number) {
-	try {
-		const response = await api.getUserTasks(userId);
-		if (response.success && response.data) {
-			userTasks.set(response.data);
-		} else {
-			error.set(response.error || 'Failed to fetch tasks');
-		}
-	} catch (err) {
-		error.set(err instanceof Error ? err.message : 'Unknown error');
-	}
-}
-
-export const userTasks = writable<Task[]>([]);

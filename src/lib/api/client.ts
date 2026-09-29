@@ -1,4 +1,3 @@
-// src/lib/api/client.ts
 import { PUBLIC_API_URL } from '$env/static/public';
 
 export interface ApiResponse<T> {

@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, waitFor } from '@testing-library/svelte';
 import { api } from '$lib/api/client';
-import { error, userTasks } from '$lib/stores/user';
-import TaskForm from '$lib/components/TaskForm.svelte';
+import { userTasks } from '$lib/features/tasks/store';
+import { error } from '$lib/stores/request-status';
+import TaskForm from '$lib/features/tasks/TaskForm.svelte';
 
 vi.mock('$lib/api/client', () => ({
 	api: {

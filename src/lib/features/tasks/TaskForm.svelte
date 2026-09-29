@@ -1,13 +1,6 @@
 <script lang="ts">
-	import {
-		userTasks,
-		loading,
-		error,
-		addTask,
-		editTask,
-		toggleTask,
-		removeTask
-	} from '$lib/stores/user';
+	import { userTasks, addTask, editTask, toggleTask, removeTask } from './store';
+	import { loading, error } from '$lib/stores/request-status';
 	import type { User } from '$lib/api/client';
 	import { TaskSchema } from '$lib/validation/schemas';
 
@@ -159,10 +152,7 @@
 										const checkbox = event.currentTarget;
 										const nextCompleted = checkbox.checked;
 										toggleTask(task.id, nextCompleted).then((ok) => {
-											// The browser already flipped the checkbox natively on
-											// click. If the update failed, Svelte won't undo that on
-											// its own (see toggleTask's comment), so revert the DOM
-											// element we already hold directly.
+											// Revert the native click if the update failed (see toggleTask).
 											if (!ok) checkbox.checked = !nextCompleted;
 										});
 									}}

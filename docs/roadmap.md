@@ -18,21 +18,19 @@
 
 ## Phase 2 — modularisation sans changement fonctionnel
 
-Seule `users` a été réellement modularisée. Les cases ci-dessous concernant
-`tasks`/`stats` ont été décochées le 2026-09-29 : le code ne correspondait pas
-à ce qu'elles affirmaient (constat F-03). Traitement au lot 7 (voir
-"Plan de lots" ci-dessous).
+`users` et `tasks` sont réellement modularisés depuis le lot "nettoyage
+frontend" du 2026-09-30 (F-03 réglé : voir `handoff.md`). `stats` reste hors
+périmètre, rien n'y justifie encore un dossier de fonctionnalité séparé.
 
 - [x] Définir les frontières `users`, `tasks` et `stats`.
-- [ ] Déplacer les composants par fonctionnalité (fait pour `users`
-      uniquement ; `TaskForm.svelte` reste dans `lib/components/`).
-- [ ] Séparer progressivement API, stores, état local et présentation (fait
-      pour `users` ; les actions de tâches restent dans `lib/stores/user.ts`).
-- [ ] Décider pour chaque store s'il est propre à une fonctionnalité ou
-      transversal (non fait pour `tasks`, qui n'a pas de store dédié).
-- [ ] Scinder le store utilisateur actuel selon ces frontières sans changer le
-      comportement (non fait : `toggleTask`/`editTask`/`addTask`/`removeTask`
-      vivent toujours dans `lib/stores/user.ts`).
+- [x] Déplacer les composants par fonctionnalité (`TaskForm.svelte` dans
+      `lib/features/tasks/`).
+- [x] Séparer progressivement API, stores, état local et présentation.
+- [x] Décider pour chaque store s'il est propre à une fonctionnalité ou
+      transversal (`lib/features/tasks/store.ts` propre à `tasks` ;
+      `loading`/`error` transversaux dans `lib/stores/request-status.ts`).
+- [x] Scinder le store utilisateur actuel selon ces frontières sans changer le
+      comportement (`lib/stores/user.ts` supprimé, contenu redistribué).
 - [x] Conserver les routes comme des compositions d'écrans.
 - [x] Ajouter les tests comportementaux au fil des déplacements.
 
@@ -55,18 +53,25 @@ ouvertes par `qa` (Q-xx). Un lot ne commence qu'après un plan envoyé au lead
 et un « GO » explicite.
 
 - [x] Lot 1 — Q-01, point 2 uniquement : resynchronisation de la case à
-      cocher d'une tâche après un `toggleTask` refusé
-      (`src/lib/stores/user.ts`, `src/lib/components/TaskForm.svelte`), test
-      de composant dédié. Le point 1 de Q-01 (consommer `response.data`) est
-      reporté : voir `handoff.md`.
+      cocher d'une tâche après un `toggleTask` refusé, test de composant
+      dédié. Le point 1 de Q-01 (consommer `response.data`) est reporté :
+      voir `handoff.md`.
+- [x] Lot "nettoyage frontend" (2026-09-30) — règle F-03 : `lib/features/tasks/`
+      créé (store + `TaskForm.svelte`), `lib/stores/user.ts` supprimé,
+      `loading`/`error` déplacés dans `lib/stores/request-status.ts`
+      (transversal, comportement inchangé — F-02 reste présent, seulement
+      mieux rangé), `Notification.svelte` déplacé vers `lib/ui/`. Code et
+      config morts retirés : `fetchUserTasks` (jamais appelée), `lib/index.ts`
+      (placeholder vide), Husky/lint-staged (hooks inertes, `core.hooksPath`
+      pointait vers un dossier inexistant), bloc `test` mort de
+      `vite.config.ts` (jamais exécuté, masqué par `vitest.config.ts`). Ce lot
+      remplace l'ancien "Lot 7".
 - [ ] Lot 2 — F-01 (le client HTTP perd le message d'erreur du backend sur
       toute réponse non-2xx) et F-02 (partage `loading`/`error` entre
-      `users` et `tasks`).
+      `users` et `tasks`, symptôme visible encore présent après le nettoyage).
 - [ ] Lot 3 — Q-07.
-- [ ] Lot 7 — F-03 : mettre la documentation en accord avec le code (les
-      cases de la Phase 2 ci-dessus ne sont pas corrigées avant ce lot) ou
-      terminer réellement la modularisation `tasks`/`stats` qu'elles
-      annoncent.
+- [ ] Lot 5 — doublon du job CI "component-tests" (relance exactement
+      `bun run test`, déjà fait par "unit-tests").
 - [ ] Lot 8 — propositions d'amélioration : FP-03 (confirmation avant
       suppression d'une tâche), FP-01 (filtrer les tâches), FP-02 (compteur
       de tâches restantes), FP-04 (« tout marquer comme terminé »).

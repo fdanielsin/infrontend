@@ -13,14 +13,45 @@ est à sens unique et ne réécrit pas le DOM quand la valeur lue reste identiqu
 (vérifié par un test qui a d'abord fait échouer un correctif purement store,
 avant de corriger l'hypothèse). Le correctif agit directement sur l'élément
 DOM reçu par l'évènement `onchange` de la case
-(`src/lib/components/TaskForm.svelte`), et `toggleTask`
-(`src/lib/stores/user.ts`) retourne désormais `Promise<boolean>` pour que
-l'appelant sache s'il doit annuler son changement optimiste. Le point 1 de
+(`src/lib/features/tasks/TaskForm.svelte`), et `toggleTask`
+(`src/lib/features/tasks/store.ts`) retourne désormais `Promise<boolean>` pour
+que l'appelant sache s'il doit annuler son changement optimiste. Le point 1 de
 Q-01 (faire consommer `response.data` par `toggleTask`/`editTask`) reste
 volontairement non fait : la réponse du `PUT` ne reflétait pas l'état
 réellement persisté avant la correction backend (DTO à pointeurs +
 `Select(...).Updates(...)`), et n'a pas encore été re-validée côté frontend
 depuis ce correctif.
+
+Lot "nettoyage frontend" (2026-09-30) terminé — règle F-03 et retire du code
+mort, sans changement de comportement (`bun run verify` vert avant/après
+chaque étape) :
+
+- `src/lib/features/tasks/` créé : `store.ts` (userTasks, addTask, editTask,
+  toggleTask, removeTask) et `TaskForm.svelte`, déplacés depuis
+  `src/lib/stores/user.ts` (supprimé) et `src/lib/components/`.
+- `src/lib/stores/request-status.ts` créé : `loading`/`error`, déplacés
+  depuis `features/users/store.ts`. Ce sont les mêmes instances `writable`
+  qu'avant, partagées à l'identique entre `users` et `tasks` — **F-02
+  (contamination croisée entre les deux formulaires) n'est pas corrigé**,
+  seulement correctement rangé dans un store transversal au lieu d'un
+  fichier "users". `features/users/store.ts::selectUser` importe `userTasks`
+  depuis `features/tasks/store.ts` pour le peupler (dépendance users→tasks
+  documentée en commentaire).
+- `src/lib/components/Notification.svelte` déplacé vers `src/lib/ui/`
+  (`lib/components/` n'avait plus d'autre habitant).
+- Code mort retiré : `fetchUserTasks` (jamais appelée dans l'app, seul un
+  test l'appelait) et son test ; `src/lib/index.ts` (placeholder vide, aucun
+  import de `$lib` nu dans le projet).
+- Config morte retirée : `.husky/pre-commit`, `.lintstagedrc.json`, les
+  dépendances `husky`/`lint-staged` — inertes (`git config core.hooksPath`
+  pointait vers `.githooks/`, qui n'existe pas ; `.husky/_/husky.sh` était
+  absent ; `package.json`'s `prepare` ne lançait jamais husky ; la CI ne les
+  utilise pas). `core.hooksPath` a été désinscrit (`git config --unset`,
+  configuration locale non suivie). **Il n'y a donc aucun hook Git local
+  actif aujourd'hui : la CI est le seul filet.** Le bloc `test.projects` de
+  `vite.config.ts` (jamais exécuté, masqué par `vitest.config.ts`) et les
+  dépendances `@vitest/browser-playwright`/`vitest-browser-svelte` ont aussi
+  été retirés.
 
 Les validations suivantes passent au moment de la rédaction :
 
@@ -41,9 +72,11 @@ La couverture utilise `@vitest/coverage-v8`.
 
 ## État de la structure
 
-- La fonctionnalité `users` possède son composant et son store dédiés dans
-  `src/lib/features/users/`.
-- Les stores transversaux restent dans `src/lib/stores/`.
+- `users` et `tasks` possèdent chacun leur composant et leur store dédiés
+  dans `src/lib/features/`.
+- Les stores transversaux (`request-status.ts`, `notification.ts`) restent
+  dans `src/lib/stores/`. Les composants visuels génériques
+  (`Notification.svelte`) sont dans `src/lib/ui/`.
 - Le client HTTP partagé reste dans `src/lib/api/`.
 - Les routes composent les écrans sans déplacer la logique backend.
 - Le workflow frontend unique est
@@ -57,6 +90,15 @@ La couverture utilise `@vitest/coverage-v8`.
   résout le build serveur de Svelte même sous `jsdom`, et `mount()` échoue) ;
   cette option est maintenant présente et documentée dans le fichier lui-même.
 
+## Écarts connus avec les règles cibles d'architecture.md
+
+- `src/lib/api/client.ts` lit `PUBLIC_API_URL` via `$env/static/public`, alors
+  qu'`architecture.md` L.49-51 vise une URL injectée plutôt que lue
+  directement par un module réutilisable.
+- `features/users/store.ts` dépend de `features/tasks/store.ts` (sélectionner
+  un utilisateur charge ses tâches), raison documentée en commentaire dans le
+  fichier.
+
 ## Contraintes
 
 - Ne pas modifier le backend pendant la modularisation frontend.
@@ -67,7 +109,9 @@ La couverture utilise `@vitest/coverage-v8`.
 ## Prochaine étape
 
 Lot 2 du plan d'audit (`roadmap.md`) : F-01 (le client HTTP perd le message
-d'erreur du backend sur toute réponse non-2xx) et F-02 (partage
-`loading`/`error` entre `users` et `tasks`). La modularisation de `tasks` puis
-de `stats` reste par ailleurs à traiter au lot 7, uniquement lorsqu'une
-extraction apporte une séparation claire et sans changement fonctionnel.
+d'erreur du backend sur toute réponse non-2xx) et F-02 (le partage
+`loading`/`error` entre `users` et `tasks` est maintenant bien rangé dans
+`lib/stores/request-status.ts`, mais le bug lui-même — contamination croisée
+entre les deux formulaires — reste à corriger). La modularisation de `stats`
+reste ouverte, uniquement lorsqu'une extraction apporte une séparation claire
+et sans changement fonctionnel.

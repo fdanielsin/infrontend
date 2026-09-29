@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { users, loading, error, selectedUser, addUser, selectUser } from './store';
+	import { users, selectedUser, addUser, selectUser } from './store';
+	import { loading, error } from '$lib/stores/request-status';
 	import { UserSchema } from '$lib/validation/schemas';
 	let name = $state('');
 	let email = $state('');
