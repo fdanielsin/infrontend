@@ -155,7 +155,17 @@
 									id={`task-${task.id}`}
 									type="checkbox"
 									checked={task.completed}
-									onchange={() => toggleTask(task.id, !task.completed)}
+									onchange={(event: Event & { currentTarget: HTMLInputElement }) => {
+										const checkbox = event.currentTarget;
+										const nextCompleted = checkbox.checked;
+										toggleTask(task.id, nextCompleted).then((ok) => {
+											// The browser already flipped the checkbox natively on
+											// click. If the update failed, Svelte won't undo that on
+											// its own (see toggleTask's comment), so revert the DOM
+											// element we already hold directly.
+											if (!ok) checkbox.checked = !nextCompleted;
+										});
+									}}
 									aria-label={`Mark ${task.title} as ${task.completed ? 'incomplete' : 'complete'}`}
 									class="mt-1 mr-3"
 								/>

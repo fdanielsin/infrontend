@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Fixed the task checkbox staying visually checked/unchecked after a rejected
+  `toggleTask` request: the browser flips the checkbox natively on click, and
+  Svelte's one-way `checked` binding does not rewrite it back when the
+  underlying value is otherwise unchanged, so the DOM element is now reverted
+  directly from the checkbox's own change event on failure. Covered by a new
+  component test (`tests/unit/components/TaskForm.test.ts`) and by `qa`'s
+  Playwright persistence E2E (`tests/e2e/task-persistence.test.ts`) run
+  against the corrected backend.
 - Completed task management with task editing, completion toggling, deletion,
   API-aligned updates, and focused success/failure coverage.
 - Workspace documentation now defines how frontend work will be coordinated

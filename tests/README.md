@@ -29,3 +29,17 @@ limite (`sad path`) et décrivent le comportement attendu.
 
 Les fichiers de production ne doivent pas contenir de fichiers `*.test.*`,
 `*.spec.*` ou de dossiers `__tests__/`.
+
+## Tests de composants
+
+Les tests sous `tests/unit/components/` rendent un composant Svelte avec
+`@testing-library/svelte` (`render`, `fireEvent`, `waitFor`, `cleanup`) sous
+l'environnement `jsdom` de Vitest. Cela exige
+`resolve: { conditions: ['browser'] }` dans `vitest.config.ts` (déjà présent) :
+sans cette option, Vite résout le build serveur de Svelte même sous Vitest, et
+`mount()` échoue avec `lifecycle_function_unavailable`. Voir
+[la documentation Svelte sur les tests](https://svelte.dev/docs/svelte/testing#Component-testing).
+
+Comme pour les autres tests unitaires, `$lib/api/client` est mocké avec
+`vi.mock` pour ne dépendre d'aucun backend réel, et chaque test nettoie le DOM
+rendu (`cleanup()` dans un `afterEach`).

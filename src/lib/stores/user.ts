@@ -46,16 +46,25 @@ export async function addTask(title: string, description: string, userId: number
 	}
 }
 
-export async function toggleTask(id: number, completed: boolean) {
+// Returns whether the update succeeded. The checkbox in TaskForm renders
+// `checked={task.completed}` as a one-way binding (not `bind:checked`), and
+// Svelte only writes to the DOM when the *value* it reads changes — cloning
+// the task object without changing `completed` does not trigger a rewrite,
+// since the primitive value is identical. So on failure, the caller (the
+// checkbox's own `onchange`) must reset the DOM element it already holds via
+// the event, rather than relying on the store to force a re-render.
+export async function toggleTask(id: number, completed: boolean): Promise<boolean> {
 	try {
 		const response = await api.updateTask(id, { completed });
 		if (response.success) {
 			userTasks.update((tasks) => tasks.map((t) => (t.id === id ? { ...t, completed } : t)));
-		} else {
-			error.set(response.error || 'Failed to update task');
+			return true;
 		}
+		error.set(response.error || 'Failed to update task');
+		return false;
 	} catch (err) {
 		error.set(err instanceof Error ? err.message : 'Unknown error');
+		return false;
 	}
 }
 

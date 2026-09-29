@@ -193,4 +193,68 @@ describe('user and task stores', () => {
 		expect(get(userTasks)).toEqual([]);
 		expect(get(error)).toBe('Tasks unavailable');
 	});
+
+	it('reports failure and leaves the task untouched when the API rejects a toggle (sad path)', async () => {
+		// GIVEN: An existing task and an API that rejects the toggle.
+		const task = {
+			id: 10,
+			title: 'Review',
+			description: 'Review code',
+			user_id: 1,
+			completed: false
+		};
+		userTasks.set([task]);
+		vi.mocked(api.updateTask).mockResolvedValue({ success: false, error: 'Task locked' });
+
+		// WHEN: The task is toggled.
+		const result = await toggleTask(task.id, true);
+
+		// THEN: The caller learns the toggle failed, the task is unchanged, and
+		// the error is exposed (the caller is responsible for reverting any
+		// optimistic UI, e.g. the checkbox's own DOM element).
+		expect(result).toBe(false);
+		expect(get(userTasks)).toEqual([task]);
+		expect(get(error)).toBe('Task locked');
+	});
+
+	it('reports failure and leaves the task untouched when toggling throws (sad path)', async () => {
+		// GIVEN: An existing task and an API call that throws.
+		const task = {
+			id: 10,
+			title: 'Review',
+			description: 'Review code',
+			user_id: 1,
+			completed: false
+		};
+		userTasks.set([task]);
+		vi.mocked(api.updateTask).mockRejectedValue(new Error('Network down'));
+
+		// WHEN: The task is toggled.
+		const result = await toggleTask(task.id, true);
+
+		// THEN: The caller learns the toggle failed and the task is unchanged.
+		expect(result).toBe(false);
+		expect(get(userTasks)).toEqual([task]);
+		expect(get(error)).toBe('Network down');
+	});
+
+	it('reports success when the API accepts a toggle (happy path)', async () => {
+		// GIVEN: An existing task and an API that accepts the toggle.
+		const task = {
+			id: 10,
+			title: 'Review',
+			description: 'Review code',
+			user_id: 1,
+			completed: false
+		};
+		userTasks.set([task]);
+		vi.mocked(api.updateTask).mockResolvedValue({ success: true });
+
+		// WHEN: The task is toggled.
+		const result = await toggleTask(task.id, true);
+
+		// THEN: The caller learns the toggle succeeded and the task is updated.
+		expect(result).toBe(true);
+		expect(get(userTasks)).toEqual([{ ...task, completed: true }]);
+	});
 });
