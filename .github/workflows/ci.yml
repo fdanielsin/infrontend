@@ -145,6 +145,7 @@ jobs:
           repository: fdanielsin/inbackend
           ref: develop
           path: inbackend
+          token: ${{ secrets.INBACKEND_READ_TOKEN }}
 
       - name: 'Setup Go'
         uses: actions/setup-go@v6

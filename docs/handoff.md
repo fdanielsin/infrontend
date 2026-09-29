@@ -47,7 +47,9 @@ La couverture utilise `@vitest/coverage-v8`.
 - Le client HTTP partagé reste dans `src/lib/api/`.
 - Les routes composent les écrans sans déplacer la logique backend.
 - Le workflow frontend unique est
-  `.github/workflows/ci.yml`.
+  `.github/workflows/ci.yml`. L'étape E2E qui checkout `inbackend` (dépôt
+  privé) requiert le secret de dépôt `INBACKEND_READ_TOKEN` (PAT en lecture
+  seule) ; sans lui, cette étape échoue avec `git fetch` exit 128.
 - `tests/unit/components/` existe désormais (premier fichier :
   `TaskForm.test.ts`), en plus de `tests/unit/api/` et `tests/unit/stores/`.
   Le rendu de composants Svelte sous Vitest exige
