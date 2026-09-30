@@ -10,6 +10,8 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Vitest V8 coverage provider.
 - Store, component and E2E test coverage for user and task management.
 - `.dockerignore`, and a CI job that builds the Docker image.
+- API types generated from the backend contract (openapi-typescript), a
+  `contract` CI job that fails on drift, and `bun run mutate` (Stryker).
 
 ### Changed
 
@@ -21,6 +23,12 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   severity).
 - The CI runs `bun run verify` once instead of repeating the tests in three
   jobs, and the E2E job uses the backend's Go version.
+- The API client calls the backend through openapi-fetch: paths, methods and
+  payloads are checked against the contract at compile time.
+- A task description is optional, as in the API contract: it can be empty when
+  creating a task and can be cleared when editing one.
+- Stricter TypeScript (indexed access, exact optional properties, implicit
+  returns and overrides, switch fallthrough) and type-aware ESLint on `src` and `tests`.
 - The Docker image takes the backend URL as the required `PUBLIC_API_URL`
   build argument and runs as a non-root user.
 - Unit tests: tautologies replaced, limits, boundaries and exceptions covered

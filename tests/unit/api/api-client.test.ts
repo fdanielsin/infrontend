@@ -27,62 +27,129 @@ describe('API client', () => {
 		const cases: {
 			name: string;
 			call: () => Promise<unknown>;
+			method: string;
 			url: string;
-			init: RequestInit;
+			body: string | null;
 		}[] = [
-			{ name: 'health', call: () => api.health(), url: '/health', init: {} },
-			{ name: 'getUsers', call: () => api.getUsers(), url: '/api/v1/users', init: {} },
-			{ name: 'getUser', call: () => api.getUser(7), url: '/api/v1/users/7', init: {} },
+			{ name: 'health', call: () => api.health(), method: 'GET', url: '/health', body: null },
+			{
+				name: 'getUsers',
+				call: () => api.getUsers(),
+				method: 'GET',
+				url: '/api/v1/users',
+				body: null
+			},
+			{
+				name: 'getUser',
+				call: () => api.getUser(7),
+				method: 'GET',
+				url: '/api/v1/users/7',
+				body: null
+			},
 			{
 				name: 'createUser',
 				call: () => api.createUser({ name: 'Ada', email: 'ada@example.com' }),
+				method: 'POST',
 				url: '/api/v1/users',
-				init: { method: 'POST', body: '{"name":"Ada","email":"ada@example.com"}' }
+				body: '{"name":"Ada","email":"ada@example.com"}'
 			},
 			{
 				name: 'getUserTasks',
 				call: () => api.getUserTasks(7),
+				method: 'GET',
 				url: '/api/v1/users/7/tasks',
-				init: {}
+				body: null
 			},
 			{
 				name: 'createTask',
 				call: () => api.createTask(task),
+				method: 'POST',
 				url: '/api/v1/tasks',
-				init: { method: 'POST', body: JSON.stringify(task) }
+				body: JSON.stringify(task)
 			},
 			{
 				name: 'updateTask',
 				call: () => api.updateTask(10, { completed: false }),
+				method: 'PUT',
 				url: '/api/v1/tasks/10',
-				init: { method: 'PUT', body: '{"completed":false}' }
+				body: '{"completed":false}'
 			},
 			{
 				name: 'deleteTask',
 				call: () => api.deleteTask(10),
+				method: 'DELETE',
 				url: '/api/v1/tasks/10',
-				init: { method: 'DELETE' }
+				body: null
 			},
-			{ name: 'getStats', call: () => api.getStats(), url: '/api/v1/stats', init: {} }
+			{
+				name: 'getStats',
+				call: () => api.getStats(),
+				method: 'GET',
+				url: '/api/v1/stats',
+				body: null
+			}
 		];
 
-		for (const { name, call, url, init } of cases) {
-			it(`${name} calls ${init.method ?? 'GET'} ${url} with JSON headers`, async () => {
+		for (const { name, call, method, url, body } of cases) {
+			it(`${name} sends ${method} ${url}, with a JSON body only when it has one`, async () => {
 				// GIVEN: A backend answering 200.
 				const fetchMock = mockFetch(jsonResponse({ success: true }));
 
 				// WHEN: The method is called.
 				await call();
 
-				// THEN: Exactly one request with the base URL, method, body and headers.
+				// THEN: Exactly one request to the base URL, with the method and, for a body, JSON.
 				expect(fetchMock).toHaveBeenCalledTimes(1);
-				expect(fetchMock).toHaveBeenCalledWith(`http://api.test${url}`, {
-					...init,
-					headers: JSON_HEADERS
-				});
+				const request = fetchMock.mock.calls[0]?.[0];
+				expect(request).toBeInstanceOf(Request);
+				const sent = request as Request;
+				expect(sent.url).toBe(`http://api.test${url}`);
+				expect(sent.method).toBe(method);
+				if (body === null) {
+					expect(await sent.text()).toBe('');
+					expect(sent.headers.get('content-type')).toBeNull();
+				} else {
+					expect(await sent.text()).toBe(body);
+					expect(sent.headers.get('content-type')).toBe('application/json');
+				}
 			});
 		}
 	});
+
+	it.each([
+		['health', () => api.health(), { status: 'ok', version: '1.0.0', id: 'x' }],
+		['getUsers', () => api.getUsers(), [{ id: 1, name: 'Ada', email: 'ada@x.io' }]],
+		['getUser', () => api.getUser(1), { id: 1, name: 'Ada', email: 'ada@x.io' }],
+		[
+			'createUser',
+			() => api.createUser({ name: 'Ada', email: 'ada@x.io' }),
+			{ id: 1, name: 'Ada', email: 'ada@x.io' }
+		],
+		[
+			'getUserTasks',
+			() => api.getUserTasks(1),
+			[{ id: 10, title: 'T', description: '', user_id: 1, completed: false }]
+		],
+		[
+			'createTask',
+			() => api.createTask({ title: 'T', user_id: 1, completed: false }),
+			{ id: 10, title: 'T', description: '', user_id: 1, completed: false }
+		],
+		[
+			'updateTask',
+			() => api.updateTask(10, { completed: true }),
+			{ id: 10, title: 'T', description: '', completed: true }
+		]
+	] as const)(
+		'%s returns the data of the success envelope (happy path)',
+		async (_name, call, data) => {
+			// GIVEN: The backend answers with a success envelope.
+			mockFetch(jsonResponse({ success: true, data }));
+
+			// WHEN / THEN: The envelope reaches the caller unchanged.
+			await expect(call()).resolves.toEqual({ success: true, data });
+		}
+	);
 
 	it('returns the 200 envelope as sent by the backend (happy path)', async () => {
 		// GIVEN: The backend returns statistics.
@@ -243,6 +310,7 @@ describe('API client', () => {
 
 	it('returns a generic failure when fetch rejects with a non-Error value (exception)', async () => {
 		// GIVEN: fetch rejects with a plain value.
+		// eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- rejecting with a non-Error value is the case under test
 		mockFetch(() => Promise.reject('offline'));
 
 		// WHEN / THEN: The message falls back to "Unknown error".

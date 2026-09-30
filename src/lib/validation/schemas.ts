@@ -7,7 +7,7 @@ export const UserSchema = z.object({
 
 export const TaskSchema = z.object({
 	title: z.string().min(1, 'Title is required'),
-	description: z.string().min(3, 'Description must be at least 3 characters'),
+	description: z.string(),
 	user_id: z.number().positive('User ID must be positive'),
 	completed: z.boolean().optional().default(false)
 });

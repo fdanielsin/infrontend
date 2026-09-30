@@ -291,15 +291,37 @@ describe('users store', () => {
 			expect(get(error)).toBe('Email already in use');
 		});
 
-		it('uses the fallback message when the failure has none (limit)', async () => {
-			// GIVEN: A failure with an empty message.
-			vi.mocked(api.getUsers).mockResolvedValue({ success: false, error: '' });
+		it.each([
+			['fetchUsers', () => fetchUsers(), 'Failed to fetch users'],
+			['addUser', () => addUser('Ada', 'ada@x.io'), 'Failed to create user'],
+			['selectUser', () => selectUser(1), 'Failed to fetch user']
+		] as const)(
+			'%s shows its own fallback message when the failure has none (limit)',
+			async (_name, action, fallback) => {
+				// GIVEN: Every API call fails without a message.
+				const failure = { success: false as const, error: '' };
+				vi.mocked(api.getUsers).mockResolvedValue(failure);
+				vi.mocked(api.createUser).mockResolvedValue(failure);
+				vi.mocked(api.getUser).mockResolvedValue(failure);
 
-			// WHEN: Users are fetched.
-			await fetchUsers();
+				// WHEN: The action runs.
+				await action();
 
-			// THEN: The fallback of the action is shown.
-			expect(get(error)).toBe('Failed to fetch users');
+				// THEN: The action's fallback is shown.
+				expect(get(error)).toBe(fallback);
+			}
+		);
+
+		it('shows the tasks fallback when the tasks of a selected user fail without a message (limit)', async () => {
+			// GIVEN: The user is found but its tasks fail without a message.
+			vi.mocked(api.getUser).mockResolvedValue({ success: true, data: ada });
+			vi.mocked(api.getUserTasks).mockResolvedValue({ success: false, error: '' });
+
+			// WHEN: The user is selected.
+			await selectUser(ada.id);
+
+			// THEN: The tasks fallback is shown in the tasks status.
+			expect(get(tasksStatus.error)).toBe('Failed to fetch tasks');
 		});
 
 		it('publishes the failure as a 6 s error notification (sad path, QM-02)', async () => {

@@ -12,6 +12,11 @@ export default defineConfig(
 	includeIgnoreFile(gitignorePath),
 	js.configs.recommended,
 	ts.configs.recommended,
+	{ ignores: ['src/lib/api/schema.d.ts'] },
+	...ts.configs.recommendedTypeChecked.map((config) => ({
+		...config,
+		files: ['src/**/*.{ts,svelte}', 'tests/**/*.ts']
+	})),
 	svelte.configs.recommended,
 	prettier,
 	svelte.configs.prettier,
@@ -24,7 +29,13 @@ export default defineConfig(
 		}
 	},
 	{
-		files: ['**/*.svelte', '**/*.svelte.ts', '**/*.svelte.js'],
+		files: [
+			'src/**/*.{ts,svelte}',
+			'tests/**/*.ts',
+			'**/*.svelte',
+			'**/*.svelte.ts',
+			'**/*.svelte.js'
+		],
 		languageOptions: {
 			parserOptions: {
 				projectService: true,
@@ -32,6 +43,16 @@ export default defineConfig(
 				parser: ts.parser
 			}
 		}
+	},
+	{
+		// Svelte props are declared with `let` so they stay bindable.
+		files: ['**/*.svelte'],
+		rules: { 'prefer-const': 'off', 'svelte/prefer-const': 'error' }
+	},
+	{
+		// `vi.mocked(api.method)` reads a method without calling it.
+		files: ['tests/**/*.ts'],
+		rules: { '@typescript-eslint/unbound-method': 'off' }
 	},
 	{
 		// Override or add rule settings here, such as:

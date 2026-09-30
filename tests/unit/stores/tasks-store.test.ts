@@ -155,7 +155,8 @@ describe('tasks store', () => {
 		// WHEN: The task is toggled.
 		const result = await toggleTask(task.id, true);
 
-		// THEN: The caller learns the toggle succeeded and the task is updated.
+		// THEN: Only completed is sent, the caller learns the toggle succeeded and the task is updated.
+		expect(api.updateTask).toHaveBeenCalledWith(task.id, { completed: true });
 		expect(result).toBe(true);
 		expect(get(userTasks)).toEqual([{ ...task, completed: true }]);
 	});
@@ -305,4 +306,28 @@ describe('tasks store', () => {
 			expect.objectContaining({ message: 'Task not found', type: 'error', duration: 6000 })
 		]);
 	});
+
+	it.each([
+		['addTask', () => addTask('New task', 'Details', 1), 'Failed to create task'],
+		['toggleTask', () => toggleTask(10, true), 'Failed to update task'],
+		['editTask', () => editTask(10, 'Changed', ''), 'Failed to update task'],
+		['removeTask', () => removeTask(10), 'Failed to delete task']
+	] as const)(
+		'%s shows its own fallback message when the failure has none (limit)',
+		async (_name, action, fallback) => {
+			// GIVEN: Every API call fails without a message.
+			userTasks.set([task]);
+			const failure = { success: false as const, error: '' };
+			vi.mocked(api.createTask).mockResolvedValue(failure);
+			vi.mocked(api.updateTask).mockResolvedValue(failure);
+			vi.mocked(api.deleteTask).mockResolvedValue(failure);
+
+			// WHEN: The action runs.
+			await action();
+
+			// THEN: The action's fallback is shown and notified.
+			expect(get(error)).toBe(fallback);
+			expect(get(notifications)).toEqual([expect.objectContaining({ message: fallback })]);
+		}
+	);
 });

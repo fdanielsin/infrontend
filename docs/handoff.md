@@ -127,6 +127,37 @@ restent jamais affichées, et si `getUser` échoue aucun utilisateur n'est
 sélectionné. Le chargement initial de la page stats (`loading` vrai au
 premier rendu serveur) n'est pas observable sous jsdom : à couvrir par un E2E.
 
+## Lot « contrat et outillage » (branche `chore/frontend-contract-tooling`)
+
+- `src/lib/api/schema.d.ts` est généré avec openapi-typescript 7.13.0 à partir
+  du contrat de la branche backend `feat/lot5-migrations` (worktree
+  `inbackend/.worktrees/lot5-migrations`, base `d970bc5`, fichier modifié et non
+  commité au moment de la génération ; SHA-256 de `openapi.yaml` :
+  `572bc4f61ee8488b695fd86038a3c1324f3ea73897e3483b90710196b964a2d7`). Ce
+  contrat contient `error_code`, le 409 `EMAIL_TAKEN`, le 404 `TASK_NOT_FOUND`
+  sur DELETE et le 404 `USER_NOT_FOUND` sur POST /tasks. À régénérer
+  (`OPENAPI_PATH=... bun run api:generate`) au merge du backend.
+- `client.ts` passe par openapi-fetch (`parseAs: 'text'`, le corps est parsé
+  par le client pour garder `status` sur un JSON mal formé) ; la façade
+  `ApiClient` et `ApiResult` restent. Le client lit `error_code` et l'expose
+  comme `code` ; aucun store n'en dépend encore.
+- `createTask` accepte `CreateTaskRequest`. La description d'une tâche est
+  optionnelle comme dans le contrat (décision du lead) : zod n'impose plus de
+  longueur minimale ; une description vide est envoyée telle quelle (`""`), à la
+  création comme à l'édition, où le contrat l'applique telle quelle.
+- TypeScript : `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`,
+  `noImplicitReturns`, `noImplicitOverride`, `noFallthroughCasesInSwitch` ; `svelte-check
+--fail-on-warnings`. ESLint : `recommendedTypeChecked` sur `src` et `tests`,
+  `unbound-method` désactivé dans `tests/` (`vi.mocked(api.method)`),
+  `prefer-const` remplacé par `svelte/prefer-const` dans les `.svelte` (props
+  déclarées avec `let`).
+- Le job CI `contract` reste rouge tant que le contrat du lot B n'est pas
+  dans `inbackend/develop` (il compare à celui de develop, sans `error_code`) :
+  attendu, à rappeler dans la description de la PR.
+- `zodIssuesToFieldErrors` (`lib/validation/field-errors.ts`) remplace trois
+  boucles identiques de TaskForm et UserForm.
+- Stryker : `bun run mutate`, config `stryker.config.json`, non bloquant.
+
 ## Prochaine étape
 
 Lots suivants : Docker/CI/doc, contrat généré (openapi-typescript et

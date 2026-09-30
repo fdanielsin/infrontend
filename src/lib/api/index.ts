@@ -9,5 +9,8 @@ export {
 	type Task,
 	type UpdatedTask,
 	type UpdateTaskRequest,
-	type Stats
+	type Stats,
+	type CreateUserRequest,
+	type CreateTaskRequest,
+	type ErrorCode
 } from './client';

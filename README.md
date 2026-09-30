@@ -62,6 +62,26 @@ il n'y a pas de `.env.local`, la fournir en ligne de commande :
 PUBLIC_API_URL=http://localhost:8080 bun run verify
 ```
 
+## Contrat d'API
+
+Les types de `src/lib/api/schema.d.ts` sont générés depuis le contrat du
+backend (`inbackend/docs/specs/api/openapi.yaml`) et committés :
+
+```bash
+bun run api:generate   # régénère schema.d.ts
+bun run api:check      # échoue si schema.d.ts n'est plus à jour
+```
+
+Par défaut le contrat est lu dans `../inbackend/` ; ailleurs (worktree), fournir
+`OPENAPI_PATH=/chemin/vers/openapi.yaml`. En CI, le job `contract` exécute
+`api:check` sur le backend (branche au choix via `workflow_dispatch`).
+
+## Tests de mutation
+
+`bun run mutate` lance Stryker sur les modules TypeScript de `src/lib` (hors
+`.svelte`), à la demande et sans bloquer la CI ; rapport dans
+`reports/mutation/`. Pour un fichier : `bunx stryker run --mutate src/lib/stores/request-status.ts`.
+
 ## Docker
 
 `PUBLIC_API_URL` est figée dans l'image au build ; elle ne peut pas être

@@ -120,16 +120,17 @@ describe('TaskForm', () => {
 		expect(api.updateTask).not.toHaveBeenCalled();
 	});
 
-	it('current rule: refuses an empty title and a 2-character description (sad path)', async () => {
+	it('refuses an empty title, whatever the description (sad path)', async () => {
 		// GIVEN: A rendered form.
 		const view = render(TaskForm, { props: { user } });
 
-		// WHEN: An empty title and a 2-character description are submitted.
+		// WHEN: An empty title is submitted with a short description.
 		await addTaskForm(view).submit('', 'ab');
 
-		// THEN: Both messages are shown and nothing is sent.
+		// THEN: Only the title is reported (the contract requires it) and nothing is sent.
 		expect(await view.findByText('Title is required')).toBeTruthy();
-		expect(view.getByText('Description must be at least 3 characters')).toBeTruthy();
+		expect(view.queryByText(/at least 3 characters/)).toBeNull();
+		expect(view.getByLabelText('Description').getAttribute('aria-invalid')).toBe('false');
 		expect(api.createTask).not.toHaveBeenCalled();
 	});
 
@@ -149,28 +150,72 @@ describe('TaskForm', () => {
 		expect(api.updateTask).not.toHaveBeenCalled();
 	});
 
-	it('current rule: accepts a 1-character title with a 3-character description (boundary)', async () => {
+	it('accepts a 1-character title with an empty description, as the contract does (boundary)', async () => {
 		// GIVEN: An API that accepts the task.
 		vi.mocked(api.createTask).mockResolvedValue({
 			success: true,
-			data: { ...task, id: 11, title: 'B', description: 'abc' }
+			data: { ...task, id: 11, title: 'B', description: '' }
 		});
 		const view = render(TaskForm, { props: { user } });
 
 		// WHEN: The shortest accepted values are submitted.
-		await addTaskForm(view).submit('B', 'abc');
+		await addTaskForm(view).submit('B', '');
 
-		// THEN: The task is sent without any validation message.
+		// THEN: The task is sent as is, without any validation message.
 		await waitFor(() =>
 			expect(api.createTask).toHaveBeenCalledWith({
 				title: 'B',
-				description: 'abc',
+				description: '',
 				user_id: user.id,
 				completed: false
 			})
 		);
 		expect(view.queryByText('Title is required')).toBeNull();
-		expect(view.queryByText('Description must be at least 3 characters')).toBeNull();
+	});
+
+	it('accepts a very long Unicode description (limit)', async () => {
+		// GIVEN: A description of 10 000 characters with accents, emoji and markup.
+		const description = 'é🚀<b>'.repeat(2000);
+		vi.mocked(api.createTask).mockResolvedValue({
+			success: true,
+			data: { ...task, id: 11, title: 'Long', description }
+		});
+		const view = render(TaskForm, { props: { user } });
+
+		// WHEN: It is submitted.
+		await addTaskForm(view).submit('Long', description);
+
+		// THEN: It is sent unchanged.
+		await waitFor(() =>
+			expect(api.createTask).toHaveBeenCalledWith({
+				title: 'Long',
+				description,
+				user_id: user.id,
+				completed: false
+			})
+		);
+	});
+
+	it('clears a description by editing it to empty (happy path)', async () => {
+		// GIVEN: A task being edited and an API that accepts the change.
+		vi.mocked(api.updateTask).mockResolvedValue({
+			success: true,
+			data: { id: task.id, title: task.title, description: '', completed: task.completed }
+		});
+		const view = render(TaskForm, { props: { user } });
+		await fireEvent.click(view.getByRole('button', { name: 'Edit Review' }));
+		const editDescription = view.getByDisplayValue('Review code') as HTMLTextAreaElement;
+
+		// WHEN: The description is emptied and saved.
+		await fireEvent.input(editDescription, { target: { value: '' } });
+		await fireEvent.submit(editDescription.closest('form') as HTMLFormElement);
+
+		// THEN: The empty description is sent and the edit closes.
+		await waitFor(() =>
+			expect(api.updateTask).toHaveBeenCalledWith(task.id, { title: 'Review', description: '' })
+		);
+		await waitFor(() => expect(view.queryByDisplayValue('Review')).toBeNull());
+		expect(view.queryByText('Review code')).toBeNull();
 	});
 
 	it('shows "No tasks yet" for an empty list (limit)', () => {

@@ -54,6 +54,11 @@ Règles :
 ## Frontière avec le backend
 
 - Le backend est propriétaire du contrat d'API et des règles métier.
+- Les types du contrat sont générés (`src/lib/api/schema.d.ts`, openapi-typescript,
+  jamais édité à la main) et le client `lib/api/client.ts` appelle l'API avec
+  openapi-fetch : chemin, méthode, corps et paramètres sont vérifiés par le
+  compilateur. Une dérive entre ce fichier et le contrat est détectée par
+  `bun run api:check` (job CI `contract`).
 - Le frontend ne recalcule pas de règles métier ou de montants.
 - Les statuts et énumérations sont issus du contrat lorsqu'un contrat existe.
 - La validation locale sert à l'ergonomie et au retour immédiat à l'utilisateur.

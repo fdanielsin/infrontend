@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { users, selectedUser, usersStatus, addUser, selectUser } from './store';
 	import { UserSchema } from '$lib/validation/schemas';
+	import { zodIssuesToFieldErrors } from '$lib/validation/field-errors';
 	const { loading, error } = usersStatus;
 	let name = $state('');
 	let email = $state('');
@@ -10,10 +11,7 @@
 		const result = UserSchema.safeParse({ name, email });
 		fieldErrors = {};
 		if (!result.success) {
-			for (const issue of result.error.issues) {
-				const field = issue.path[0];
-				if (field === 'name' || field === 'email') fieldErrors[field] = issue.message;
-			}
+			fieldErrors = zodIssuesToFieldErrors(result.error, ['name', 'email']);
 			return;
 		}
 		const created = await addUser(result.data.name, result.data.email);
@@ -34,7 +32,7 @@
 	<form
 		onsubmit={(e) => {
 			e.preventDefault();
-			handleSubmit();
+			void handleSubmit();
 		}}
 		class="space-y-4"
 	>

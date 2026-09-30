@@ -2,8 +2,10 @@
 	import { userTasks, tasksStatus, addTask, editTask, toggleTask, removeTask } from './store';
 	import type { User } from '$lib/api/client';
 	import { TaskSchema } from '$lib/validation/schemas';
+	import { zodIssuesToFieldErrors } from '$lib/validation/field-errors';
 
 	const { loading, error } = tasksStatus;
+	const TASK_FIELDS = ['title', 'description'] as const;
 	let { user = null }: { user: User | null } = $props();
 
 	let taskTitle = $state('');
@@ -39,10 +41,7 @@
 			completed: false
 		});
 		if (!result.success) {
-			for (const issue of result.error.issues) {
-				const field = issue.path[0];
-				if (field === 'title' || field === 'description') editErrors[field] = issue.message;
-			}
+			editErrors = zodIssuesToFieldErrors(result.error, TASK_FIELDS);
 			return;
 		}
 
@@ -60,10 +59,7 @@
 				completed: false
 			});
 			if (!result.success) {
-				for (const issue of result.error.issues) {
-					const field = issue.path[0];
-					if (field === 'title' || field === 'description') fieldErrors[field] = issue.message;
-				}
+				fieldErrors = zodIssuesToFieldErrors(result.error, TASK_FIELDS);
 				return;
 			}
 			const created = await addTask(result.data.title, result.data.description, user.id);
@@ -91,7 +87,7 @@
 			<form
 				onsubmit={(e) => {
 					e.preventDefault();
-					handleAddTask();
+					void handleAddTask();
 				}}
 				class="mb-6 space-y-4"
 			>
@@ -151,7 +147,7 @@
 									onchange={(event: Event & { currentTarget: HTMLInputElement }) => {
 										const checkbox = event.currentTarget;
 										const nextCompleted = checkbox.checked;
-										toggleTask(task.id, nextCompleted).then((ok) => {
+										void toggleTask(task.id, nextCompleted).then((ok) => {
 											// Revert the native click if the update failed (see toggleTask).
 											if (!ok) checkbox.checked = !nextCompleted;
 										});
@@ -164,7 +160,7 @@
 										class="flex-1 space-y-2"
 										onsubmit={(e) => {
 											e.preventDefault();
-											handleEditTask();
+											void handleEditTask();
 										}}
 									>
 										<label class="sr-only" for={`edit-title-${task.id}`}>Task Title</label>

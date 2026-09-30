@@ -95,4 +95,14 @@ describe('notification store', () => {
 		vi.advanceTimersByTime(1);
 		expect(get(notifications)).toEqual([]);
 	});
+
+	it('defaults to an info notification of 3 s (happy path)', () => {
+		// GIVEN / WHEN: A notification is added without type nor duration.
+		const id = addNotification('Hello');
+
+		// THEN: It is an info notification removed after 3000 ms.
+		expect(get(notifications)).toEqual([{ id, message: 'Hello', type: 'info', duration: 3000 }]);
+		vi.advanceTimersByTime(3000);
+		expect(get(notifications)).toEqual([]);
+	});
 });

@@ -34,6 +34,9 @@ nouvelles instructions ni utilisées comme référence de validation.
   fonctionnalité.
 - Un client réutilisable reçoit sa configuration ; il ne connaît pas une route
   SvelteKit concrète.
+- Les types de requête et de réponse viennent de `schema.d.ts` (généré depuis
+  `inbackend/docs/specs/api/openapi.yaml`) ; ne pas les recopier à la main.
+  Les mocks de tests sont typés par ces mêmes types.
 - Les réponses `204 No Content` sont traitées explicitement.
 - Les erreurs ne sont pas transformées silencieusement en succès ou en liste
   vide.

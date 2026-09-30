@@ -18,6 +18,8 @@ describe('API client base URL', () => {
 		await api.getUsers();
 
 		// THEN: The default local backend is called.
-		expect(fetchMock).toHaveBeenCalledWith('http://localhost:8080/api/v1/users', expect.anything());
+		const request = fetchMock.mock.calls[0]?.[0];
+		expect(request).toBeInstanceOf(Request);
+		expect((request as Request).url).toBe('http://localhost:8080/api/v1/users');
 	});
 });
