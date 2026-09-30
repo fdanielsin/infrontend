@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, waitFor } from '@testing-library/svelte';
-import { api, type ApiResponse, type User } from '$lib/api/client';
-import { fetchUsers, selectedUser, users } from '$lib/features/users/store';
-import { error, loading } from '$lib/stores/request-status';
+import { api, type ApiResult, type User } from '$lib/api/client';
+import { fetchUsers, selectedUser, users, usersStatus } from '$lib/features/users/store';
+import { tasksStatus } from '$lib/features/tasks/store';
 import UserForm from '$lib/features/users/UserForm.svelte';
 
 vi.mock('$lib/api/client', () => ({
@@ -35,8 +35,10 @@ describe('UserForm', () => {
 		vi.resetAllMocks();
 		users.set([]);
 		selectedUser.set(null);
-		loading.set(false);
-		error.set(null);
+		for (const status of [usersStatus, tasksStatus]) {
+			status.loading.set(false);
+			status.error.set(null);
+		}
 	});
 
 	afterEach(() => {
@@ -122,7 +124,7 @@ describe('UserForm', () => {
 
 	it('disables the submit button while the request is pending (exception)', async () => {
 		// GIVEN: An API call that has not answered yet.
-		let answer!: (value: ApiResponse<User>) => void;
+		let answer!: (value: ApiResult<User>) => void;
 		vi.mocked(api.createUser).mockReturnValue(new Promise((resolve) => (answer = resolve)));
 		const { submit, getByRole } = renderForm();
 
@@ -140,16 +142,47 @@ describe('UserForm', () => {
 		);
 	});
 
-	it('shows an alert when the users cannot be loaded (exception)', async () => {
+	it('shows the error inline when the users cannot be loaded (exception)', async () => {
 		// GIVEN: A rendered form and a backend that cannot be reached.
 		vi.mocked(api.getUsers).mockRejectedValue(new TypeError('Failed to fetch'));
-		const { findByRole, getByText } = renderForm();
+		const { findByText, getByText } = renderForm();
 
 		// WHEN: The page loads the users.
 		await fetchUsers();
 
-		// THEN: The failure is announced and the list stays empty.
-		expect((await findByRole('alert')).textContent).toContain('Failed to fetch');
+		// THEN: The failure is shown and the list stays empty.
+		expect(await findByText('Failed to fetch')).toBeTruthy();
 		expect(getByText('No users yet')).toBeTruthy();
+	});
+
+	it('shows the backend message as is, without prefix (sad path, F-01)', async () => {
+		// GIVEN: The backend refuses a taken email.
+		vi.mocked(api.createUser).mockResolvedValue({
+			success: false,
+			error: 'Email already in use',
+			status: 409,
+			code: 'EMAIL_TAKEN'
+		});
+		const { submit, findByText, getByText } = renderForm();
+
+		// WHEN: The form is submitted.
+		await submit('Ada', 'ada@x.io');
+
+		// THEN: The exact message is displayed, and no user is listed.
+		expect((await findByText('Email already in use')).textContent?.trim()).toBe(
+			'Email already in use'
+		);
+		expect(getByText('No users yet')).toBeTruthy();
+	});
+
+	it('does not show a tasks error in the user form (sad path, F-02)', () => {
+		// GIVEN: The tasks feature failed.
+		tasksStatus.error.set('Task not found');
+
+		// WHEN: The user form is rendered.
+		const { queryByText } = renderForm();
+
+		// THEN: The error stays in its own feature.
+		expect(queryByText('Task not found')).toBeNull();
 	});
 });

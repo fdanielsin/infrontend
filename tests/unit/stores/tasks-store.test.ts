@@ -1,8 +1,29 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { get } from 'svelte/store';
-import { api } from '$lib/api/client';
-import { addTask, editTask, removeTask, toggleTask, userTasks } from '$lib/features/tasks/store';
-import { error, loading } from '$lib/stores/request-status';
+import { api, type ApiResult, type UpdatedTask } from '$lib/api/client';
+import {
+	addTask,
+	editTask,
+	removeTask,
+	tasksStatus,
+	toggleTask,
+	userTasks
+} from '$lib/features/tasks/store';
+import { notifications } from '$lib/stores/notification';
+
+const { error, loading } = tasksStatus;
+
+function updated(task: { id: number; title: string; description: string; completed: boolean }) {
+	return {
+		success: true as const,
+		data: {
+			id: task.id,
+			title: task.title,
+			description: task.description,
+			completed: task.completed
+		}
+	};
+}
 
 vi.mock('$lib/api/client', () => ({
 	api: {
@@ -30,6 +51,7 @@ describe('tasks store', () => {
 		userTasks.set([]);
 		loading.set(false);
 		error.set(null);
+		notifications.set([]);
 	});
 
 	it('stores a task API failure without replacing existing tasks (sad path)', async () => {
@@ -63,7 +85,9 @@ describe('tasks store', () => {
 			completed: true
 		};
 		userTasks.set([task]);
-		vi.mocked(api.updateTask).mockResolvedValue({ success: true });
+		vi.mocked(api.updateTask).mockResolvedValue(
+			updated({ ...task, title: 'Review again', description: 'Review the updated code' })
+		);
 
 		// WHEN: The task title and description are edited.
 		const result = await editTask(task.id, 'Review again', 'Review the updated code');
@@ -126,7 +150,7 @@ describe('tasks store', () => {
 	it('reports success when the API accepts a toggle (happy path)', async () => {
 		// GIVEN: An existing task and an API that accepts the toggle.
 		userTasks.set([task]);
-		vi.mocked(api.updateTask).mockResolvedValue({ success: true });
+		vi.mocked(api.updateTask).mockResolvedValue(updated({ ...task, completed: true }));
 
 		// WHEN: The task is toggled.
 		const result = await toggleTask(task.id, true);
@@ -188,7 +212,7 @@ describe('tasks store', () => {
 	it('leaves the list unchanged for an id that is not listed (boundary)', async () => {
 		// GIVEN: The API accepts every call for an id absent from the local list.
 		userTasks.set([task]);
-		vi.mocked(api.updateTask).mockResolvedValue({ success: true });
+		vi.mocked(api.updateTask).mockResolvedValue(updated({ ...task, id: 999 }));
 		vi.mocked(api.deleteTask).mockResolvedValue({ success: true });
 
 		// WHEN: The unknown id is toggled, edited and removed.
@@ -222,4 +246,63 @@ describe('tasks store', () => {
 			expect(get(loading)).toBe(false);
 		}
 	);
+
+	it.each(['toggleTask', 'removeTask'] as const)(
+		'%s clears the previous error at start and after success (happy path, QM-03)',
+		async (action) => {
+			// GIVEN: A previous failure and a request that has not answered yet.
+			userTasks.set([task]);
+			error.set('previous failure');
+			let answer!: (value: ApiResult<UpdatedTask>) => void;
+			vi.mocked(api.updateTask).mockReturnValue(new Promise((resolve) => (answer = resolve)));
+			let answerDelete!: (value: ApiResult<void>) => void;
+			vi.mocked(api.deleteTask).mockReturnValue(new Promise((resolve) => (answerDelete = resolve)));
+
+			// WHEN: The action starts, then succeeds.
+			const running = action === 'toggleTask' ? toggleTask(task.id, true) : removeTask(task.id);
+			expect(get(error)).toBeNull();
+			if (action === 'toggleTask') answer(updated({ ...task, completed: true }));
+			else answerDelete({ success: true, message: 'Task deleted' });
+			await running;
+
+			// THEN: The error stays cleared.
+			expect(get(error)).toBeNull();
+		}
+	);
+
+	it.each(['toggleTask', 'removeTask'] as const)(
+		'%s never switches loading on, so the forms stay usable (limit, F-02)',
+		async (action) => {
+			// GIVEN: A slow API.
+			userTasks.set([task]);
+			let answer!: (value: ApiResult<UpdatedTask>) => void;
+			vi.mocked(api.updateTask).mockReturnValue(new Promise((resolve) => (answer = resolve)));
+			let answerDelete!: (value: ApiResult<void>) => void;
+			vi.mocked(api.deleteTask).mockReturnValue(new Promise((resolve) => (answerDelete = resolve)));
+
+			// WHEN: The background action runs.
+			const running = action === 'toggleTask' ? toggleTask(task.id, true) : removeTask(task.id);
+
+			// THEN: loading never becomes true.
+			expect(get(loading)).toBe(false);
+			if (action === 'toggleTask') answer(updated({ ...task, completed: true }));
+			else answerDelete({ success: true });
+			await running;
+			expect(get(loading)).toBe(false);
+		}
+	);
+
+	it('publishes a failed toggle as an error notification (sad path, QM-02)', async () => {
+		// GIVEN: The API refuses the toggle.
+		userTasks.set([task]);
+		vi.mocked(api.updateTask).mockResolvedValue({ success: false, error: 'Task not found' });
+
+		// WHEN: The task is toggled.
+		await toggleTask(task.id, true);
+
+		// THEN: The same message is notified as an error.
+		expect(get(notifications)).toEqual([
+			expect.objectContaining({ message: 'Task not found', type: 'error', duration: 6000 })
+		]);
+	});
 });

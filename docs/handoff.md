@@ -29,13 +29,10 @@ chaque étape) :
 - `src/lib/features/tasks/` créé : `store.ts` (userTasks, addTask, editTask,
   toggleTask, removeTask) et `TaskForm.svelte`, déplacés depuis
   `src/lib/stores/user.ts` (supprimé) et `src/lib/components/`.
-- `src/lib/stores/request-status.ts` créé : `loading`/`error`, déplacés
-  depuis `features/users/store.ts`. Ce sont les mêmes instances `writable`
-  qu'avant, partagées à l'identique entre `users` et `tasks` — **F-02
-  (contamination croisée entre les deux formulaires) n'est pas corrigé**,
-  seulement correctement rangé dans un store transversal au lieu d'un
-  fichier "users". `features/users/store.ts::selectUser` importe `userTasks`
-  depuis `features/tasks/store.ts` pour le peupler (dépendance users→tasks
+- `src/lib/stores/request-status.ts` créé (à ce stade `loading`/`error`
+  partagés ; remplacés ensuite par la fabrique `createRequestStatus`, voir
+  lot « erreurs » ci-dessous). `features/users/store.ts::selectUser` appelle
+  `loadUserTasks` de `features/tasks/store.ts` (dépendance users→tasks
   documentée en commentaire).
 - `src/lib/components/Notification.svelte` déplacé vers `src/lib/ui/`
   (`lib/components/` n'avait plus d'autre habitant).
@@ -106,12 +103,24 @@ La couverture utilise `@vitest/coverage-v8`.
 - Utiliser Bun dans les commandes, la documentation et la CI frontend.
 - Ne pas considérer un contrôle comme valide s'il est masqué par `|| true`.
 
+## Lot « erreurs » (2026-10-01, branche `fix/frontend-errors`)
+
+F-01, F-02, QM-01, QM-02, QM-03 corrigés. `client.ts` renvoie une union
+`ApiResult` (succès avec `data` / échec avec `error`, `status`, `code`
+optionnel), lit le corps `ErrorResponse` et signale un JSON mal formé.
+`createRequestStatus().run` porte `loading`/`error` par domaine
+(`usersStatus`, `tasksStatus`), remet `error` à null au début de chaque
+action et publie un toast d'erreur de 6 s. Les bannières inline n'ont plus
+`role="alert"` : le toast annonce. `selectUser` désélectionne l'utilisateur et vide `userTasks` dès le début
+de la sélection (QM-04, QM-05) : les tâches d'un autre utilisateur ne
+restent jamais affichées, et si `getUser` échoue aucun utilisateur n'est
+sélectionné. Le chargement initial de la page stats (`loading` vrai au
+premier rendu serveur) n'est pas observable sous jsdom : à couvrir par un E2E.
+
 ## Prochaine étape
 
-Lot 2 du plan d'audit (`roadmap.md`) : F-01 (le client HTTP perd le message
-d'erreur du backend sur toute réponse non-2xx) et F-02 (le partage
-`loading`/`error` entre `users` et `tasks` est maintenant bien rangé dans
-`lib/stores/request-status.ts`, mais le bug lui-même — contamination croisée
-entre les deux formulaires — reste à corriger). La modularisation de `stats`
-reste ouverte, uniquement lorsqu'une extraction apporte une séparation claire
-et sans changement fonctionnel.
+Lots suivants : Docker/CI/doc, contrat généré (openapi-typescript et
+openapi-fetch, `api:check`), puis B-04 côté interface (404 sur la
+suppression d'une tâche absente, décision fonctionnelle en attente). La
+modularisation de `stats` reste ouverte, uniquement si elle apporte une
+séparation claire.

@@ -1,6 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { get } from 'svelte/store';
-import { addNotification, notifications, removeNotification } from '$lib/stores/notification';
+import {
+	addNotification,
+	ERROR_NOTIFICATION_DURATION,
+	notifications,
+	notifyError,
+	removeNotification
+} from '$lib/stores/notification';
 
 describe('notification store', () => {
 	beforeEach(() => {
@@ -73,5 +79,20 @@ describe('notification store', () => {
 
 		// THEN: It is still shown.
 		expect(get(notifications)).toHaveLength(1);
+	});
+
+	it('notifies an error for exactly 6 s (boundary, QM-02)', () => {
+		// GIVEN / WHEN: An error is notified.
+		const id = notifyError('Email already in use');
+
+		// THEN: It is an error notification kept until 6000 ms, not one ms more.
+		expect(ERROR_NOTIFICATION_DURATION).toBe(6000);
+		expect(get(notifications)).toEqual([
+			{ id, message: 'Email already in use', type: 'error', duration: 6000 }
+		]);
+		vi.advanceTimersByTime(5999);
+		expect(get(notifications)).toHaveLength(1);
+		vi.advanceTimersByTime(1);
+		expect(get(notifications)).toEqual([]);
 	});
 });

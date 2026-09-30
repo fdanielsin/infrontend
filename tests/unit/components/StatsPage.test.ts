@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render } from '@testing-library/svelte';
-import { api, type ApiResponse, type Stats } from '$lib/api/client';
+import { get } from 'svelte/store';
+import { api, type ApiResult, type Stats } from '$lib/api/client';
+import { notifications } from '$lib/stores/notification';
 import StatsPage from '../../../src/routes/stats/+page.svelte';
 
 vi.mock('$lib/api/client', () => ({
@@ -59,23 +61,39 @@ describe('stats page', () => {
 		expect(await findByText('❌ Erreur: HTTP 500')).toBeTruthy();
 	});
 
-	it('treats a success without data as an error (limit)', async () => {
-		// GIVEN: A success envelope without data.
-		vi.mocked(api.getStats).mockResolvedValue({ success: true });
+	it('rounds a repeating average to 2 decimals (limit)', async () => {
+		// GIVEN: 3 users and 1 task.
+		vi.mocked(api.getStats).mockResolvedValue({ success: true, data: { users: 3, tasks: 1 } });
 
 		// WHEN: The page is rendered.
-		const { findByText, queryByText } = render(StatsPage);
+		const { findByText, container } = render(StatsPage);
 
-		// THEN: A generic error is displayed instead of empty counters.
-		expect(await findByText('❌ Erreur: Failed to fetch stats')).toBeTruthy();
-		expect(queryByText('Résumé')).toBeNull();
+		// THEN: 1 / 3 is shown as 0.33.
+		await findByText('Résumé');
+		expect(averageText(container)).toBe('0.33');
+	});
+
+	it('notifies a stats failure as an error (sad path, QM-02)', async () => {
+		// GIVEN: The API reports a failure.
+		notifications.set([]);
+		vi.mocked(api.getStats).mockResolvedValue({ success: false, error: 'HTTP 500' });
+
+		// WHEN: The page is rendered.
+		const { findByText } = render(StatsPage);
+
+		// THEN: The error is displayed and notified.
+		await findByText('❌ Erreur: HTTP 500');
+		expect(get(notifications)).toEqual([
+			expect.objectContaining({ message: 'HTTP 500', type: 'error' })
+		]);
+		notifications.set([]);
 	});
 
 	it('shows the loading state until the answer, then the error when the call throws (exception)', async () => {
 		// GIVEN: A request that is still pending.
 		let fail!: (reason: Error) => void;
 		vi.mocked(api.getStats).mockReturnValue(
-			new Promise<ApiResponse<Stats>>((_resolve, reject) => (fail = reject))
+			new Promise<ApiResult<Stats>>((_resolve, reject) => (fail = reject))
 		);
 
 		// WHEN: The page is rendered.

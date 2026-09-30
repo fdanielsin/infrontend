@@ -31,6 +31,13 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- API errors now show the message sent by the backend instead of `HTTP <code>` (F-01).
+- A failure in the users form no longer appears in the tasks form, and the
+  reverse (F-02).
+- A malformed JSON response is reported as an invalid server response (QM-01).
+- Errors are also shown as a temporary notification (QM-02).
+- Selecting a user no longer leaves the previous user's tasks editable, and a failed selection leaves no user selected (QM-04, QM-05).
+- An error disappears when the next action starts (QM-03).
 - The task checkbox no longer stays visually checked/unchecked after a
   rejected update (Q-01).
 

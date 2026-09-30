@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { users, selectedUser, addUser, selectUser } from './store';
-	import { loading, error } from '$lib/stores/request-status';
+	import { users, selectedUser, usersStatus, addUser, selectUser } from './store';
 	import { UserSchema } from '$lib/validation/schemas';
+	const { loading, error } = usersStatus;
 	let name = $state('');
 	let email = $state('');
 	let fieldErrors = $state<{ name?: string; email?: string }>({});
@@ -28,7 +28,7 @@
 	<h2 class="mb-4 text-xl font-bold">Create User</h2>
 
 	{#if $error}
-		<div class="mb-4 rounded bg-red-100 p-3 text-red-700" role="alert">{$error}</div>
+		<div class="mb-4 rounded bg-red-100 p-3 text-red-700">{$error}</div>
 	{/if}
 
 	<form

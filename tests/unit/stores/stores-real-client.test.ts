@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { get } from 'svelte/store';
-import { fetchUsers, users } from '$lib/features/users/store';
-import { addTask, userTasks } from '$lib/features/tasks/store';
-import { error, loading } from '$lib/stores/request-status';
+import { addUser, fetchUsers, users, usersStatus } from '$lib/features/users/store';
+import { addTask, tasksStatus, userTasks } from '$lib/features/tasks/store';
+import { notifications } from '$lib/stores/notification';
 
 // These tests keep the real API client and only replace fetch: they check what
 // the stores do with transport failures the client itself does not absorb.
@@ -12,8 +12,11 @@ describe('stores with the real API client', () => {
 	beforeEach(() => {
 		users.set([ada]);
 		userTasks.set([]);
-		loading.set(false);
-		error.set(null);
+		for (const status of [usersStatus, tasksStatus]) {
+			status.loading.set(false);
+			status.error.set(null);
+		}
+		notifications.set([]);
 	});
 
 	afterEach(() => {
@@ -27,10 +30,13 @@ describe('stores with the real API client', () => {
 		// WHEN: Users are fetched.
 		await fetchUsers();
 
-		// THEN: An error is exposed, the previous list is kept and loading is over.
-		expect(get(error)).toEqual(expect.any(String));
+		// THEN: An explicit error is exposed and notified, the list is kept, loading is over.
+		expect(get(usersStatus.error)).toBe('Invalid server response');
+		expect(get(notifications)).toEqual([
+			expect.objectContaining({ message: 'Invalid server response', type: 'error' })
+		]);
 		expect(get(users)).toEqual([ada]);
-		expect(get(loading)).toBe(false);
+		expect(get(usersStatus.loading)).toBe(false);
 	});
 
 	it('reports an unreachable backend without adding the task (exception)', async () => {
@@ -43,7 +49,30 @@ describe('stores with the real API client', () => {
 		// THEN: Nothing is added and the network error reaches the store.
 		expect(result).toBeUndefined();
 		expect(get(userTasks)).toEqual([]);
-		expect(get(error)).toBe('Failed to fetch');
-		expect(get(loading)).toBe(false);
+		expect(get(tasksStatus.error)).toBe('Failed to fetch');
+		expect(get(tasksStatus.loading)).toBe(false);
+	});
+
+	it('shows the backend message of a refused creation (sad path, F-01)', async () => {
+		// GIVEN: The backend refuses a taken email with its error envelope.
+		vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+			new Response(
+				JSON.stringify({
+					success: false,
+					error: 'Email already in use',
+					error_code: 'EMAIL_TAKEN'
+				}),
+				{ status: 409 }
+			)
+		);
+
+		// WHEN: The user is created.
+		await addUser('Ada', 'ada@x.io');
+
+		// THEN: The backend message reaches the store and the notification, not "HTTP 409".
+		expect(get(usersStatus.error)).toBe('Email already in use');
+		expect(get(notifications)).toEqual([
+			expect.objectContaining({ message: 'Email already in use', type: 'error' })
+		]);
 	});
 });

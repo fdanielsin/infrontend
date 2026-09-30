@@ -2,7 +2,9 @@
 export {
 	ApiClient,
 	api,
-	type ApiResponse,
+	type ApiResult,
+	type ApiSuccess,
+	type ApiFailure,
 	type User,
 	type Task,
 	type UpdatedTask,

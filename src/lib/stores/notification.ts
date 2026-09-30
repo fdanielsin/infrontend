@@ -28,6 +28,12 @@ export function addNotification(message: string, type: NotificationType = 'info'
 	return notifId;
 }
 
+export const ERROR_NOTIFICATION_DURATION = 6000;
+
+export function notifyError(message: string) {
+	return addNotification(message, 'error', ERROR_NOTIFICATION_DURATION);
+}
+
 export function removeNotification(id: string) {
 	notifications.update((n) => n.filter((notif) => notif.id !== id));
 }

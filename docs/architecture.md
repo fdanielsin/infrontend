@@ -5,10 +5,9 @@
 Architecture retenue pour une modularisation progressive. `users` et `tasks`
 sont réellement modularisés (composant et store dédiés chacun) ; `stats`
 reste dans sa route (`routes/stats/+page.svelte`), rien n'y justifie encore
-un dossier de fonctionnalité séparé. `loading`/`error` sont un store
-transversal (`lib/stores/request-status.ts`), partagé entre `users` et
-`tasks` — ce partage cause un bug de contamination croisée entre les deux
-formulaires (voir `handoff.md`), non traité par cette architecture.
+un dossier de fonctionnalité séparé. `loading`/`error` sont propres à chaque domaine (`usersStatus`,
+`tasksStatus`, fabrique `createRequestStatus` dans
+`lib/stores/request-status.ts`).
 
 ## Cible
 

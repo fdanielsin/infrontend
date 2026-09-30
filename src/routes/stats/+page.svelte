@@ -2,24 +2,15 @@
 	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
 	import { api, type Stats } from '$lib/api/client';
+	import { createRequestStatus } from '$lib/stores/request-status';
 
+	const { loading, error, run } = createRequestStatus();
+	loading.set(true);
 	let stats = $state<Stats | null>(null);
-	let loading = $state(true);
-	let error = $state<string | null>(null);
 
 	onMount(async () => {
-		try {
-			loading = true;
-			const response = await api.getStats();
-			if (!response.success || !response.data) {
-				throw new Error(response.error || 'Failed to fetch stats');
-			}
-			stats = response.data;
-		} catch (err) {
-			error = err instanceof Error ? err.message : 'Unknown error';
-		} finally {
-			loading = false;
-		}
+		const result = await run(() => api.getStats(), { fallbackMessage: 'Failed to fetch stats' });
+		if (result.success) stats = result.data;
 	});
 </script>
 
@@ -27,13 +18,13 @@
 	<div class="mx-auto max-w-2xl">
 		<h1 class="mb-8 text-4xl font-bold text-gray-800">📊 Statistiques</h1>
 
-		{#if loading}
+		{#if $loading}
 			<div class="rounded-lg bg-white p-8 text-center shadow-lg">
 				<p class="text-gray-600">Chargement des statistiques...</p>
 			</div>
-		{:else if error}
+		{:else if $error}
 			<div class="rounded-lg border border-red-200 bg-red-50 p-8 shadow-lg">
-				<p class="font-semibold text-red-600">❌ Erreur: {error}</p>
+				<p class="font-semibold text-red-600">❌ Erreur: {$error}</p>
 			</div>
 		{:else if stats}
 			<div class="grid grid-cols-2 gap-6">

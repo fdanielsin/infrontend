@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, waitFor } from '@testing-library/svelte';
 import { api } from '$lib/api/client';
-import { userTasks } from '$lib/features/tasks/store';
-import { error, loading } from '$lib/stores/request-status';
+import { tasksStatus, userTasks } from '$lib/features/tasks/store';
+import { usersStatus } from '$lib/features/users/store';
 import TaskForm from '$lib/features/tasks/TaskForm.svelte';
 
 vi.mock('$lib/api/client', () => ({
@@ -45,8 +45,10 @@ describe('TaskForm', () => {
 	beforeEach(() => {
 		vi.resetAllMocks();
 		userTasks.set([task]);
-		loading.set(false);
-		error.set(null);
+		for (const status of [tasksStatus, usersStatus]) {
+			status.loading.set(false);
+			status.error.set(null);
+		}
 	});
 
 	afterEach(() => {
@@ -56,7 +58,7 @@ describe('TaskForm', () => {
 	it('reverts the checkbox to the real state when the API rejects the toggle (sad path)', async () => {
 		// GIVEN: A rendered task list and an API that rejects the toggle request.
 		vi.mocked(api.updateTask).mockResolvedValue({ success: false, error: 'Task locked' });
-		const { getByRole } = render(TaskForm, { props: { user } });
+		const { getByRole, getByText } = render(TaskForm, { props: { user } });
 		const checkbox = getByRole('checkbox', {
 			name: /mark review as complete/i
 		}) as HTMLInputElement;
@@ -68,7 +70,7 @@ describe('TaskForm', () => {
 		// THEN: Once the rejection is handled, the checkbox reflects the real,
 		// unchanged `completed` value instead of keeping the optimistic click.
 		await waitFor(() => expect(checkbox.checked).toBe(false));
-		expect(getByRole('alert').textContent).toContain('Task locked');
+		expect(getByText('Task locked')).toBeTruthy();
 	});
 
 	it('asks to select a user when none is selected (happy path)', () => {
@@ -196,7 +198,7 @@ describe('TaskForm', () => {
 	it('reverts the checkbox when the toggle request throws (exception)', async () => {
 		// GIVEN: A toggle request that rejects.
 		vi.mocked(api.updateTask).mockRejectedValue(new Error('Network down'));
-		const { getByRole } = render(TaskForm, { props: { user } });
+		const { getByRole, getByText } = render(TaskForm, { props: { user } });
 		const checkbox = getByRole('checkbox', {
 			name: /mark review as complete/i
 		}) as HTMLInputElement;
@@ -206,6 +208,28 @@ describe('TaskForm', () => {
 
 		// THEN: It returns to the real state and the error is shown.
 		await waitFor(() => expect(checkbox.checked).toBe(false));
-		expect(getByRole('alert').textContent).toContain('Network down');
+		expect(getByText('Network down')).toBeTruthy();
+	});
+
+	it('keeps "Add Task" usable while the users are loading (sad path, F-02)', () => {
+		// GIVEN: The users feature is loading.
+		usersStatus.loading.set(true);
+
+		// WHEN: The task form is rendered.
+		const { getByRole } = render(TaskForm, { props: { user } });
+
+		// THEN: Adding a task is not blocked by another feature.
+		expect((getByRole('button', { name: 'Add Task' }) as HTMLButtonElement).disabled).toBe(false);
+	});
+
+	it('does not show a users error in the task form (sad path, F-02)', () => {
+		// GIVEN: The users feature failed.
+		usersStatus.error.set('Email already in use');
+
+		// WHEN: The task form is rendered.
+		const { queryByText } = render(TaskForm, { props: { user } });
+
+		// THEN: The error stays in its own feature.
+		expect(queryByText('Email already in use')).toBeNull();
 	});
 });

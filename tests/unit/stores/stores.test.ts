@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import * as stores from '$lib/stores';
 import { selectedUser, users } from '$lib/features/users/store';
 import { userTasks } from '$lib/features/tasks/store';
-import { error, loading } from '$lib/stores/request-status';
 import { notifications } from '$lib/stores/notification';
 
 describe('stores barrel', () => {
@@ -13,8 +12,14 @@ describe('stores barrel', () => {
 		expect(stores.users).toBe(users);
 		expect(stores.selectedUser).toBe(selectedUser);
 		expect(stores.userTasks).toBe(userTasks);
-		expect(stores.loading).toBe(loading);
-		expect(stores.error).toBe(error);
 		expect(stores.notifications).toBe(notifications);
+	});
+
+	it('no longer exposes a request status shared by every feature (limit, F-02)', () => {
+		// GIVEN / WHEN: The barrel is imported.
+
+		// THEN: loading and error are owned by each feature, not re-exported globally.
+		expect(stores).not.toHaveProperty('loading');
+		expect(stores).not.toHaveProperty('error');
 	});
 });

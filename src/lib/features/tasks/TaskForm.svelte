@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { userTasks, addTask, editTask, toggleTask, removeTask } from './store';
-	import { loading, error } from '$lib/stores/request-status';
+	import { userTasks, tasksStatus, addTask, editTask, toggleTask, removeTask } from './store';
 	import type { User } from '$lib/api/client';
 	import { TaskSchema } from '$lib/validation/schemas';
 
+	const { loading, error } = tasksStatus;
 	let { user = null }: { user: User | null } = $props();
 
 	let taskTitle = $state('');
@@ -85,7 +85,7 @@
 			<h2 class="mb-4 text-xl font-bold">Tasks for {user.name}</h2>
 
 			{#if $error}
-				<div class="mb-4 rounded bg-red-100 p-3 text-red-700" role="alert">{$error}</div>
+				<div class="mb-4 rounded bg-red-100 p-3 text-red-700">{$error}</div>
 			{/if}
 
 			<form
