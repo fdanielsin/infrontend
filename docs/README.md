@@ -33,4 +33,6 @@ bun run build
 ```
 
 `bun run verify` est la porte locale complète : formatage, lint, typage, tests
-et build. La CI frontend ajoute les contrôles de sécurité, E2E et couverture.
+et build (tests avec seuils de couverture). La CI frontend lance cette
+commande, puis construit l'image Docker, exécute les E2E et audite les
+dépendances (bloquant à partir de la sévérité moyenne).

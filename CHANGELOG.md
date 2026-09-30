@@ -9,14 +9,22 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `bun run verify` as the single local validation gate.
 - Vitest V8 coverage provider.
 - Store, component and E2E test coverage for user and task management.
+- `.dockerignore`, and a CI job that builds the Docker image.
 
 ### Changed
 
 - Reorganized `tasks` into its own feature alongside `users`, with
   `loading`/`error` state in a dedicated shared module.
 - Standardized commands, CI and deployment on Bun.
-- CI checks made blocking (format, lint, types, build, tests, E2E);
-  dependency audit and coverage remain informational.
+- CI checks made blocking (format, lint with no warnings, types, build, tests
+  with coverage thresholds, E2E, Docker build, dependency audit from moderate
+  severity).
+- The CI runs `bun run verify` once instead of repeating the tests in three
+  jobs, and the E2E job uses the backend's Go version.
+- The Docker image takes the backend URL as the required `PUBLIC_API_URL`
+  build argument and runs as a non-root user.
+- Unit tests: tautologies replaced, limits, boundaries and exceptions covered
+  (Q-07).
 - Centralized and reorganized tests under `tests/` by domain, with explicit
   GIVEN/WHEN/THEN and happy/sad path naming.
 - Modularized the `users` feature with a dedicated component and store.
@@ -24,6 +32,8 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Removed
 
+- The duplicated CI component-tests and coverage jobs, now covered by `bun run verify`.
+- The runtime `PUBLIC_API_URL` variable of the Docker image, which had no effect.
 - Dead code and non-functional tooling: unused `fetchUserTasks`, an empty
   `$lib` placeholder, the inert Husky/lint-staged setup, and an unused
   browser-mode Vitest config.

@@ -50,8 +50,27 @@ bun run test:e2e -- --project=chromium
 bun run verify
 ```
 
-Cette commande vérifie le formatage, le lint, le typage, les tests et le build.
-La CI ajoute les contrôles de sécurité, E2E et couverture.
+Cette commande vérifie le formatage, le lint, le typage, les tests avec seuils
+de couverture (lignes 85 %, branches 75 %) et le build. La CI lance cette même
+commande, puis construit l'image Docker, exécute les E2E et audite les
+dépendances (`bun audit --audit-level=moderate`, bloquant).
+
+`PUBLIC_API_URL` (URL du backend) est lue au build : dans un worktree neuf, où
+il n'y a pas de `.env.local`, la fournir en ligne de commande :
+
+```bash
+PUBLIC_API_URL=http://localhost:8080 bun run verify
+```
+
+## Docker
+
+`PUBLIC_API_URL` est figée dans l'image au build ; elle ne peut pas être
+changée au démarrage du conteneur, et le build échoue sans elle :
+
+```bash
+docker build --build-arg PUBLIC_API_URL=http://localhost:8080 -t infrontend .
+docker run --rm -p 3000:3000 infrontend
+```
 
 ## Project Structure
 

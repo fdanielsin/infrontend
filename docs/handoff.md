@@ -63,9 +63,19 @@ Le test end-to-end Playwright de persistance (`tests/e2e/task-persistence.test.t
 écrit par `qa`) passe contre le backend corrigé, mais n'a pas été exécuté par
 l'agent frontend (backend non lancé localement de ce côté).
 
-La CI frontend vérifie également le formatage, le lint, le typage, le build, les
-tests unitaires, les tests composants, la sécurité, les E2E et la couverture.
-La couverture utilise `@vitest/coverage-v8`.
+La CI frontend lance `bun run verify` (formatage, lint avec
+`--max-warnings 0`, typage, tests avec seuils de couverture dans
+`vitest.config.ts` : lignes 85 %, branches 75 %, build), puis construit
+l'image Docker (`docker build --build-arg`, sans push), exécute les E2E et
+audite les dépendances avec `bun audit --audit-level=moderate` (bloquant). Au
+2026-10-01 : 1 vulnérabilité faible signalée (`cookie` < 0.7.0, via
+`@sveltejs/kit`, GHSA-pxg6-pf52-xh8x), donc l'audit passe ; aucune en
+production (`bun audit --prod`). Couverture mesurée le même jour : lignes
+92,12 %, branches 86,87 % (périmètre `src/**/*.{ts,svelte}`).
+
+Docker : `PUBLIC_API_URL` est un `ARG` obligatoire, figé dans l'image au build
+(`$env/static/public`) ; le runtime n'embarque que `build/` sans fichiers `.map` (adapter-node
+regroupe les dépendances) et tourne sous l'utilisateur `bun`.
 
 ## État de la structure
 

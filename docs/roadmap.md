@@ -70,7 +70,7 @@ et un « GO » explicite.
       toute réponse non-2xx) et F-02 (partage `loading`/`error` entre
       `users` et `tasks`, symptôme visible encore présent après le nettoyage).
 - [ ] Lot 3 — Q-07.
-- [ ] Lot 5 — doublon du job CI "component-tests" (relance exactement
+- [x] Lot 5 — doublon du job CI "component-tests" (relance exactement
       `bun run test`, déjà fait par "unit-tests").
 - [ ] Lot 8 — propositions d'amélioration : FP-03 (confirmation avant
       suppression d'une tâche), FP-01 (filtrer les tâches), FP-02 (compteur
