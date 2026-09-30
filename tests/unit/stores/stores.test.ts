@@ -1,19 +1,20 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { get } from 'svelte/store';
-import { users, userTasks } from '$lib/stores';
+import { describe, expect, it } from 'vitest';
+import * as stores from '$lib/stores';
+import { selectedUser, users } from '$lib/features/users/store';
+import { userTasks } from '$lib/features/tasks/store';
+import { error, loading } from '$lib/stores/request-status';
+import { notifications } from '$lib/stores/notification';
 
-describe('Stores', () => {
-	beforeEach(() => {
-		// GIVEN: A clean store state before each scenario.
-		users.set([]);
-		userTasks.set([]);
-	});
+describe('stores barrel', () => {
+	it('re-exports the feature stores themselves, not copies (happy path)', () => {
+		// GIVEN / WHEN: The barrel and the owning modules are imported.
 
-	it('initializes user collections as empty (happy path)', () => {
-		// WHEN: Read the initial store values.
-
-		// THEN: Both user collections are empty.
-		expect(get(users)).toEqual([]);
-		expect(get(userTasks)).toEqual([]);
+		// THEN: Every re-export is the very same store instance.
+		expect(stores.users).toBe(users);
+		expect(stores.selectedUser).toBe(selectedUser);
+		expect(stores.userTasks).toBe(userTasks);
+		expect(stores.loading).toBe(loading);
+		expect(stores.error).toBe(error);
+		expect(stores.notifications).toBe(notifications);
 	});
 });

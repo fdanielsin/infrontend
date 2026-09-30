@@ -1,23 +1,15 @@
-import { describe, it, expect } from 'vitest';
-import { api } from '$lib/api';
+import { describe, expect, it } from 'vitest';
+import * as facade from '$lib/api';
+import { ApiClient, api } from '$lib/api/client';
 
-describe('ApiClient', () => {
-	it('exposes the API facade (happy path)', () => {
-		// GIVEN: The public API module.
+describe('API facade', () => {
+	it('re-exports the shared client instance, not a copy (happy path)', () => {
+		// GIVEN / WHEN: The public facade and the client module are imported.
 
-		// WHEN: Access the exported facade.
-
-		// THEN: The facade is available.
-		expect(api).toBeDefined();
-	});
-
-	it('exposes user operations through the API facade (happy path)', () => {
-		// GIVEN: The public API facade.
-
-		// WHEN: Access user operations.
-
-		// THEN: The expected operations are available.
-		expect(api.getUsers).toBeDefined();
-		expect(api.createUser).toBeDefined();
+		// THEN: Both expose the same singleton and class, so the stores and the
+		// pages talk to the same client.
+		expect(facade.api).toBe(api);
+		expect(facade.ApiClient).toBe(ApiClient);
+		expect(facade.api).toBeInstanceOf(ApiClient);
 	});
 });

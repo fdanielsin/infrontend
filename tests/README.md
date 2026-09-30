@@ -24,8 +24,20 @@ Les scénarios suivent une structure explicite :
 // THEN: Résultat attendu.
 ```
 
-Les noms distinguent le chemin nominal (`happy path`) du chemin d'erreur ou
-limite (`sad path`) et décrivent le comportement attendu.
+Les noms décrivent le comportement attendu et finissent par sa catégorie
+(voir `docs/specs/test-matrix.md` à la racine du workspace) : `happy path`,
+`sad path` (erreur), `limit`, `boundary` ou `exception`. Un test qui fige une
+règle de validation actuelle, dont le comportement peut encore être décidé
+autrement, commence par `current rule:`.
+
+Les tests ne dépendent d'aucun backend réel : les stores et les composants
+mockent `$lib/api/client` avec `vi.mock` ; les tests du client, et ceux qui
+vérifient ce que les stores font d'une panne de transport
+(`stores/stores-real-client.test.ts`), remplacent seulement `fetch`.
+
+`bun run verify` exige `PUBLIC_API_URL` (lu via `$env/static/public`) : la CI
+le fixe dans son workflow ; en local, il vient de `.env.local` ou de la ligne
+de commande (`PUBLIC_API_URL=http://localhost:8080 bun run verify`).
 
 Les fichiers de production ne doivent pas contenir de fichiers `*.test.*`,
 `*.spec.*` ou de dossiers `__tests__/`.
@@ -40,6 +52,5 @@ sans cette option, Vite résout le build serveur de Svelte même sous Vitest, et
 `mount()` échoue avec `lifecycle_function_unavailable`. Voir
 [la documentation Svelte sur les tests](https://svelte.dev/docs/svelte/testing#Component-testing).
 
-Comme pour les autres tests unitaires, `$lib/api/client` est mocké avec
-`vi.mock` pour ne dépendre d'aucun backend réel, et chaque test nettoie le DOM
-rendu (`cleanup()` dans un `afterEach`).
+Chaque test de composant nettoie le DOM rendu (`cleanup()` dans un
+`afterEach`).

@@ -17,6 +17,14 @@ vi.mock('$lib/api/client', () => ({
 }));
 
 describe('tasks store', () => {
+	const task = {
+		id: 10,
+		title: 'Review',
+		description: 'Review code',
+		user_id: 1,
+		completed: false
+	};
+
 	beforeEach(() => {
 		vi.resetAllMocks();
 		userTasks.set([]);
@@ -43,27 +51,6 @@ describe('tasks store', () => {
 		expect(result).toBeUndefined();
 		expect(get(userTasks)).toEqual([existingTask]);
 		expect(get(error)).toBe('Task rejected');
-	});
-
-	it('updates and removes a task after successful API calls (happy path)', async () => {
-		// GIVEN: A pending task exists and the API accepts both mutations.
-		const task = {
-			id: 10,
-			title: 'Review',
-			description: 'Review code',
-			user_id: 1,
-			completed: false
-		};
-		userTasks.set([task]);
-		vi.mocked(api.updateTask).mockResolvedValue({ success: true });
-		vi.mocked(api.deleteTask).mockResolvedValue({ success: true });
-
-		// WHEN: The task is completed and then removed.
-		await toggleTask(task.id, true);
-		await removeTask(task.id);
-
-		// THEN: The task is no longer present.
-		expect(get(userTasks)).toEqual([]);
 	});
 
 	it('edits a task and preserves its completion state (happy path)', async () => {
@@ -94,13 +81,6 @@ describe('tasks store', () => {
 
 	it('reports an edit failure without changing the task (sad path)', async () => {
 		// GIVEN: The API rejects an edit.
-		const task = {
-			id: 10,
-			title: 'Review',
-			description: 'Review code',
-			user_id: 1,
-			completed: false
-		};
 		userTasks.set([task]);
 		vi.mocked(api.updateTask).mockResolvedValue({ success: false, error: 'Task not found' });
 
@@ -115,13 +95,6 @@ describe('tasks store', () => {
 
 	it('reports failure and leaves the task untouched when the API rejects a toggle (sad path)', async () => {
 		// GIVEN: An existing task and an API that rejects the toggle.
-		const task = {
-			id: 10,
-			title: 'Review',
-			description: 'Review code',
-			user_id: 1,
-			completed: false
-		};
 		userTasks.set([task]);
 		vi.mocked(api.updateTask).mockResolvedValue({ success: false, error: 'Task locked' });
 
@@ -138,13 +111,6 @@ describe('tasks store', () => {
 
 	it('reports failure and leaves the task untouched when toggling throws (sad path)', async () => {
 		// GIVEN: An existing task and an API call that throws.
-		const task = {
-			id: 10,
-			title: 'Review',
-			description: 'Review code',
-			user_id: 1,
-			completed: false
-		};
 		userTasks.set([task]);
 		vi.mocked(api.updateTask).mockRejectedValue(new Error('Network down'));
 
@@ -159,13 +125,6 @@ describe('tasks store', () => {
 
 	it('reports success when the API accepts a toggle (happy path)', async () => {
 		// GIVEN: An existing task and an API that accepts the toggle.
-		const task = {
-			id: 10,
-			title: 'Review',
-			description: 'Review code',
-			user_id: 1,
-			completed: false
-		};
 		userTasks.set([task]);
 		vi.mocked(api.updateTask).mockResolvedValue({ success: true });
 
@@ -176,4 +135,91 @@ describe('tasks store', () => {
 		expect(result).toBe(true);
 		expect(get(userTasks)).toEqual([{ ...task, completed: true }]);
 	});
+
+	it('appends and returns the created task (happy path)', async () => {
+		// GIVEN: One task listed and an API that accepts the new one.
+		userTasks.set([task]);
+		const created = { ...task, id: 11, title: 'New task', description: 'Details' };
+		vi.mocked(api.createTask).mockResolvedValue({ success: true, data: created });
+
+		// WHEN: A task is added.
+		const result = await addTask('New task', 'Details', 1);
+
+		// THEN: The API receives an uncompleted task and the store appends it.
+		expect(result).toEqual(created);
+		expect(api.createTask).toHaveBeenCalledWith({
+			title: 'New task',
+			description: 'Details',
+			user_id: 1,
+			completed: false
+		});
+		expect(get(userTasks)).toEqual([task, created]);
+		expect(get(error)).toBeNull();
+		expect(get(loading)).toBe(false);
+	});
+
+	it('removes only the deleted task (happy path)', async () => {
+		// GIVEN: Two tasks and an API that accepts the deletion.
+		const other = { ...task, id: 11, title: 'Other' };
+		userTasks.set([task, other]);
+		vi.mocked(api.deleteTask).mockResolvedValue({ success: true, message: 'Task deleted' });
+
+		// WHEN: The first task is removed.
+		await removeTask(task.id);
+
+		// THEN: Only the other task remains.
+		expect(api.deleteTask).toHaveBeenCalledWith(task.id);
+		expect(get(userTasks)).toEqual([other]);
+	});
+
+	it('keeps the task and exposes the error when the API refuses the deletion (sad path)', async () => {
+		// GIVEN: The API refuses the deletion.
+		userTasks.set([task]);
+		vi.mocked(api.deleteTask).mockResolvedValue({ success: false, error: 'HTTP 500' });
+
+		// WHEN: The task is removed.
+		await removeTask(task.id);
+
+		// THEN: The task is still listed and the error is exposed.
+		expect(get(userTasks)).toEqual([task]);
+		expect(get(error)).toBe('HTTP 500');
+	});
+
+	it('leaves the list unchanged for an id that is not listed (boundary)', async () => {
+		// GIVEN: The API accepts every call for an id absent from the local list.
+		userTasks.set([task]);
+		vi.mocked(api.updateTask).mockResolvedValue({ success: true });
+		vi.mocked(api.deleteTask).mockResolvedValue({ success: true });
+
+		// WHEN: The unknown id is toggled, edited and removed.
+		await toggleTask(999, true);
+		await editTask(999, 'Changed', 'Changed description');
+		await removeTask(999);
+
+		// THEN: The listed task is untouched.
+		expect(get(userTasks)).toEqual([task]);
+	});
+
+	it.each([
+		['addTask', () => addTask('New task', 'Details', 1)],
+		['editTask', () => editTask(10, 'Changed', 'Changed description')],
+		['removeTask', () => removeTask(10)]
+	] as const)(
+		'%s keeps the list and exposes the message when the API call throws (exception)',
+		async (_name, action) => {
+			// GIVEN: Every API call rejects.
+			userTasks.set([task]);
+			vi.mocked(api.createTask).mockRejectedValue(new Error('Network down'));
+			vi.mocked(api.updateTask).mockRejectedValue(new Error('Network down'));
+			vi.mocked(api.deleteTask).mockRejectedValue(new Error('Network down'));
+
+			// WHEN: The action runs.
+			await action();
+
+			// THEN: The list is unchanged, the error is exposed and loading is over.
+			expect(get(userTasks)).toEqual([task]);
+			expect(get(error)).toBe('Network down');
+			expect(get(loading)).toBe(false);
+		}
+	);
 });
