@@ -1,117 +1,52 @@
-# inFrontend - Svelte + SvelteKit + Bun
+# inFrontend
 
-Modern, full-stack frontend framework with TypeScript, Tailwind CSS, and testing.
+SvelteKit (Svelte 5) web interface of the task manager, built with Bun. It
+consumes the `inbackend` API and is available in English, French, German and
+Spanish.
 
-## Stack
+## Requirements
 
-- **Framework**: SvelteKit (modern, reactive)
-- **Language**: TypeScript with strict mode
-- **Runtime**: Bun (ultra-fast)
-- **Styling**: Tailwind CSS
-- **Testing**: Vitest (unit + component tests)
-- **Linting**: ESLint + Prettier
-- **Dev Server**: Vite (instant HMR)
+- [Bun](https://bun.sh) 1.3 (pinned in the `Dockerfile`)
+- The `inbackend` API on `http://localhost:8080` (only for the end-to-end tests
+  that use a real backend, see [`tests/README.md`](./tests/README.md))
+- Docker (optional, to build the image)
 
-## Quick Start
+## Quick start
 
 ```bash
-# Install dependencies
 bun install
-
-# Run dev server
-bun run dev
+cp .env.example .env.local   # then set PUBLIC_API_URL if the API is elsewhere
+bun run dev                  # http://localhost:5173
 ```
 
-Server runs on `http://localhost:5173`
+The message module `src/lib/paraglide/` is generated and git-ignored: `dev` and
+`build` produce it, `bun run i18n:compile` does it on demand.
 
-The message module `src/lib/paraglide/` is generated (git-ignored). `bun run dev`
-and `bun run build` produce it; run `bun run i18n:compile` before `lint`, `check`
-or the tests on a fresh clone (`bun run verify` does it).
+## Environment variables
 
-## Build
+| Variable         | Used by                                | Required                          | Notes                                                                                                                       |
+| ---------------- | -------------------------------------- | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `PUBLIC_API_URL` | `dev`, `build`, `verify`, Docker build | yes (not set in a fresh worktree) | Backend URL, read at build time and baked into the bundle: a running container cannot change it. Example in `.env.example`. |
+| `OPENAPI_PATH`   | `api:generate`, `api:check`            | no                                | Path to the backend `openapi.yaml`. Default: `../inbackend/docs/specs/api/openapi.yaml`.                                    |
 
-```bash
-bun run build
-bun run preview
-```
+## Commands
 
-## Test
+| Command                                                                         | What it does                                                                         |
+| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `bun run dev`                                                                   | Dev server with hot reload                                                           |
+| `bun run build` / `bun run preview`                                             | Production build / serve the build                                                   |
+| `bun run verify`                                                                | Format, lint, types, tests with coverage thresholds, build (the CI runs the same)    |
+| `bun run test`                                                                  | Unit and component tests                                                             |
+| `bun run test:e2e -- --project=chromium`                                        | End-to-end tests (some need the backend, see [`tests/README.md`](./tests/README.md)) |
+| `docker build --build-arg PUBLIC_API_URL=http://localhost:8080 -t infrontend .` | Build the image (fails without `PUBLIC_API_URL`)                                     |
+| `docker run --rm -p 3000:3000 infrontend`                                       | Run the image on `http://localhost:3000`                                             |
 
-```bash
-bun run test
-```
-
-Les tests de bout en bout nécessitent un backend `inbackend` disponible sur
-`http://localhost:8080` :
-
-```bash
-bun run test:e2e -- --project=chromium
-```
-
-## Vérification complète
-
-```bash
-bun run verify
-```
-
-Cette commande vérifie le formatage, le lint, le typage, les tests avec seuils
-de couverture (lignes 85 %, branches 75 %) et le build. La CI lance cette même
-commande, puis construit l'image Docker, exécute les E2E et audite les
-dépendances (`bun audit --audit-level=moderate`, bloquant).
-
-`PUBLIC_API_URL` (URL du backend) est lue au build : dans un worktree neuf, où
-il n'y a pas de `.env.local`, la fournir en ligne de commande :
-
-```bash
-PUBLIC_API_URL=http://localhost:8080 bun run verify
-```
-
-## Contrat d'API
-
-Les types de `src/lib/api/schema.d.ts` sont générés depuis le contrat du
-backend (`inbackend/docs/specs/api/openapi.yaml`) et committés :
-
-```bash
-bun run api:generate   # régénère schema.d.ts
-bun run api:check      # échoue si schema.d.ts n'est plus à jour
-```
-
-Par défaut le contrat est lu dans `../inbackend/` ; ailleurs (worktree), fournir
-`OPENAPI_PATH=/chemin/vers/openapi.yaml`. En CI, le job `contract` exécute
-`api:check` sur le backend (branche au choix via `workflow_dispatch`).
-
-## Tests de mutation
-
-`bun run mutate` lance Stryker sur les modules TypeScript de `src/lib` (hors
-`.svelte`), à la demande et sans bloquer la CI ; rapport dans
-`reports/mutation/`. Pour un fichier : `bunx stryker run --mutate src/lib/state/request-status.svelte.ts`.
-
-## Docker
-
-`PUBLIC_API_URL` est figée dans l'image au build ; elle ne peut pas être
-changée au démarrage du conteneur, et le build échoue sans elle :
-
-```bash
-docker build --build-arg PUBLIC_API_URL=http://localhost:8080 -t infrontend .
-docker run --rm -p 3000:3000 infrontend
-```
-
-## Project Structure
-
-```
-src/
-├── routes/       # File-based routing and screen composition
-├── lib/          # API, features, state, UI and validation
-│   ├── api/      # Shared HTTP client
-│   ├── features/ # Feature-specific components
-│   ├── i18n/     # API error messages, number formatting, language names
-│   └── state/    # Reactive state classes, provided by context
-└── app.html      # HTML shell
-messages/         # Interface texts, one JSON file per language (en, fr, de, es)
-project.inlang/   # Paraglide project (languages, message format plugin)
-```
+In a fresh worktree, give the variable on the command line:
+`PUBLIC_API_URL=http://localhost:8080 bun run verify`.
 
 ## Documentation
 
-- [Global workspace context](../docs/README.md)
-- [Frontend documentation](./docs/README.md)
+- [Frontend documentation](./docs/README.md): architecture, conventions, API
+  contract, decisions
+- [Writing tests](./tests/README.md)
+- [Workspace documentation](../docs/README.md)

@@ -22,17 +22,9 @@ documentation ne remplace pas les contrats partagés dans
 
 ## Commandes
 
-Le runtime et le gestionnaire de dépendances du projet sont Bun.
-
-```bash
-bun install
-bun run verify
-bun run check
-bun run test
-bun run build
-```
-
-`bun run verify` est la porte locale complète : formatage, lint, typage, tests
-et build (tests avec seuils de couverture). La CI frontend lance cette
-commande, puis construit l'image Docker, exécute les E2E et audite les
-dépendances (bloquant à partir de la sévérité moyenne).
+Le runtime et le gestionnaire de dépendances du projet sont Bun ; les commandes
+courantes sont dans le [README](../README.md). `bun run verify` est la porte
+locale complète (formatage, lint, typage, tests avec seuils de couverture,
+build). La CI frontend lance cette commande, puis construit l'image Docker,
+exécute les E2E et audite les dépendances (bloquant à partir de la sévérité
+moyenne).

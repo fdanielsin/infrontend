@@ -2,6 +2,10 @@
 
 ## Statut
 
+Stack : SvelteKit avec Svelte 5 (runes), TypeScript strict, Bun, Tailwind CSS 4,
+Paraglide (textes en en/fr/de/es), openapi-fetch avec types générés, zod pour la
+validation locale ; tests avec Vitest et Playwright.
+
 Architecture retenue pour une modularisation progressive. `users` et `tasks`
 sont réellement modularisés (composant dédié chacun) ; `stats` reste dans sa
 route (`routes/stats/+page.svelte`), rien n'y justifie encore un dossier de
@@ -30,6 +34,8 @@ src/
     ├── validation/         # Validation UX locale
     ├── config/             # Configuration injectée
     └── testing/            # Utilitaires de test
+messages/                   # Textes de l'interface, un fichier JSON par langue
+project.inlang/             # Projet Paraglide (langues, plugin de format de messages)
 ```
 
 Les dossiers ne seront créés que lorsqu'un déplacement réel le justifie.

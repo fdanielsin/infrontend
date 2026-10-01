@@ -69,10 +69,6 @@ Chaque test construit son propre `new AppState()` (ou `NotificationState`,
 à zéro entre deux tests. Le test prépare et inspecte l'état directement
 (`app.tasks.tasks = [...]`, `app.users.status.error`).
 
-`bun run verify` exige `PUBLIC_API_URL` (lu via `$env/static/public`) : la CI
-le fixe dans son workflow ; en local, il vient de `.env.local` ou de la ligne
-de commande (`PUBLIC_API_URL=http://localhost:8080 bun run verify`).
-
 Les fichiers de production ne doivent pas contenir de fichiers `*.test.*`,
 `*.spec.*` ou de dossiers `__tests__/`.
 

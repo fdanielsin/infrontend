@@ -3,19 +3,7 @@
 ## Runtime et commandes
 
 Le projet utilise Bun. Les commandes documentées et exécutées doivent utiliser
-Bun :
-
-```bash
-bun install
-bun run dev
-bun run check
-bun run lint
-bun run test
-bun run build
-bun x playwright test
-```
-
-Les anciennes commandes d'un autre runtime ne doivent pas être ajoutées aux
+Bun (liste dans le [README](../README.md)). Les anciennes commandes d'un autre runtime ne doivent pas être ajoutées aux
 nouvelles instructions ni utilisées comme référence de validation.
 
 ## Svelte
@@ -61,6 +49,29 @@ singleton de module : les composants obtiennent l'état par `getAppState()`, les
 tests créent un `new AppState()` par cas. Un test qui utilise `$effect` vit
 dans un fichier `*.svelte.test.ts`.
 
+## État partagé
+
+1. L'état reste local au composant (`$state`, `$derived`) tant qu'un seul
+   composant l'utilise.
+2. Un état partagé est une classe `.svelte.ts` par responsabilité : champs
+   `$state`, modifications par méthodes, dépendances reçues au constructeur
+   (une classe n'importe jamais l'instance d'une autre, tout au plus son type
+   pour typer le paramètre : `UserState` reçoit un `TaskState`).
+3. Il est fourni par `createContext` (`getAppState` / `setAppState`), jamais en
+   singleton de module : un singleton serait partagé entre les requêtes du
+   serveur (fuite de données d'un utilisateur à l'autre) et entre les tests.
+4. Quand une fonctionnalité grossit, son état et son contexte vont dans
+   `src/lib/features/<fonctionnalité>/` ; `AppState` ne garde alors que le
+   transversal (notifications, langue). Aujourd'hui tout vit dans
+   `src/lib/state/` : le déplacement n'est pas fait, il est à faire quand une
+   fonctionnalité le justifie.
+5. Une seule source de vérité : ce qui se calcule est un `$derived`, jamais un
+   second `$state` synchronisé à la main ; `$state.raw` pour les données
+   remplacées en entier (listes reçues de l'API), pas d'objet profond réactif
+   inutile.
+6. Les rôles et permissions côté client ne servent qu'à l'affichage (masquer un
+   bouton) ; c'est le backend qui autorise.
+
 ## Validation
 
 La validation côté frontend est une validation UX. Elle ne remplace pas la
@@ -77,11 +88,9 @@ Les erreurs de validation doivent :
 
 Tous les tests frontend vivent sous `tests/` à la racine du projet :
 
-- `tests/unit/api/` pour les tests du client et des façades API ;
-- `tests/unit/stores/` pour les tests des stores ;
-- `tests/unit/components/` pour les tests de composants ;
-- `tests/e2e/` pour les scénarios Playwright contre l'application et l'API
-  `inbackend`.
+`tests/unit/` pour les tests unitaires et de composants, `tests/e2e/` pour les
+scénarios Playwright ; l'organisation détaillée et les règles d'écriture sont
+dans [`tests/README.md`](../tests/README.md).
 
 Les dossiers `__tests__` et les fichiers de test ne doivent pas être placés
 dans `src/`.
@@ -93,8 +102,24 @@ Une porte n'est utile que si elle est exécutée. Toute commande de validation
 doit échouer lorsque le contrôle correspondant échoue ; les `|| true` ne
 doivent pas masquer les erreurs des contrôles obligatoires.
 
-La porte cible sera centralisée dans un script Bun de vérification qui regroupe
-formatage, lint, typage, tests et build.
+La porte est `bun run verify` (formatage, lint, typage, tests avec seuils de
+couverture, build) ; la CI lance la même commande.
+
+### Contrat d'API
+
+Les types de `src/lib/api/schema.d.ts` sont générés depuis le contrat du backend
+(`inbackend/docs/specs/api/openapi.yaml`) et committés : `bun run api:generate`
+les régénère, `bun run api:check` échoue s'ils ne sont plus à jour. Par défaut le
+contrat est lu dans `../inbackend/` ; ailleurs (worktree), fournir
+`OPENAPI_PATH=/chemin/vers/openapi.yaml`. En CI, le job `contract` exécute
+`api:check` sur le backend (branche au choix via `workflow_dispatch`).
+
+### Tests de mutation
+
+`bun run mutate` lance Stryker sur les modules TypeScript de `src/lib`
+(`.svelte.ts` compris, hors composants `.svelte`), à la demande et sans bloquer
+la CI ; rapport dans `reports/mutation/`. Pour un fichier :
+`bunx stryker run --mutate src/lib/state/request-status.svelte.ts`.
 
 ## Documentation et invariants
 
