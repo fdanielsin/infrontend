@@ -209,6 +209,17 @@ section Internationalisation. Le contrat a été régénéré depuis `inbackend`
 (`@inlang/plugin-message-format`), pas téléchargé depuis un CDN au build.
 Traductions FR, DE et ES rédigées par l'agent : relecture humaine à prévoir.
 
+## Lot « design system » (branche `feature/frontend-design-tokens`)
+
+Jetons dans `@theme` (`src/routes/layout.css`) et sept composants dans
+`src/lib/ui/` (`Button`, `IconButton`, `Card`, `TextField`, `Select`, `Alert`,
+`ToastItem`) ; les écrans les utilisent, sans changement de rendu ni de
+comportement (aucun test modifié). Règles : `conventions.md`, section Design
+system. Preuve d'apparence : captures, styles calculés et arbres d'accessibilité
+avant/après par qa-front (référence prise sur `52cd2dd`). Restent hors lot : le
+focus uniforme des champs et l'unification des couleurs d'erreur, qui sont des
+changements visibles à proposer à part.
+
 ## Prochaine étape
 
 Docker/CI, contrat généré (openapi-typescript, openapi-fetch, `api:check`) et

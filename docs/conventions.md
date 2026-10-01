@@ -102,8 +102,8 @@ Une porte n'est utile que si elle est exécutée. Toute commande de validation
 doit échouer lorsque le contrôle correspondant échoue ; les `|| true` ne
 doivent pas masquer les erreurs des contrôles obligatoires.
 
-La porte est `bun run verify` (formatage, lint, typage, tests avec seuils de
-couverture, build) ; la CI lance la même commande.
+La porte est `bun run verify` (voir le [README](../README.md)) ; la CI lance la
+même commande.
 
 ### Contrat d'API
 
@@ -126,6 +126,29 @@ la CI ; rapport dans `reports/mutation/`. Pour un fichier :
 Un commentaire affirmant une propriété durable doit être garanti par un type
 ou par un test. Sinon, le commentaire doit expliquer une raison, une limite ou
 un piège sans présenter cette information comme une garantie.
+
+## Design system
+
+- Les jetons vivent dans le bloc `@theme` de `src/routes/layout.css` : couleurs
+  sémantiques (`surface`, `line`, `muted`, `primary`, `danger`, `focus`…), rayons
+  (`control`, `card`) et ombres (`card`, `card-raised`). Un jeton nomme une valeur
+  déjà utilisée (une teinte de palette Tailwind) ; ses ratios de contraste validés
+  sont en commentaire. On ajoute un jeton quand une valeur est utilisée deux fois
+  ou plus, jamais par anticipation.
+- Les composants de `src/lib/ui/` (`Button`, `IconButton`, `Card`, `TextField`,
+  `Select`, `Alert`, `ToastItem`) portent leur accessibilité : nom accessible
+  obligatoire (`label` de `IconButton`, `label` de `TextField` et `Select`), cible
+  de 24 px, `aria-invalid` et `aria-describedby` de `TextField`. Les libellés
+  arrivent déjà traduits en props : un composant n'a de texte propre que son
+  libellé d'accessibilité (`ToastItem`).
+- Les classes Tailwind d'un composant sont des chaînes complètes (pas de
+  concaténation), sinon Tailwind ne les trouve pas. Les `{@attach}` et attributs
+  posés sur un composant passent par `...rest` jusqu'à l'élément.
+- Un test qui vérifie des noms de classes (ex. la sélection d'un utilisateur)
+  fige ces classes : ne pas les remplacer par un jeton sans le dire à qa.
+- Limite connue : le focus des champs de formulaire n'a pas de style propre
+  (contour du navigateur) et les erreurs de champ sont en `field-error` (red-600)
+  sur blanc et en `danger` (red-700) sur gris ; les unifier changerait le rendu.
 
 ## Accessibilité (WCAG 2.2 AA)
 

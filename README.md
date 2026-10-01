@@ -49,4 +49,4 @@ In a fresh worktree, give the variable on the command line:
 - [Frontend documentation](./docs/README.md): architecture, conventions, API
   contract, decisions
 - [Writing tests](./tests/README.md)
-- [Workspace documentation](../docs/README.md)
+- Workspace docs, outside this repository: `../docs/README.md`

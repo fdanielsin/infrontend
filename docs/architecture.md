@@ -28,7 +28,7 @@ src/
     │   ├── users/
     │   ├── tasks/
     │   └── stats/
-    ├── ui/                 # Composants visuels génériques
+    ├── ui/                 # Composants visuels génériques et jetons de design (layout.css)
     ├── state/              # Classes d'état réactif ($state), fournies par contexte
     ├── i18n/               # Messages d'erreur de l'API, formats de nombres, noms des langues
     ├── validation/         # Validation UX locale
