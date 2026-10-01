@@ -128,9 +128,10 @@ contrat est lu dans `../inbackend/` ; ailleurs (worktree), fournir
 Les schémas zod des réponses (`src/lib/api/zod/zod.gen.ts`) sont générés par
 `@hey-api/openapi-ts` (version exacte : l'outil est pré-1.0) depuis le même
 contrat ; `api:generate` produit les deux fichiers et `api:check` compare les
-deux. La configuration est `openapi-ts.config.ts`. Provisoire : un patch retire
-`format: int64` des compteurs de `Stats` avant génération (le générateur en
-ferait un `bigint`) ; à retirer quand le contrat n'a plus ce format.
+deux. La configuration est `openapi-ts.config.ts`. Le générateur est piloté sans
+correctif : un contrat qui le met en défaut (par exemple un entier `int64`, qu'il
+traduit en `bigint`, ou un objet de réponse sans `properties`, dont il perd les
+champs requis) se corrige dans le contrat, pas ici.
 
 ### Tests de mutation
 
