@@ -83,7 +83,7 @@ describe('translation files', () => {
 		// THEN: They are stored as written, not escaped or stripped.
 		expect(messagesOf('fr').stats_back_home).toBe("← Retour à l'accueil");
 		expect(messagesOf('es').stats_page_title).toBe('Estadísticas - inBackend');
-		expect(messagesOf('de').stats_no_data).toBe('Keine Daten verfügbar');
+		expect(messagesOf('de').notifications_dismiss).toBe('Benachrichtigung schließen');
 	});
 
 	it('uses every English key somewhere in the source code (boundary)', () => {

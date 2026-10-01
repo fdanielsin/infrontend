@@ -133,23 +133,4 @@ test.describe('Accessibility (axe, mocked API)', () => {
 		// THEN: The error banner and its toast have no violation.
 		await expectNoViolations(page);
 	});
-
-	test('statistics page without data has no violation (limit)', async ({ page }) => {
-		// GIVEN: The statistics endpoint answers without data.
-		await mockApi(page);
-		await page.route('**/api/v1/stats', (route) =>
-			route.fulfill({
-				status: 200,
-				headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
-				body: JSON.stringify({ success: true, data: null })
-			})
-		);
-
-		// WHEN: The statistics page is loaded.
-		await page.goto('/stats');
-		await expect(page.getByText('No data available')).toBeVisible();
-
-		// THEN: No violation.
-		await expectNoViolations(page);
-	});
 });

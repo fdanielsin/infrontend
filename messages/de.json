@@ -38,7 +38,6 @@
 	"stats_total_users": "Insgesamt angelegte Benutzer:",
 	"stats_total_tasks": "Insgesamt angelegte Aufgaben:",
 	"stats_average": "Durchschnittliche Aufgaben pro Benutzer:",
-	"stats_no_data": "Keine Daten verfügbar",
 	"stats_back_home": "← Zurück zur Startseite",
 	"validation_name_min": "Der Name muss mindestens 2 Zeichen lang sein",
 	"validation_email_invalid": "Ungültige E-Mail-Adresse",

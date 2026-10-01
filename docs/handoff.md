@@ -178,7 +178,8 @@ dégradé) le titre et le sous-titre de l'accueil et le titre de stats, calculé
 à la main. Lacune de la mesure initiale : les états d'erreur et « aucune
 donnée » de la page stats n'étaient pas parcourus ; ils avaient deux contrastes
 insuffisants (erreur `red-600` sur `red-50` à 4,41:1, vide `yellow-600` sur
-`yellow-50` à environ 2,8:1), corrigés en `700`. Comportement vérifié dans un vrai navigateur : focus après Edit,
+`yellow-50` à environ 2,8:1), corrigés en `700` ; l'état « vide » a été retiré
+ensuite, inatteignable depuis que les réponses sont validées. Comportement vérifié dans un vrai navigateur : focus après Edit,
 Échap, Save, suppression et validation invalide ; toast en pause au survol,
 disparaît 6 s après la sortie, se ferme avec le bouton.
 

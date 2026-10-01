@@ -84,10 +84,6 @@
 					</li>
 				</ul>
 			</Card>
-		{:else}
-			<div class="rounded-lg border border-yellow-200 bg-yellow-50 p-8 shadow-lg">
-				<p class="text-yellow-700">{m.stats_no_data()}</p>
-			</div>
 		{/if}
 
 		<div class="mt-8">

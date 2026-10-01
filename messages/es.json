@@ -38,7 +38,6 @@
 	"stats_total_users": "Total de usuarios creados:",
 	"stats_total_tasks": "Total de tareas creadas:",
 	"stats_average": "Promedio de tareas por usuario:",
-	"stats_no_data": "No hay datos disponibles",
 	"stats_back_home": "← Volver al inicio",
 	"validation_name_min": "El nombre debe tener al menos 2 caracteres",
 	"validation_email_invalid": "Dirección de correo no válida",
