@@ -20,6 +20,8 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- Every API response is checked against the contract: a response that does not match
+  is reported as an invalid server response instead of being used.
 - The statistics page follows the interface language instead of being fixed in
   French.
 - Notifications: errors and other messages sit in two persistent live regions

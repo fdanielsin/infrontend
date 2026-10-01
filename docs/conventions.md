@@ -30,6 +30,11 @@ nouvelles instructions ni utilisées comme référence de validation.
   se déclare « géré » (`isHandled` de `run`) pour ne produire ni erreur ni
   toast d'erreur.
 - Les réponses `204 No Content` sont traitées explicitement.
+- Toute réponse de succès est validée par le schéma zod généré de son opération
+  (`client.ts`) : une réponse qui ne le respecte pas devient un échec
+  `invalid_response`, jamais une donnée à moitié exacte. Les corps d'erreur ne
+  sont pas validés (le contrat peut ajouter des codes) ; `health` ne l'est pas non
+  plus, le contrat y fige des constantes (version, messages).
 - Les erreurs ne sont pas transformées silencieusement en succès ou en liste
   vide.
 - Les tests API couvrent les succès, les erreurs et les réponses sans contenu.

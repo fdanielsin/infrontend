@@ -1,7 +1,18 @@
 import createClient from 'openapi-fetch';
 import { PUBLIC_API_URL } from '$env/static/public';
 import { getLocale } from '$lib/paraglide/runtime';
+import type { ZodType } from 'zod';
 import type { components, paths } from './schema';
+import {
+	zCreateTaskResponse,
+	zCreateUserResponse,
+	zDeleteTaskResponse,
+	zGetStatsResponse,
+	zGetUserResponse,
+	zListUsersResponse,
+	zListUserTasksResponse,
+	zUpdateTaskResponse
+} from './zod/zod.gen';
 
 type Schemas = components['schemas'];
 
@@ -86,10 +97,12 @@ function toFailure(error: unknown, status: number): ApiFailure {
 	};
 }
 
-// `hasData` is false for endpoints whose 200 envelope carries only a message.
+// `schema` is the contract's schema of the success response: a body that does not match it is an
+// invalid response, whatever its status. `hasData` is false for endpoints whose 200 envelope
+// carries only a message. Failure bodies are not checked: the contract lets the server add codes.
 async function toResult<T>(
 	send: () => Promise<Outcome>,
-	{ hasData = true }: { hasData?: boolean } = {}
+	{ schema, hasData = true }: { schema?: ZodType; hasData?: boolean } = {}
 ): Promise<ApiResult<T>> {
 	try {
 		const { data, error, response } = await send();
@@ -101,7 +114,9 @@ async function toResult<T>(
 		if (body?.success !== true || (hasData && body.data === undefined)) {
 			return invalidResponse(response.status);
 		}
-		return body as ApiSuccess<T>;
+		if (!schema) return body as ApiSuccess<T>;
+		const checked = schema.safeParse(body);
+		return checked.success ? (checked.data as ApiSuccess<T>) : invalidResponse(response.status);
 	} catch (error) {
 		return error instanceof Error
 			? { success: false, error: error.message }
@@ -112,42 +127,56 @@ async function toResult<T>(
 export class ApiClient {
 	// Users
 	async getUsers(): Promise<ApiResult<SuccessData<paths['/api/v1/users']['get']>>> {
-		return toResult(() => http.GET('/api/v1/users', { parseAs: 'text' }));
+		return toResult(() => http.GET('/api/v1/users', { parseAs: 'text' }), {
+			schema: zListUsersResponse
+		});
 	}
 
 	async getUser(id: number): Promise<ApiResult<SuccessData<paths['/api/v1/users/{id}']['get']>>> {
-		return toResult(() =>
-			http.GET('/api/v1/users/{id}', { params: { path: { id } }, parseAs: 'text' })
+		return toResult(
+			() => http.GET('/api/v1/users/{id}', { params: { path: { id } }, parseAs: 'text' }),
+			{ schema: zGetUserResponse }
 		);
 	}
 
 	async createUser(
 		user: CreateUserRequest
 	): Promise<ApiResult<SuccessData<paths['/api/v1/users']['post']>>> {
-		return toResult(() => http.POST('/api/v1/users', { body: user, parseAs: 'text' }));
+		return toResult(() => http.POST('/api/v1/users', { body: user, parseAs: 'text' }), {
+			schema: zCreateUserResponse
+		});
 	}
 
 	// Tasks
 	async getUserTasks(
 		userId: number
 	): Promise<ApiResult<SuccessData<paths['/api/v1/users/{id}/tasks']['get']>>> {
-		return toResult(() =>
-			http.GET('/api/v1/users/{id}/tasks', { params: { path: { id: userId } }, parseAs: 'text' })
+		return toResult(
+			() =>
+				http.GET('/api/v1/users/{id}/tasks', {
+					params: { path: { id: userId } },
+					parseAs: 'text'
+				}),
+			{ schema: zListUserTasksResponse }
 		);
 	}
 
 	async createTask(
 		task: CreateTaskRequest
 	): Promise<ApiResult<SuccessData<paths['/api/v1/tasks']['post']>>> {
-		return toResult(() => http.POST('/api/v1/tasks', { body: task, parseAs: 'text' }));
+		return toResult(() => http.POST('/api/v1/tasks', { body: task, parseAs: 'text' }), {
+			schema: zCreateTaskResponse
+		});
 	}
 
 	async updateTask(
 		id: number,
 		task: UpdateTaskRequest
 	): Promise<ApiResult<SuccessData<paths['/api/v1/tasks/{id}']['put']>>> {
-		return toResult(() =>
-			http.PUT('/api/v1/tasks/{id}', { params: { path: { id } }, body: task, parseAs: 'text' })
+		return toResult(
+			() =>
+				http.PUT('/api/v1/tasks/{id}', { params: { path: { id } }, body: task, parseAs: 'text' }),
+			{ schema: zUpdateTaskResponse }
 		);
 	}
 
@@ -156,15 +185,18 @@ export class ApiClient {
 	): Promise<ApiResult<SuccessData<paths['/api/v1/tasks/{id}']['delete']>>> {
 		return toResult(
 			() => http.DELETE('/api/v1/tasks/{id}', { params: { path: { id } }, parseAs: 'text' }),
-			{ hasData: false }
+			{ schema: zDeleteTaskResponse, hasData: false }
 		);
 	}
 
 	async getStats(): Promise<ApiResult<SuccessData<paths['/api/v1/stats']['get']>>> {
-		return toResult(() => http.GET('/api/v1/stats', { parseAs: 'text' }));
+		return toResult(() => http.GET('/api/v1/stats', { parseAs: 'text' }), {
+			schema: zGetStatsResponse
+		});
 	}
 
-	// Health
+	// Health: not validated, the contract pins its constants (version, messages) which would turn
+	// a backend upgrade into an invalid response.
 	async health(): Promise<ApiResult<SuccessData<paths['/health']['get']>>> {
 		return toResult(() => http.GET('/health', { parseAs: 'text' }));
 	}
