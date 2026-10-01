@@ -7,7 +7,16 @@ export interface paths {
     "/health": {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description Langue des messages : le français pour `fr` et ses variantes, l'anglais
+                 *     sinon. Chaque élément doit respecter la RFC 9110 (plage de langue avec
+                 *     tirets, `q` de 0 à 1) : un élément invalide, un en-tête absent ou de plus
+                 *     de 1024 octets donnent l'anglais, jamais une erreur. Voir la description
+                 *     de l'API.
+                 */
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -30,7 +39,16 @@ export interface paths {
     "/ready": {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description Langue des messages : le français pour `fr` et ses variantes, l'anglais
+                 *     sinon. Chaque élément doit respecter la RFC 9110 (plage de langue avec
+                 *     tirets, `q` de 0 à 1) : un élément invalide, un en-tête absent ou de plus
+                 *     de 1024 octets donnent l'anglais, jamais une erreur. Voir la description
+                 *     de l'API.
+                 */
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -53,7 +71,16 @@ export interface paths {
     "/api/v1/users": {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description Langue des messages : le français pour `fr` et ses variantes, l'anglais
+                 *     sinon. Chaque élément doit respecter la RFC 9110 (plage de langue avec
+                 *     tirets, `q` de 0 à 1) : un élément invalide, un en-tête absent ou de plus
+                 *     de 1024 octets donnent l'anglais, jamais une erreur. Voir la description
+                 *     de l'API.
+                 */
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -71,7 +98,16 @@ export interface paths {
     "/api/v1/users/{id}": {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description Langue des messages : le français pour `fr` et ses variantes, l'anglais
+                 *     sinon. Chaque élément doit respecter la RFC 9110 (plage de langue avec
+                 *     tirets, `q` de 0 à 1) : un élément invalide, un en-tête absent ou de plus
+                 *     de 1024 octets donnent l'anglais, jamais une erreur. Voir la description
+                 *     de l'API.
+                 */
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
             path: {
                 /** @description Identifiant numérique non négatif */
                 id: components["parameters"]["Id"];
@@ -91,7 +127,16 @@ export interface paths {
     "/api/v1/users/{id}/tasks": {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description Langue des messages : le français pour `fr` et ses variantes, l'anglais
+                 *     sinon. Chaque élément doit respecter la RFC 9110 (plage de langue avec
+                 *     tirets, `q` de 0 à 1) : un élément invalide, un en-tête absent ou de plus
+                 *     de 1024 octets donnent l'anglais, jamais une erreur. Voir la description
+                 *     de l'API.
+                 */
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
             path: {
                 /** @description Identifiant numérique non négatif */
                 id: components["parameters"]["Id"];
@@ -115,7 +160,16 @@ export interface paths {
     "/api/v1/tasks": {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description Langue des messages : le français pour `fr` et ses variantes, l'anglais
+                 *     sinon. Chaque élément doit respecter la RFC 9110 (plage de langue avec
+                 *     tirets, `q` de 0 à 1) : un élément invalide, un en-tête absent ou de plus
+                 *     de 1024 octets donnent l'anglais, jamais une erreur. Voir la description
+                 *     de l'API.
+                 */
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -137,7 +191,16 @@ export interface paths {
     "/api/v1/tasks/{id}": {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description Langue des messages : le français pour `fr` et ses variantes, l'anglais
+                 *     sinon. Chaque élément doit respecter la RFC 9110 (plage de langue avec
+                 *     tirets, `q` de 0 à 1) : un élément invalide, un en-tête absent ou de plus
+                 *     de 1024 octets donnent l'anglais, jamais une erreur. Voir la description
+                 *     de l'API.
+                 */
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
             path: {
                 /** @description Identifiant numérique non négatif */
                 id: components["parameters"]["Id"];
@@ -170,7 +233,16 @@ export interface paths {
     "/api/v1/stats": {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description Langue des messages : le français pour `fr` et ses variantes, l'anglais
+                 *     sinon. Chaque élément doit respecter la RFC 9110 (plage de langue avec
+                 *     tirets, `q` de 0 à 1) : un élément invalide, un en-tête absent ou de plus
+                 *     de 1024 octets donnent l'anglais, jamais une erreur. Voir la description
+                 *     de l'API.
+                 */
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -191,13 +263,14 @@ export interface components {
         SuccessResponse: {
             /** @constant */
             success: true;
+            /** @description Texte lisible et localisé, destiné à l'affichage ; ne pas le comparer. */
             message?: string;
             data?: unknown;
         };
         ErrorResponse: {
             /** @constant */
             success: false;
-            /** @description Message lisible, destiné à l'affichage ; sa formulation peut évoluer. */
+            /** @description Message lisible et localisé, destiné à l'affichage ; sa formulation peut évoluer. */
             error: string;
             error_code: components["schemas"]["ErrorCode"];
         };
@@ -232,26 +305,24 @@ export interface components {
             completed: boolean;
         };
         Stats: {
-            /** Format: int64 */
             users: number;
-            /** Format: int64 */
             tasks: number;
         };
         HealthResponse: components["schemas"]["SuccessResponse"] & {
-            /** @constant */
-            message: "Service is healthy";
+            /** @example Service is healthy */
+            message: string;
             data: {
                 /** @constant */
                 status: "ok";
-                /** @constant */
-                version: "1.0.0";
+                /** @example 1.0.0 */
+                version: string;
                 /** Format: uuid */
                 id: string;
             };
         };
         ReadyResponse: components["schemas"]["SuccessResponse"] & {
-            /** @constant */
-            message: "Service is ready";
+            /** @example Service is ready */
+            message: string;
             data: {
                 /** @constant */
                 status: "ready";
@@ -297,6 +368,8 @@ export interface components {
         /** @description La base de données ne répond pas (`DATABASE_UNAVAILABLE`) */
         DatabaseUnavailable: {
             headers: {
+                "Content-Language": components["headers"]["ContentLanguage"];
+                Vary: components["headers"]["Vary"];
                 "Cache-Control": components["headers"]["CacheControlNoStore"];
                 [name: string]: unknown;
             };
@@ -307,6 +380,8 @@ export interface components {
         /** @description Corps invalide (`INVALID_BODY`) ou erreur de validation (`VALIDATION_FAILED`) */
         BadRequest: {
             headers: {
+                "Content-Language": components["headers"]["ContentLanguage"];
+                Vary: components["headers"]["Vary"];
                 [name: string]: unknown;
             };
             content: {
@@ -316,6 +391,8 @@ export interface components {
         /** @description Identifiant utilisateur invalide (`INVALID_ID`) */
         InvalidUserId: {
             headers: {
+                "Content-Language": components["headers"]["ContentLanguage"];
+                Vary: components["headers"]["Vary"];
                 [name: string]: unknown;
             };
             content: {
@@ -325,6 +402,8 @@ export interface components {
         /** @description Identifiant tâche invalide (`INVALID_ID`) */
         InvalidTaskId: {
             headers: {
+                "Content-Language": components["headers"]["ContentLanguage"];
+                Vary: components["headers"]["Vary"];
                 [name: string]: unknown;
             };
             content: {
@@ -334,6 +413,8 @@ export interface components {
         /** @description Utilisateur introuvable (`USER_NOT_FOUND`) */
         UserNotFound: {
             headers: {
+                "Content-Language": components["headers"]["ContentLanguage"];
+                Vary: components["headers"]["Vary"];
                 [name: string]: unknown;
             };
             content: {
@@ -343,6 +424,8 @@ export interface components {
         /** @description Tâche introuvable (`TASK_NOT_FOUND`) */
         TaskNotFound: {
             headers: {
+                "Content-Language": components["headers"]["ContentLanguage"];
+                Vary: components["headers"]["Vary"];
                 [name: string]: unknown;
             };
             content: {
@@ -352,6 +435,8 @@ export interface components {
         /** @description Un utilisateur avec cet email existe déjà (`EMAIL_TAKEN`) */
         EmailTaken: {
             headers: {
+                "Content-Language": components["headers"]["ContentLanguage"];
+                Vary: components["headers"]["Vary"];
                 [name: string]: unknown;
             };
             content: {
@@ -361,6 +446,8 @@ export interface components {
         /** @description Corps de requête de plus de 1 MiB (`PAYLOAD_TOO_LARGE`) */
         PayloadTooLarge: {
             headers: {
+                "Content-Language": components["headers"]["ContentLanguage"];
+                Vary: components["headers"]["Vary"];
                 [name: string]: unknown;
             };
             content: {
@@ -370,6 +457,8 @@ export interface components {
         /** @description Erreur interne (`INTERNAL_ERROR`) ; les détails techniques ne sont pas exposés */
         InternalServerError: {
             headers: {
+                "Content-Language": components["headers"]["ContentLanguage"];
+                Vary: components["headers"]["Vary"];
                 [name: string]: unknown;
             };
             content: {
@@ -378,11 +467,23 @@ export interface components {
         };
     };
     parameters: {
+        /**
+         * @description Langue des messages : le français pour `fr` et ses variantes, l'anglais
+         *     sinon. Chaque élément doit respecter la RFC 9110 (plage de langue avec
+         *     tirets, `q` de 0 à 1) : un élément invalide, un en-tête absent ou de plus
+         *     de 1024 octets donnent l'anglais, jamais une erreur. Voir la description
+         *     de l'API.
+         */
+        AcceptLanguage: string;
         /** @description Identifiant numérique non négatif */
         Id: number;
     };
     requestBodies: never;
     headers: {
+        /** @description Langue des textes de la réponse. */
+        ContentLanguage: "en" | "fr";
+        /** @description La réponse dépend de la langue demandée. */
+        Vary: "Accept-Language";
         /** @description Interdit toute mise en cache de la réponse (sondes). */
         CacheControlNoStore: "no-store";
     };
@@ -393,7 +494,16 @@ export interface operations {
     healthCheck: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description Langue des messages : le français pour `fr` et ses variantes, l'anglais
+                 *     sinon. Chaque élément doit respecter la RFC 9110 (plage de langue avec
+                 *     tirets, `q` de 0 à 1) : un élément invalide, un en-tête absent ou de plus
+                 *     de 1024 octets donnent l'anglais, jamais une erreur. Voir la description
+                 *     de l'API.
+                 */
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -402,6 +512,8 @@ export interface operations {
             /** @description Service disponible */
             200: {
                 headers: {
+                    "Content-Language": components["headers"]["ContentLanguage"];
+                    Vary: components["headers"]["Vary"];
                     "Cache-Control": components["headers"]["CacheControlNoStore"];
                     [name: string]: unknown;
                 };
@@ -414,7 +526,16 @@ export interface operations {
     readinessCheck: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description Langue des messages : le français pour `fr` et ses variantes, l'anglais
+                 *     sinon. Chaque élément doit respecter la RFC 9110 (plage de langue avec
+                 *     tirets, `q` de 0 à 1) : un élément invalide, un en-tête absent ou de plus
+                 *     de 1024 octets donnent l'anglais, jamais une erreur. Voir la description
+                 *     de l'API.
+                 */
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -423,6 +544,8 @@ export interface operations {
             /** @description Service prêt */
             200: {
                 headers: {
+                    "Content-Language": components["headers"]["ContentLanguage"];
+                    Vary: components["headers"]["Vary"];
                     "Cache-Control": components["headers"]["CacheControlNoStore"];
                     [name: string]: unknown;
                 };
@@ -436,7 +559,16 @@ export interface operations {
     listUsers: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description Langue des messages : le français pour `fr` et ses variantes, l'anglais
+                 *     sinon. Chaque élément doit respecter la RFC 9110 (plage de langue avec
+                 *     tirets, `q` de 0 à 1) : un élément invalide, un en-tête absent ou de plus
+                 *     de 1024 octets donnent l'anglais, jamais une erreur. Voir la description
+                 *     de l'API.
+                 */
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -445,6 +577,8 @@ export interface operations {
             /** @description Liste des utilisateurs */
             200: {
                 headers: {
+                    "Content-Language": components["headers"]["ContentLanguage"];
+                    Vary: components["headers"]["Vary"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -459,7 +593,16 @@ export interface operations {
     createUser: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description Langue des messages : le français pour `fr` et ses variantes, l'anglais
+                 *     sinon. Chaque élément doit respecter la RFC 9110 (plage de langue avec
+                 *     tirets, `q` de 0 à 1) : un élément invalide, un en-tête absent ou de plus
+                 *     de 1024 octets donnent l'anglais, jamais une erreur. Voir la description
+                 *     de l'API.
+                 */
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -472,6 +615,8 @@ export interface operations {
             /** @description Utilisateur créé */
             201: {
                 headers: {
+                    "Content-Language": components["headers"]["ContentLanguage"];
+                    Vary: components["headers"]["Vary"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -489,7 +634,16 @@ export interface operations {
     getUser: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description Langue des messages : le français pour `fr` et ses variantes, l'anglais
+                 *     sinon. Chaque élément doit respecter la RFC 9110 (plage de langue avec
+                 *     tirets, `q` de 0 à 1) : un élément invalide, un en-tête absent ou de plus
+                 *     de 1024 octets donnent l'anglais, jamais une erreur. Voir la description
+                 *     de l'API.
+                 */
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
             path: {
                 /** @description Identifiant numérique non négatif */
                 id: components["parameters"]["Id"];
@@ -501,6 +655,8 @@ export interface operations {
             /** @description Utilisateur trouvé */
             200: {
                 headers: {
+                    "Content-Language": components["headers"]["ContentLanguage"];
+                    Vary: components["headers"]["Vary"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -517,7 +673,16 @@ export interface operations {
     listUserTasks: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description Langue des messages : le français pour `fr` et ses variantes, l'anglais
+                 *     sinon. Chaque élément doit respecter la RFC 9110 (plage de langue avec
+                 *     tirets, `q` de 0 à 1) : un élément invalide, un en-tête absent ou de plus
+                 *     de 1024 octets donnent l'anglais, jamais une erreur. Voir la description
+                 *     de l'API.
+                 */
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
             path: {
                 /** @description Identifiant numérique non négatif */
                 id: components["parameters"]["Id"];
@@ -529,6 +694,8 @@ export interface operations {
             /** @description Liste des tâches, triée par `id` croissant. */
             200: {
                 headers: {
+                    "Content-Language": components["headers"]["ContentLanguage"];
+                    Vary: components["headers"]["Vary"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -544,7 +711,16 @@ export interface operations {
     createTask: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description Langue des messages : le français pour `fr` et ses variantes, l'anglais
+                 *     sinon. Chaque élément doit respecter la RFC 9110 (plage de langue avec
+                 *     tirets, `q` de 0 à 1) : un élément invalide, un en-tête absent ou de plus
+                 *     de 1024 octets donnent l'anglais, jamais une erreur. Voir la description
+                 *     de l'API.
+                 */
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -557,6 +733,8 @@ export interface operations {
             /** @description Tâche créée */
             201: {
                 headers: {
+                    "Content-Language": components["headers"]["ContentLanguage"];
+                    Vary: components["headers"]["Vary"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -574,7 +752,16 @@ export interface operations {
     updateTask: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description Langue des messages : le français pour `fr` et ses variantes, l'anglais
+                 *     sinon. Chaque élément doit respecter la RFC 9110 (plage de langue avec
+                 *     tirets, `q` de 0 à 1) : un élément invalide, un en-tête absent ou de plus
+                 *     de 1024 octets donnent l'anglais, jamais une erreur. Voir la description
+                 *     de l'API.
+                 */
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
             path: {
                 /** @description Identifiant numérique non négatif */
                 id: components["parameters"]["Id"];
@@ -590,6 +777,8 @@ export interface operations {
             /** @description Tâche mise à jour ; la réponse reflète l'état réellement persisté. */
             200: {
                 headers: {
+                    "Content-Language": components["headers"]["ContentLanguage"];
+                    Vary: components["headers"]["Vary"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -607,7 +796,16 @@ export interface operations {
     deleteTask: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description Langue des messages : le français pour `fr` et ses variantes, l'anglais
+                 *     sinon. Chaque élément doit respecter la RFC 9110 (plage de langue avec
+                 *     tirets, `q` de 0 à 1) : un élément invalide, un en-tête absent ou de plus
+                 *     de 1024 octets donnent l'anglais, jamais une erreur. Voir la description
+                 *     de l'API.
+                 */
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
             path: {
                 /** @description Identifiant numérique non négatif */
                 id: components["parameters"]["Id"];
@@ -619,10 +817,14 @@ export interface operations {
             /** @description Tâche supprimée */
             200: {
                 headers: {
+                    "Content-Language": components["headers"]["ContentLanguage"];
+                    Vary: components["headers"]["Vary"];
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SuccessResponse"] & Record<string, never>;
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        message: string;
+                    };
                 };
             };
             400: components["responses"]["InvalidTaskId"];
@@ -633,7 +835,16 @@ export interface operations {
     getStats: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description Langue des messages : le français pour `fr` et ses variantes, l'anglais
+                 *     sinon. Chaque élément doit respecter la RFC 9110 (plage de langue avec
+                 *     tirets, `q` de 0 à 1) : un élément invalide, un en-tête absent ou de plus
+                 *     de 1024 octets donnent l'anglais, jamais une erreur. Voir la description
+                 *     de l'API.
+                 */
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -642,6 +853,8 @@ export interface operations {
             /** @description Statistiques agrégées */
             200: {
                 headers: {
+                    "Content-Language": components["headers"]["ContentLanguage"];
+                    Vary: components["headers"]["Vary"];
                     [name: string]: unknown;
                 };
                 content: {

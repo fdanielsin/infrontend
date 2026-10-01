@@ -57,21 +57,21 @@ export const zUpdatedTask = z.object({
 });
 
 export const zStats = z.object({
-    users: z.int(),
-    tasks: z.int()
+    users: z.int().gte(0),
+    tasks: z.int().gte(0)
 });
 
 export const zHealthResponse = zSuccessResponse.and(z.object({
-    message: z.literal('Service is healthy'),
+    message: z.string(),
     data: z.object({
         status: z.literal('ok'),
-        version: z.literal('1.0.0'),
+        version: z.string(),
         id: z.uuid()
     })
 }));
 
 export const zReadyResponse = zSuccessResponse.and(z.object({
-    message: z.literal('Service is ready'),
+    message: z.string(),
     data: z.object({
         status: z.literal('ready')
     })
@@ -101,6 +101,16 @@ export const zUpdateTaskRequest = z.object({
     description: z.string().optional(),
     completed: z.boolean().optional()
 });
+
+/**
+ * Langue des messages : le français pour `fr` et ses variantes, l'anglais
+ * sinon. Chaque élément doit respecter la RFC 9110 (plage de langue avec
+ * tirets, `q` de 0 à 1) : un élément invalide, un en-tête absent ou de plus
+ * de 1024 octets donnent l'anglais, jamais une erreur. Voir la description
+ * de l'API.
+ *
+ */
+export const zAcceptLanguage = z.string().max(1024);
 
 /**
  * Identifiant numérique non négatif
