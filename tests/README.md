@@ -7,6 +7,9 @@ Tous les tests du frontend vivent sous `tests/`.
   - `tests/unit/api/` pour le client et les façades API ;
   - `tests/unit/stores/` pour l'état de l'application (`src/lib/state/`) ;
   - `tests/unit/components/` pour les composants lorsque nécessaire ;
+  - `tests/unit/i18n/` pour les langues : parité des fichiers `messages/*.json`,
+    traduction des `ErrorCode` du contrat, nombres, langue d'une requête et
+    hook serveur, règles de validation du serveur couvertes par le client ;
   - `tests/unit/support/` pour les aides partagées (hôte de contexte).
 - `tests/e2e/` contient les scénarios Playwright de bout en bout contre
   l'application et l'API `inbackend`.
@@ -16,12 +19,24 @@ Les E2E `task-*.test.ts` nécessitent un backend `inbackend` disponible sur
 base PostgreSQL de service.
 
 Les E2E d'accessibilité (`accessibility.test.ts`, axe avec les règles par
-défaut) et de clavier (`keyboard-focus.test.ts`) mockent l'API avec
-`page.route` (`e2e/support/mock-api.ts`) et tournent sans backend :
-`PUBLIC_API_URL=http://localhost:8080 bun x playwright test accessibility keyboard-focus --project=chromium`.
+défaut), de clavier (`keyboard-focus.test.ts`) et de langues (`i18n.test.ts`)
+mockent l'API avec `page.route` (`e2e/support/mock-api.ts`) et tournent sans
+backend :
+`PUBLIC_API_URL=http://localhost:8080 bun x playwright test accessibility keyboard-focus i18n --project=chromium`.
 Les minuteries des toasts y sont pilotées par `page.clock`. Attendre la
 première réponse de l'API avant de remplir un champ : une saisie faite avant
 l'hydratation est effacée.
+
+Langues. Les tests unitaires tournent en anglais (navigateur jsdom en-US).
+Un test qui change de langue passe par `app.locale.set(...)` ou
+`app.changeLocale(...)` d'un `new AppState()`, ou par `overwriteGetLocale`
+pour une fonction isolée, et remet l'anglais et efface le cookie
+`PARAGLIDE_LOCALE` dans son `afterEach`. Les textes attendus dans une autre
+langue sont lus dans `messages/<langue>.json`, jamais recopiés. En E2E, la
+langue se choisit par le cookie `PARAGLIDE_LOCALE` (`context.addCookies`) ou
+par la langue du navigateur (`test.use({ locale: 'fr-FR' })`). Le `<select>`
+natif change au clavier par saisie de lettre (« f » pour « FR - Français ») :
+les flèches ouvrent la liste sur certains systèmes.
 
 Vitest exécute les tests dans un ordre aléatoire (`sequence.shuffle`, graine affichée
 en tête de run) : un test ne doit dépendre ni d'un autre ni de l'ordre.

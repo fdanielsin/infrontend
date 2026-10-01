@@ -1,5 +1,6 @@
 import createClient from 'openapi-fetch';
 import { PUBLIC_API_URL } from '$env/static/public';
+import { getLocale } from '$lib/paraglide/runtime';
 import type { components, paths } from './schema';
 
 type Schemas = components['schemas'];
@@ -32,6 +33,8 @@ export type ApiSuccess<T> = { success: true; message?: string } & ([T] extends [
 export interface ApiFailure {
 	success: false;
 	error: string;
+	// Failures born in the client, which the interface words itself (the server sent no message).
+	kind?: 'invalid_response' | 'unknown';
 	status?: number;
 	// Stable codes are listed by `ErrorCode`, but the contract lets the server add new ones.
 	code?: string;
@@ -46,7 +49,10 @@ const INVALID_RESPONSE = 'Invalid server response';
 // ApiFailure carrying the HTTP status, not an exception.
 const http = createClient<paths>({
 	baseUrl: API_BASE,
-	fetch: (request) => globalThis.fetch(request)
+	fetch: (request) => {
+		request.headers.set('Accept-Language', getLocale());
+		return globalThis.fetch(request);
+	}
 });
 
 interface Outcome {
@@ -65,7 +71,7 @@ function parseJson(text: unknown): unknown {
 }
 
 function invalidResponse(status: number): ApiFailure {
-	return { success: false, error: INVALID_RESPONSE, status };
+	return { success: false, error: INVALID_RESPONSE, status, kind: 'invalid_response' };
 }
 
 function toFailure(error: unknown, status: number): ApiFailure {
@@ -97,10 +103,9 @@ async function toResult<T>(
 		}
 		return body as ApiSuccess<T>;
 	} catch (error) {
-		return {
-			success: false,
-			error: error instanceof Error ? error.message : 'Unknown error'
-		};
+		return error instanceof Error
+			? { success: false, error: error.message }
+			: { success: false, error: 'Unknown error', kind: 'unknown' };
 	}
 }
 

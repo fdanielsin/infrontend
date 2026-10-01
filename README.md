@@ -24,6 +24,10 @@ bun run dev
 
 Server runs on `http://localhost:5173`
 
+The message module `src/lib/paraglide/` is generated (git-ignored). `bun run dev`
+and `bun run build` produce it; run `bun run i18n:compile` before `lint`, `check`
+or the tests on a fresh clone (`bun run verify` does it).
+
 ## Build
 
 ```bash
@@ -100,8 +104,11 @@ src/
 ├── lib/          # API, features, state, UI and validation
 │   ├── api/      # Shared HTTP client
 │   ├── features/ # Feature-specific components
+│   ├── i18n/     # API error messages, number formatting, language names
 │   └── state/    # Reactive state classes, provided by context
 └── app.html      # HTML shell
+messages/         # Interface texts, one JSON file per language (en, fr, de, es)
+project.inlang/   # Paraglide project (languages, message format plugin)
 ```
 
 ## Documentation

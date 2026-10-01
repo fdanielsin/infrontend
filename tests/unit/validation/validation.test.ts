@@ -1,8 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { TaskSchema, UserSchema } from '$lib/validation/schemas';
+import { TaskSchema, UserSchema, validationMessage } from '$lib/validation/schemas';
 import { zodIssuesToFieldErrors } from '$lib/validation/field-errors';
 
 const validTask = { title: 'Buy milk', description: 'Semi-skimmed', user_id: 1 };
+
+function shown(errors: Record<string, string>) {
+	return Object.fromEntries(
+		Object.entries(errors).map(([field, key]) => [field, validationMessage(key)])
+	);
+}
 
 describe('TaskSchema', () => {
 	it('accepts an empty description, as the contract does (boundary)', () => {
@@ -23,9 +29,9 @@ describe('TaskSchema', () => {
 
 		// THEN: Only the title is reported.
 		expect(result.success).toBe(false);
-		expect(result.error?.issues.map((issue) => [issue.path[0], issue.message])).toEqual([
-			['title', 'Title is required']
-		]);
+		expect(
+			result.error?.issues.map((issue) => [issue.path[0], validationMessage(issue.message)])
+		).toEqual([['title', 'Title is required']]);
 	});
 });
 
@@ -35,7 +41,7 @@ describe('schema messages', () => {
 		const result = TaskSchema.safeParse({ ...validTask, user_id: 0 });
 
 		// THEN: The user_id message is given.
-		expect(result.error?.issues.map((issue) => issue.message)).toEqual([
+		expect(result.error?.issues.map((issue) => validationMessage(issue.message))).toEqual([
 			'User ID must be positive'
 		]);
 	});
@@ -53,7 +59,7 @@ describe('zodIssuesToFieldErrors', () => {
 		const errors = zodIssuesToFieldErrors(invalid({ name: 'A', email: 'nope' }), ['name', 'email']);
 
 		// THEN: One message per field.
-		expect(errors).toEqual({
+		expect(shown(errors)).toEqual({
 			name: 'Name must be at least 2 characters',
 			email: 'Invalid email address'
 		});
@@ -64,7 +70,7 @@ describe('zodIssuesToFieldErrors', () => {
 		const errors = zodIssuesToFieldErrors(invalid({ name: 'A', email: 'nope' }), ['name']);
 
 		// THEN: The email issue is left out.
-		expect(errors).toEqual({ name: 'Name must be at least 2 characters' });
+		expect(shown(errors)).toEqual({ name: 'Name must be at least 2 characters' });
 	});
 
 	it('keeps the last message when a field has several issues (limit)', () => {

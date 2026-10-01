@@ -1,4 +1,5 @@
 import { api, type User } from '$lib/api/client';
+import { m } from '$lib/paraglide/messages';
 import type { NotificationState } from './notification.svelte';
 import { RequestStatus } from './request-status.svelte';
 import type { TaskState } from './tasks.svelte';
@@ -18,14 +19,14 @@ export class UserState {
 
 	async fetch() {
 		const result = await this.status.run(() => api.getUsers(), {
-			fallbackMessage: 'Failed to fetch users'
+			fallbackMessage: m.error_fetch_users
 		});
 		if (result.success) this.users = result.data;
 	}
 
 	async add(name: string, email: string) {
 		const result = await this.status.run(() => api.createUser({ name, email }), {
-			fallbackMessage: 'Failed to create user'
+			fallbackMessage: m.error_create_user
 		});
 		if (!result.success) return undefined;
 		this.users = [...this.users, result.data];
@@ -38,7 +39,7 @@ export class UserState {
 		this.selected = null;
 		this.#tasks.clear();
 		const result = await this.status.run(() => api.getUser(id), {
-			fallbackMessage: 'Failed to fetch user',
+			fallbackMessage: m.error_fetch_user,
 			isCurrent
 		});
 		if (!result.success || !isCurrent()) return;

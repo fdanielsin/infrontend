@@ -1,8 +1,10 @@
 import type { ApiFailure, ApiResult } from '$lib/api/client';
+import { failureMessage } from '$lib/i18n/errors';
+import { m } from '$lib/paraglide/messages';
 import type { NotificationState } from './notification.svelte';
 
 interface RunOptions {
-	fallbackMessage: string;
+	fallbackMessage: () => string;
 	// False for background actions (toggle, delete) that must not disable forms.
 	tracksLoading?: boolean;
 	// A superseded request leaves `loading` and `error` to the newer one.
@@ -38,11 +40,14 @@ export class RequestStatus {
 		try {
 			result = await action();
 		} catch (err) {
-			result = { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
+			result =
+				err instanceof Error
+					? { success: false, error: err.message }
+					: { success: false, error: m.error_unknown(), kind: 'unknown' };
 		}
 		if (isCurrent()) {
 			if (!result.success && !isHandled(result)) {
-				const message = result.error || fallbackMessage;
+				const message = failureMessage(result, fallbackMessage);
 				this.error = message;
 				this.#notifications.notifyError(message);
 			}

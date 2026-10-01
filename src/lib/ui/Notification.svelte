@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { tick } from 'svelte';
+	import { m } from '$lib/paraglide/messages';
 	import { getAppState } from '$lib/state/app-state.svelte';
 	import type { Notification as Toast } from '$lib/state/notification.svelte';
 
@@ -70,7 +71,7 @@
 		<button
 			type="button"
 			onclick={(event) => void dismiss(toast.id, event.currentTarget)}
-			aria-label="Dismiss notification"
+			aria-label={m.notifications_dismiss()}
 			class="inline-flex min-h-6 min-w-6 items-center justify-center rounded hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
 		>
 			<svg

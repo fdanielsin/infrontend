@@ -132,6 +132,49 @@ un piège sans présenter cette information comme une garantie.
   fait perdre le focus à qui valide au bouton ; non corrigé volontairement (les
   tests s'appuient sur `disabled`, gain faible).
 
+## Internationalisation
+
+- Toute chaîne visible passe par un message Paraglide (`m.<cle>()`, fichiers
+  `messages/{en,fr,de,es}.json`) : textes, noms accessibles, titres de page,
+  notifications. Les messages de validation zod sont des clés (`validation_*`) ;
+  `validationMessage(clé)` les traduit au rendu, donc une erreur de champ déjà
+  affichée passe dans la nouvelle langue à la bascule. Les données saisies (titres, noms) ne sont jamais traduites.
+- Les quatre fichiers ont les mêmes clés et les mêmes paramètres ; l'anglais
+  est la langue source. `src/lib/paraglide/` est généré et ignoré par Git :
+  `bun run i18n:compile` (déjà dans `verify`).
+- Langue : cookie `PARAGLIDE_LOCALE` (écrit seulement quand l'utilisateur choisit
+  dans le sélecteur ; préférence strictement fonctionnelle, pas de bandeau),
+  sinon langue du navigateur (`Accept-Language`), sinon anglais. Pas de préfixe
+  d'URL. Le serveur pose `lang` dans le HTML (`hooks.server.ts`) : pas
+  d'éclair de mauvaise langue. Dans le navigateur, `LocaleState.current`
+  (`$state`) est lu par chaque message : changer de langue met l'écran à jour
+  sans rechargement ni perte de saisie ; l'attribut `lang` du document suit.
+- Limite connue : la détection de langue de Paraglide ne traite pas `q=0` comme
+  « non acceptable » (RFC 9110, 12.4.2) : un en-tête `fr;q=0` donne le français.
+  Sans effet pratique, aucun navigateur ne l'envoie.
+- La détection initiale dans le navigateur lit sans jamais écrire (cookie, puis
+  `navigator.languages`, puis anglais), dans le même ordre que le serveur : même
+  langue au rendu serveur et à l'hydratation. Le cookie n'est écrit que par
+  `LocaleState.set` (choix explicite), et ce refus éventuel est sans conséquence.
+- Cookies bloqués : la langue change pour la page en cours, sans erreur ; au
+  rechargement on revient à la langue du navigateur.
+- Erreurs de l'API : `failureMessage` (`lib/i18n/errors.ts`) traduit le
+  `error_code` connu ; la table est exhaustive sur `ErrorCode` (un code ajouté
+  au contrat sans traduction casse le typage). Un code inconnu garde le message
+  du serveur. `VALIDATION_FAILED` s'affiche en message générique traduit : la
+  validation zod du client donne déjà les messages précis et traduits avant
+  l'envoi, le cas serveur n'existe que si le client est contourné. Un échec réseau (TypeError du navigateur) garde le message du
+  navigateur, non traduit. À la bascule de langue, les erreurs affichées sont
+  vidées ; les toasts expirent seuls.
+- Le client envoie `Accept-Language` avec la langue active ; le backend le
+  déclarera dans le contrat (lot api-i18n).
+- Nombres : `formatNumber` (`Intl.NumberFormat` de la langue active), valeurs
+  CLDR telles quelles.
+- Sélecteur : `<select>` natif avec label visible traduit ; chaque option porte
+  sa langue en `lang` et son nom dans sa propre langue. Il est en haut de chaque
+  page (dans le flux, rien ne le chevauche à 320 px de large ni à 200 % de zoom) ; le
+  focus reste sur lui à la bascule.
+
 ## Références
 
 - [Svelte, bonnes pratiques](https://svelte.dev/docs/svelte/best-practices) :

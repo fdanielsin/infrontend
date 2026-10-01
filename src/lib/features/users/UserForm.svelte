@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { ref } from '$lib/ui/attachments';
+	import { m } from '$lib/paraglide/messages';
 	import { getAppState } from '$lib/state/app-state.svelte';
-	import { UserSchema } from '$lib/validation/schemas';
+	import { UserSchema, validationMessage } from '$lib/validation/schemas';
 	import { zodIssuesToFieldErrors } from '$lib/validation/field-errors';
 	const { users } = getAppState();
 	const status = users.status;
@@ -30,7 +31,7 @@
 </script>
 
 <div class="rounded-lg border border-gray-300 bg-white p-6 shadow">
-	<h2 class="mb-4 text-xl font-bold">Create User</h2>
+	<h2 class="mb-4 text-xl font-bold">{m.users_create_heading()}</h2>
 
 	{#if status.error}
 		<div class="mb-4 rounded bg-red-100 p-3 text-red-700">{status.error}</div>
@@ -44,7 +45,9 @@
 		class="space-y-4"
 	>
 		<div>
-			<label for="name" class="block text-sm font-medium text-gray-700">Name</label>
+			<label for="name" class="block text-sm font-medium text-gray-700"
+				>{m.users_name_label()}</label
+			>
 			<input
 				id="name"
 				type="text"
@@ -56,12 +59,14 @@
 				class="mt-1 w-full rounded border border-gray-300 px-3 py-2"
 			/>
 			{#if fieldErrors.name}<p id="name-error" class="mt-1 text-sm text-red-600">
-					{fieldErrors.name}
+					{validationMessage(fieldErrors.name)}
 				</p>{/if}
 		</div>
 
 		<div>
-			<label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+			<label for="email" class="block text-sm font-medium text-gray-700"
+				>{m.users_email_label()}</label
+			>
 			<input
 				id="email"
 				type="email"
@@ -73,7 +78,7 @@
 				class="mt-1 w-full rounded border border-gray-300 px-3 py-2"
 			/>
 			{#if fieldErrors.email}<p id="email-error" class="mt-1 text-sm text-red-600">
-					{fieldErrors.email}
+					{validationMessage(fieldErrors.email)}
 				</p>{/if}
 		</div>
 
@@ -82,14 +87,14 @@
 			disabled={status.loading}
 			class="w-full rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:bg-gray-400"
 		>
-			{status.loading ? 'Creating...' : 'Create User'}
+			{status.loading ? m.users_creating() : m.users_create_button()}
 		</button>
 	</form>
 
 	<div class="mt-6">
-		<h3 class="mb-3 font-semibold">Users ({users.users.length})</h3>
+		<h3 class="mb-3 font-semibold">{m.users_list_heading({ count: users.users.length })}</h3>
 		{#if users.users.length === 0}
-			<p class="text-gray-500">No users yet</p>
+			<p class="text-gray-500">{m.users_empty()}</p>
 		{:else}
 			<ul class="space-y-2">
 				{#each users.users as user (user.id)}

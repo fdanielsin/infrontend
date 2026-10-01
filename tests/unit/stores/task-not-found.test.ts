@@ -67,13 +67,15 @@ describe('a task already deleted on the server (TASK_NOT_FOUND)', () => {
 	it.each([
 		[
 			'USER_NOT_FOUND',
-			{ success: false, error: 'User not found', status: 404, code: 'USER_NOT_FOUND' }
+			{ success: false, error: 'User not found', status: 404, code: 'USER_NOT_FOUND' },
+			'User not found'
 		],
 		[
 			'ROUTE_NOT_FOUND',
-			{ success: false, error: 'Route not found', status: 404, code: 'ROUTE_NOT_FOUND' }
+			{ success: false, error: 'Route not found', status: 404, code: 'ROUTE_NOT_FOUND' },
+			'Route not found'
 		],
-		['a 404 without code', { success: false, error: 'HTTP 404', status: 404 }],
+		['a 404 without code', { success: false, error: 'HTTP 404', status: 404 }, 'HTTP 404'],
 		[
 			'a 400',
 			{
@@ -81,29 +83,34 @@ describe('a task already deleted on the server (TASK_NOT_FOUND)', () => {
 				error: 'Task title cannot be empty',
 				status: 400,
 				code: 'VALIDATION_FAILED'
-			}
+			},
+			'Invalid data'
 		],
 		[
 			'a 500',
-			{ success: false, error: 'Internal server error', status: 500, code: 'INTERNAL_ERROR' }
+			{ success: false, error: 'Internal server error', status: 500, code: 'INTERNAL_ERROR' },
+			'Internal server error'
 		]
-	] as const)('treats %s as an error and keeps the task (sad path)', async (_case, failure) => {
-		// GIVEN: Any failure other than TASK_NOT_FOUND.
-		failWith(failure);
+	] as const)(
+		'treats %s as an error and keeps the task (sad path)',
+		async (_case, failure, shown) => {
+			// GIVEN: Any failure other than TASK_NOT_FOUND.
+			failWith(failure);
 
-		for (const [, action] of actions) {
-			// WHEN: Each action runs.
-			app.notifications.items = [];
-			await action(second.id);
+			for (const [, action] of actions) {
+				// WHEN: Each action runs.
+				app.notifications.items = [];
+				await action(second.id);
 
-			// THEN: The error is shown and notified as an error, the task stays.
-			expect(app.tasks.status.error).toBe(failure.error);
-			expect(app.notifications.items).toEqual([
-				expect.objectContaining({ message: failure.error, type: 'error' })
-			]);
-			expect(app.tasks.tasks).toEqual([first, second, third]);
+				// THEN: The error is shown and notified as an error, the task stays.
+				expect(app.tasks.status.error).toBe(shown);
+				expect(app.notifications.items).toEqual([
+					expect.objectContaining({ message: shown, type: 'error' })
+				]);
+				expect(app.tasks.tasks).toEqual([first, second, third]);
+			}
 		}
-	});
+	);
 
 	it.each(actions)(
 		'%s stays silent when the task is no longer listed (limit: second delete, user switched)',

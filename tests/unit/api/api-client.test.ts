@@ -183,7 +183,8 @@ describe('API client', () => {
 		await expect(api.getUsers()).resolves.toEqual({
 			success: false,
 			error: 'Invalid server response',
-			status: 204
+			status: 204,
+			kind: 'invalid_response'
 		});
 	});
 
@@ -284,7 +285,8 @@ describe('API client', () => {
 			await expect(api.getStats()).resolves.toEqual({
 				success: false,
 				error: 'Invalid server response',
-				status: 200
+				status: 200,
+				kind: 'invalid_response'
 			});
 		}
 	);
@@ -314,6 +316,10 @@ describe('API client', () => {
 		mockFetch(() => Promise.reject('offline'));
 
 		// WHEN / THEN: The message falls back to "Unknown error".
-		await expect(api.getUsers()).resolves.toEqual({ success: false, error: 'Unknown error' });
+		await expect(api.getUsers()).resolves.toEqual({
+			success: false,
+			error: 'Unknown error',
+			kind: 'unknown'
+		});
 	});
 });

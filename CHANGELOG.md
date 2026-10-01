@@ -6,6 +6,11 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Interface in English, French, German and Spanish: the browser language decides
+  on the first visit, then a selector in the header (kept in a cookie set only
+  on that choice). API errors are translated from their `error_code`, numbers
+  follow the language.
+- Translations for the 11 error codes of the contract (types regenerated).
 - `bun run verify` as the single local validation gate.
 - Vitest V8 coverage provider.
 - Store, component and E2E test coverage for user and task management.
@@ -15,6 +20,8 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- The statistics page follows the interface language instead of being fixed in
+  French.
 - Notifications: errors and other messages sit in two persistent live regions
   (alert and status), pause on hover and focus, and have a close button
   (WCAG 2.2.1, 4.1.3). The entry animation respects reduced motion.

@@ -200,6 +200,15 @@ donc `qa-front` les a portés mécaniquement (mêmes scénarios et assertions, u
 pour le contexte ; 12 fichiers portés, `stores.test.ts` remplacé par `app-state.test.ts` ; équivalence prouvée par 27 mutants et Stryker). Aucun helper
 d'export réservé aux tests.
 
+## Lot « interface multilingue » (branche `feature/multilingual-user-interface`, I2)
+
+Interface en anglais, français, allemand et espagnol avec Paraglide JS
+(messages compilés et typés). Règles et limites : `conventions.md`,
+section Internationalisation. Le contrat a été régénéré depuis `inbackend`
+61a68cb (11 `ErrorCode`, `/ready`). Le plugin de messages est installé en local
+(`@inlang/plugin-message-format`), pas téléchargé depuis un CDN au build.
+Traductions FR, DE et ES rédigées par l'agent : relecture humaine à prévoir.
+
 ## Prochaine étape
 
 Docker/CI, contrat généré (openapi-typescript, openapi-fetch, `api:check`) et

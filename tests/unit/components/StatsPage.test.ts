@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup } from '@testing-library/svelte';
 import { api, type ApiResult, type Stats } from '$lib/api/client';
+import { overwriteGetLocale } from '$lib/paraglide/runtime';
 import { AppState } from '$lib/state/app-state.svelte';
 import StatsPage from '../../../src/routes/stats/+page.svelte';
 import { renderWithApp } from '../support/render-with-app';
@@ -11,7 +12,7 @@ vi.mock('$lib/api/client', () => ({
 
 function averageText(container: HTMLElement): string | undefined {
 	const item = Array.from(container.querySelectorAll('li')).find((li) =>
-		li.textContent?.includes('Moyenne')
+		li.textContent?.includes('Average tasks per user')
 	);
 	return item?.querySelector('strong')?.textContent ?? undefined;
 }
@@ -26,6 +27,8 @@ describe('stats page', () => {
 
 	afterEach(() => {
 		cleanup();
+		document.cookie = 'PARAGLIDE_LOCALE=; path=/; max-age=0';
+		overwriteGetLocale(() => 'en');
 	});
 
 	it('shows the counters and the average rounded to 2 decimals (happy path)', async () => {
@@ -36,7 +39,7 @@ describe('stats page', () => {
 		const { findByText, container } = renderWithApp(app, StatsPage);
 
 		// THEN: Both counters and 10 / 3 rounded are shown.
-		expect(await findByText('Résumé')).toBeTruthy();
+		expect(await findByText('Summary')).toBeTruthy();
 		const strongs = Array.from(container.querySelectorAll('li strong')).map((s) => s.textContent);
 		expect(strongs).toEqual(['3', '10', '3.33']);
 	});
@@ -49,7 +52,7 @@ describe('stats page', () => {
 		const { findByText, container } = renderWithApp(app, StatsPage);
 
 		// THEN: The average is 0, not NaN or Infinity.
-		await findByText('Résumé');
+		await findByText('Summary');
 		expect(averageText(container)).toBe('0');
 	});
 
@@ -61,7 +64,7 @@ describe('stats page', () => {
 		const { findByText } = renderWithApp(app, StatsPage);
 
 		// THEN: The error is displayed.
-		expect(await findByText('Erreur: HTTP 500')).toBeTruthy();
+		expect(await findByText('Error: HTTP 500')).toBeTruthy();
 	});
 
 	it('rounds a repeating average to 2 decimals (limit)', async () => {
@@ -72,7 +75,7 @@ describe('stats page', () => {
 		const { findByText, container } = renderWithApp(app, StatsPage);
 
 		// THEN: 1 / 3 is shown as 0.33.
-		await findByText('Résumé');
+		await findByText('Summary');
 		expect(averageText(container)).toBe('0.33');
 	});
 
@@ -84,7 +87,7 @@ describe('stats page', () => {
 		const { findByText } = renderWithApp(app, StatsPage);
 
 		// THEN: The error is displayed and notified.
-		await findByText('Erreur: HTTP 500');
+		await findByText('Error: HTTP 500');
 		expect(app.notifications.items).toEqual([
 			expect.objectContaining({ message: 'HTTP 500', type: 'error' })
 		]);
@@ -101,9 +104,36 @@ describe('stats page', () => {
 		const { getByText, findByText, queryByText } = renderWithApp(app, StatsPage);
 
 		// THEN: The loading message is shown, then replaced by the error.
-		expect(getByText('Chargement des statistiques...')).toBeTruthy();
+		expect(getByText('Loading statistics...')).toBeTruthy();
 		fail(new Error('Failed to fetch'));
-		expect(await findByText('Erreur: Failed to fetch')).toBeTruthy();
-		expect(queryByText('Chargement des statistiques...')).toBeNull();
+		expect(await findByText('Error: Failed to fetch')).toBeTruthy();
+		expect(queryByText('Loading statistics...')).toBeNull();
 	});
+
+	it.each([
+		['fr', 'Statistiques', '1\u202f234', '2\u202f468', '2,00'],
+		['de', 'Statistiken', '1.234', '2.468', '2,00'],
+		['es', 'Estadísticas', '1234', '2468', '2,00']
+	] as const)(
+		'follows the interface language %s for labels, counters and average (happy path)',
+		async (locale, heading, users, tasks, average) => {
+			// GIVEN: The interface in that language, 1234 users and 2468 tasks.
+			app.locale.set(locale);
+			vi.mocked(api.getStats).mockResolvedValue({
+				success: true,
+				data: { users: 1234, tasks: 2468 }
+			});
+
+			// WHEN: The page is rendered.
+			const { findByRole, container } = renderWithApp(app, StatsPage);
+
+			// THEN: Heading, counters and the 2-decimal average use the language conventions.
+			expect((await findByRole('heading', { level: 1 })).textContent).toContain(heading);
+			await findByRole('heading', { level: 2 });
+			const strongs = Array.from(container.querySelectorAll('li strong')).map((s) =>
+				s.textContent?.trim()
+			);
+			expect(strongs).toEqual([users, tasks, average]);
+		}
+	);
 });

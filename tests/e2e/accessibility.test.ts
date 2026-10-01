@@ -105,7 +105,7 @@ test.describe('Accessibility (axe, mocked API)', () => {
 		await expectNoViolations(page);
 	});
 
-	test('statistics page has no violation and declares its French content (happy path)', async ({
+	test('statistics page has no violation and declares the interface language (happy path)', async ({
 		page
 	}) => {
 		// GIVEN: Statistics are available.
@@ -113,11 +113,11 @@ test.describe('Accessibility (axe, mocked API)', () => {
 
 		// WHEN: The statistics page is loaded.
 		await page.goto('/stats');
-		await expect(page.getByText('Résumé')).toBeVisible();
+		await expect(page.getByText('Summary')).toBeVisible();
 
-		// THEN: It has a title, French content marked as such, and no violation.
+		// THEN: It has a title, the page language on <html>, and no violation.
 		await expect(page).toHaveTitle(/\S/);
-		await expect(page.getByRole('main')).toHaveAttribute('lang', 'fr');
+		await expect(page.locator('html')).toHaveAttribute('lang', 'en');
 		await expectNoViolations(page);
 	});
 
@@ -128,7 +128,7 @@ test.describe('Accessibility (axe, mocked API)', () => {
 
 		// WHEN: The statistics page is loaded.
 		await page.goto('/stats');
-		await expect(page.getByText('Erreur: Database unavailable')).toBeVisible();
+		await expect(page.getByText('Error: Database unavailable')).toBeVisible();
 
 		// THEN: The error banner and its toast have no violation.
 		await expectNoViolations(page);
@@ -147,7 +147,7 @@ test.describe('Accessibility (axe, mocked API)', () => {
 
 		// WHEN: The statistics page is loaded.
 		await page.goto('/stats');
-		await expect(page.getByText('Pas de données disponibles')).toBeVisible();
+		await expect(page.getByText('No data available')).toBeVisible();
 
 		// THEN: No violation.
 		await expectNoViolations(page);

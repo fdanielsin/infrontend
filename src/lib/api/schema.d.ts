@@ -11,8 +11,37 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Vérifier l'état du service */
+        /**
+         * Vérifier que le service est vivant
+         * @description Sonde de vivacité : répond tant que le processus sert des requêtes, sans
+         *     interroger la base de données. Pour savoir si le service peut répondre
+         *     aux requêtes métier, utiliser `/ready`.
+         *     La réponse n'est jamais mise en cache (`Cache-Control: no-store`).
+         */
         get: operations["healthCheck"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ready": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Vérifier que le service est prêt
+         * @description Sonde de disponibilité : vérifie que la base de données répond (délai
+         *     maximal de 2 secondes). Répond `503` `DATABASE_UNAVAILABLE`, sans
+         *     détail technique, sinon. Les réponses ne sont jamais mises en cache
+         *     (`Cache-Control: no-store`).
+         */
+        get: operations["readinessCheck"];
         put?: never;
         post?: never;
         delete?: never;
@@ -179,7 +208,7 @@ export interface components {
          *     peuvent être ajoutés.
          * @enum {string}
          */
-        ErrorCode: "INVALID_BODY" | "INVALID_ID" | "VALIDATION_FAILED" | "USER_NOT_FOUND" | "TASK_NOT_FOUND" | "EMAIL_TAKEN" | "INTERNAL_ERROR";
+        ErrorCode: "INVALID_BODY" | "INVALID_ID" | "VALIDATION_FAILED" | "USER_NOT_FOUND" | "TASK_NOT_FOUND" | "EMAIL_TAKEN" | "ROUTE_NOT_FOUND" | "METHOD_NOT_ALLOWED" | "PAYLOAD_TOO_LARGE" | "DATABASE_UNAVAILABLE" | "INTERNAL_ERROR";
         User: {
             /** Format: uint32 */
             id: number;
@@ -220,6 +249,14 @@ export interface components {
                 id: string;
             };
         };
+        ReadyResponse: components["schemas"]["SuccessResponse"] & {
+            /** @constant */
+            message: "Service is ready";
+            data: {
+                /** @constant */
+                status: "ready";
+            };
+        };
         CreateUserRequest: {
             name: string;
             /**
@@ -257,6 +294,16 @@ export interface components {
         };
     };
     responses: {
+        /** @description La base de données ne répond pas (`DATABASE_UNAVAILABLE`) */
+        DatabaseUnavailable: {
+            headers: {
+                "Cache-Control": components["headers"]["CacheControlNoStore"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
         /** @description Corps invalide (`INVALID_BODY`) ou erreur de validation (`VALIDATION_FAILED`) */
         BadRequest: {
             headers: {
@@ -311,6 +358,15 @@ export interface components {
                 "application/json": components["schemas"]["ErrorResponse"];
             };
         };
+        /** @description Corps de requête de plus de 1 MiB (`PAYLOAD_TOO_LARGE`) */
+        PayloadTooLarge: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
         /** @description Erreur interne (`INTERNAL_ERROR`) ; les détails techniques ne sont pas exposés */
         InternalServerError: {
             headers: {
@@ -326,7 +382,10 @@ export interface components {
         Id: number;
     };
     requestBodies: never;
-    headers: never;
+    headers: {
+        /** @description Interdit toute mise en cache de la réponse (sondes). */
+        CacheControlNoStore: "no-store";
+    };
     pathItems: never;
 }
 export type $defs = Record<string, never>;
@@ -343,12 +402,35 @@ export interface operations {
             /** @description Service disponible */
             200: {
                 headers: {
+                    "Cache-Control": components["headers"]["CacheControlNoStore"];
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["HealthResponse"];
                 };
             };
+        };
+    };
+    readinessCheck: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Service prêt */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControlNoStore"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReadyResponse"];
+                };
+            };
+            503: components["responses"]["DatabaseUnavailable"];
         };
     };
     listUsers: {
@@ -400,6 +482,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             409: components["responses"]["EmailTaken"];
+            413: components["responses"]["PayloadTooLarge"];
             500: components["responses"]["InternalServerError"];
         };
     };
@@ -484,6 +567,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             404: components["responses"]["UserNotFound"];
+            413: components["responses"]["PayloadTooLarge"];
             500: components["responses"]["InternalServerError"];
         };
     };
@@ -516,6 +600,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             404: components["responses"]["TaskNotFound"];
+            413: components["responses"]["PayloadTooLarge"];
             500: components["responses"]["InternalServerError"];
         };
     };

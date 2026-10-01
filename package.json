@@ -8,6 +8,7 @@
 		"build": "vite build",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
+		"i18n:compile": "paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide --strategy cookie preferredLanguage baseLocale",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --fail-on-warnings",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"lint": "prettier --check . && eslint . --max-warnings 0",
@@ -20,11 +21,13 @@
 		"test:unit": "vitest",
 		"test": "bun run test:unit -- --run",
 		"test:e2e": "playwright test",
-		"verify": "svelte-kit sync && bun run lint && bun run check && bun run test:coverage && bun run build"
+		"verify": "svelte-kit sync && bun run i18n:compile && bun run lint && bun run check && bun run test:coverage && bun run build"
 	},
 	"devDependencies": {
 		"@axe-core/playwright": "^4.13.0",
 		"@eslint/js": "^10.0.1",
+		"@inlang/paraglide-js": "^2.18.2",
+		"@inlang/plugin-message-format": "^4.4.4",
 		"@playwright/test": "^1.63.0",
 		"@stryker-mutator/core": "^10.0.0",
 		"@stryker-mutator/vitest-runner": "^10.0.0",

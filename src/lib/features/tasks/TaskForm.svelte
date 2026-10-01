@@ -2,9 +2,10 @@
 	import { tick } from 'svelte';
 	import type { Attachment } from 'svelte/attachments';
 	import { focusOnMount, ref } from '$lib/ui/attachments';
+	import { m } from '$lib/paraglide/messages';
 	import { getAppState } from '$lib/state/app-state.svelte';
 	import type { User } from '$lib/api/client';
-	import { TaskSchema } from '$lib/validation/schemas';
+	import { TaskSchema, validationMessage } from '$lib/validation/schemas';
 	import { zodIssuesToFieldErrors } from '$lib/validation/field-errors';
 
 	type FieldErrors = { title?: string; description?: string };
@@ -160,12 +161,12 @@
 
 {#if !user}
 	<div class="rounded-lg border border-gray-300 bg-white p-6 shadow">
-		<p class="text-gray-500">Select a user to manage tasks</p>
+		<p class="text-gray-500">{m.tasks_select_user()}</p>
 	</div>
 {:else}
 	<div class="space-y-6">
 		<div class="rounded-lg border border-gray-300 bg-white p-6 shadow">
-			<h2 class="mb-4 text-xl font-bold">Tasks for {user.name}</h2>
+			<h2 class="mb-4 text-xl font-bold">{m.tasks_for_user({ name: user.name })}</h2>
 
 			{#if status.error}
 				<div class="mb-4 rounded bg-red-100 p-3 text-red-700">{status.error}</div>
@@ -179,7 +180,9 @@
 				class="mb-6 space-y-4"
 			>
 				<div>
-					<label for="title" class="block text-sm font-medium text-gray-700">Task Title</label>
+					<label for="title" class="block text-sm font-medium text-gray-700"
+						>{m.tasks_title_label()}</label
+					>
 					<input
 						id="title"
 						type="text"
@@ -191,13 +194,13 @@
 						class="mt-1 w-full rounded border border-gray-300 px-3 py-2"
 					/>
 					{#if fieldErrors.title}<p id="title-error" class="mt-1 text-sm text-red-600">
-							{fieldErrors.title}
+							{validationMessage(fieldErrors.title)}
 						</p>{/if}
 				</div>
 
 				<div>
 					<label for="description" class="block text-sm font-medium text-gray-700">
-						Description
+						{m.tasks_description_label()}
 					</label>
 					<textarea
 						id="description"
@@ -208,7 +211,7 @@
 						aria-invalid={!!fieldErrors.description}
 						aria-describedby={fieldErrors.description ? 'description-error' : undefined}></textarea>
 					{#if fieldErrors.description}<p id="description-error" class="mt-1 text-sm text-red-600">
-							{fieldErrors.description}
+							{validationMessage(fieldErrors.description)}
 						</p>{/if}
 				</div>
 
@@ -217,16 +220,16 @@
 					disabled={status.loading}
 					class="w-full rounded bg-green-700 px-4 py-2 text-white hover:bg-green-800 disabled:bg-gray-400"
 				>
-					{status.loading ? 'Adding...' : 'Add Task'}
+					{status.loading ? m.tasks_adding() : m.tasks_add_button()}
 				</button>
 			</form>
 
 			<div>
 				<h3 {@attach ref(refs, 'tasksHeading')} tabindex="-1" class="mb-3 font-semibold">
-					Tasks ({tasks.tasks.length})
+					{m.tasks_list_heading({ count: tasks.tasks.length })}
 				</h3>
 				{#if tasks.tasks.length === 0}
-					<p class="text-gray-500">No tasks yet</p>
+					<p class="text-gray-500">{m.tasks_empty()}</p>
 				{:else}
 					<ul class="space-y-2">
 						{#each tasks.tasks as task (task.id)}
@@ -248,7 +251,9 @@
 											void handleEditTask();
 										}}
 									>
-										<label class="sr-only" for={`edit-title-${task.id}`}>Task Title</label>
+										<label class="sr-only" for={`edit-title-${task.id}`}
+											>{m.tasks_title_label()}</label
+										>
 										<input
 											id={`edit-title-${task.id}`}
 											type="text"
@@ -265,9 +270,11 @@
 												id={`edit-title-error-${task.id}`}
 												class="text-sm text-red-700"
 											>
-												{editErrors.title}
+												{validationMessage(editErrors.title)}
 											</p>{/if}
-										<label class="sr-only" for={`edit-description-${task.id}`}>Description</label>
+										<label class="sr-only" for={`edit-description-${task.id}`}
+											>{m.tasks_description_label()}</label
+										>
 										<textarea
 											id={`edit-description-${task.id}`}
 											bind:value={editingDescription}
@@ -282,7 +289,7 @@
 												id={`edit-description-error-${task.id}`}
 												class="text-sm text-red-700"
 											>
-												{editErrors.description}
+												{validationMessage(editErrors.description)}
 											</p>{/if}
 										<div class="flex gap-2">
 											<button
@@ -290,14 +297,14 @@
 												disabled={status.loading}
 												class="min-h-6 rounded bg-blue-700 px-2 py-1 text-sm text-white"
 											>
-												Save
+												{m.tasks_save()}
 											</button>
 											<button
 												type="button"
 												onclick={() => closeEditing(task.id)}
 												class="min-h-6 rounded border px-2 py-1 text-sm"
 											>
-												Cancel
+												{m.tasks_cancel()}
 											</button>
 										</div>
 									</form>
@@ -318,16 +325,16 @@
 										type="button"
 										{@attach registerEditButton(task.id)}
 										onclick={() => startEditing(task)}
-										aria-label={`Edit ${task.title}`}
+										aria-label={m.tasks_edit_named({ title: task.title })}
 										class="ml-2 min-h-6 rounded px-1 text-blue-700 hover:text-blue-900"
 									>
-										Edit
+										{m.tasks_edit()}
 									</button>
 								{/if}
 								<button
 									type="button"
 									onclick={() => void handleRemoveTask(task.id)}
-									aria-label={`Delete ${task.title}`}
+									aria-label={m.tasks_delete_named({ title: task.title })}
 									class="ml-2 inline-flex min-h-6 min-w-6 items-center justify-center rounded text-red-700 hover:text-red-900"
 								>
 									<svg

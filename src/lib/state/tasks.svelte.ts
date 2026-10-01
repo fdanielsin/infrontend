@@ -1,4 +1,5 @@
 import { api, type ApiFailure, type ErrorCode, type Task } from '$lib/api/client';
+import { m } from '$lib/paraglide/messages';
 import type { NotificationState } from './notification.svelte';
 import { RequestStatus } from './request-status.svelte';
 
@@ -26,7 +27,7 @@ export class TaskState {
 
 	async load(userId: number, isCurrent: () => boolean) {
 		const result = await this.status.run(() => api.getUserTasks(userId), {
-			fallbackMessage: 'Failed to fetch tasks',
+			fallbackMessage: m.error_fetch_tasks,
 			isCurrent
 		});
 		if (result.success && isCurrent()) this.tasks = result.data;
@@ -35,7 +36,7 @@ export class TaskState {
 	async add(title: string, description: string, userId: number) {
 		const result = await this.status.run(
 			() => api.createTask({ title, description, user_id: userId, completed: false }),
-			{ fallbackMessage: 'Failed to create task' }
+			{ fallbackMessage: m.error_create_task }
 		);
 		if (!result.success) return undefined;
 		this.tasks = [...this.tasks, result.data];
@@ -46,7 +47,7 @@ export class TaskState {
 	// `checked` binding does not rewrite an unchanged value.
 	async toggle(id: number, completed: boolean): Promise<boolean> {
 		const result = await this.status.run(() => api.updateTask(id, { completed }), {
-			fallbackMessage: 'Failed to update task',
+			fallbackMessage: m.error_update_task,
 			tracksLoading: false,
 			isHandled: isTaskGone
 		});
@@ -60,7 +61,7 @@ export class TaskState {
 
 	async edit(id: number, title: string, description: string) {
 		const result = await this.status.run(() => api.updateTask(id, { title, description }), {
-			fallbackMessage: 'Failed to update task',
+			fallbackMessage: m.error_update_task,
 			isHandled: isTaskGone
 		});
 		if (!result.success) {
@@ -75,7 +76,7 @@ export class TaskState {
 
 	async remove(id: number) {
 		const result = await this.status.run(() => api.deleteTask(id), {
-			fallbackMessage: 'Failed to delete task',
+			fallbackMessage: m.error_delete_task,
 			tracksLoading: false,
 			isHandled: isTaskGone
 		});
@@ -88,6 +89,6 @@ export class TaskState {
 	#dropGoneTask(id: number) {
 		if (!this.tasks.some((task) => task.id === id)) return;
 		this.tasks = this.tasks.filter((task) => task.id !== id);
-		this.#notifications.add('Task already deleted', 'info');
+		this.#notifications.add(m.notifications_task_gone(), 'info');
 	}
 }

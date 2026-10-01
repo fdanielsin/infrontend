@@ -27,13 +27,13 @@ describe('createRequestStatus', () => {
 		const tracked = status.run(
 			() => new Promise<ApiResult<number>>((resolve) => (answer = resolve)),
 			{
-				fallbackMessage: 'tracked'
+				fallbackMessage: () => 'tracked'
 			}
 		);
 
 		// WHEN: A background action (tracksLoading false) completes meanwhile.
 		await status.run(() => Promise.resolve({ success: true, data: 1 }), {
-			fallbackMessage: 'background',
+			fallbackMessage: () => 'background',
 			tracksLoading: false
 		});
 
@@ -52,11 +52,11 @@ describe('createRequestStatus', () => {
 		const result = await status.run(
 			// eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- rejecting with a non-Error value is the case under test
 			(): Promise<ApiResult<number>> => Promise.reject('offline'),
-			{ fallbackMessage: 'fallback' }
+			{ fallbackMessage: () => 'fallback' }
 		);
 
 		// THEN: A failure is returned, shown and notified with the generic message.
-		expect(result).toEqual({ success: false, error: 'Unknown error' });
+		expect(result).toEqual({ success: false, error: 'Unknown error', kind: 'unknown' });
 		expect(status.error).toBe('Unknown error');
 		expect(notifications.items).toEqual([expect.objectContaining({ message: 'Unknown error' })]);
 	});
@@ -75,7 +75,7 @@ describe('createRequestStatus with a handled failure', () => {
 
 		// WHEN: The action fails that way.
 		const result = await status.run(() => Promise.resolve(failure), {
-			fallbackMessage: 'fallback',
+			fallbackMessage: () => 'fallback',
 			isHandled: (f) => f.code === 'TASK_NOT_FOUND'
 		});
 
@@ -94,15 +94,15 @@ describe('createRequestStatus with a handled failure', () => {
 		await status.run(
 			() => Promise.resolve({ success: false as const, error: 'Boom', code: 'INTERNAL_ERROR' }),
 			{
-				fallbackMessage: 'fallback',
+				fallbackMessage: () => 'fallback',
 				isHandled: (f) => f.code === 'TASK_NOT_FOUND'
 			}
 		);
 
 		// THEN: It is shown and notified as an error.
-		expect(status.error).toBe('Boom');
+		expect(status.error).toBe('Internal server error');
 		expect(notifications.items).toEqual([
-			expect.objectContaining({ message: 'Boom', type: 'error' })
+			expect.objectContaining({ message: 'Internal server error', type: 'error' })
 		]);
 	});
 });

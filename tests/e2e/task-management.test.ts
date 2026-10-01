@@ -46,9 +46,9 @@ test.describe('Task management', () => {
 
 		// Statistics remain available after task management operations.
 		await page.getByRole('link', { name: /View Statistics/ }).click();
-		await expect(page.getByRole('heading', { name: 'Statistiques' })).toBeVisible();
-		await expect(page.getByText("Total d'utilisateurs créés:")).toBeVisible();
-		await expect(page.getByText('Total de tâches créées:')).toBeVisible();
+		await expect(page.getByRole('heading', { name: 'Statistics' })).toBeVisible();
+		await expect(page.getByText('Total users created:')).toBeVisible();
+		await expect(page.getByText('Total tasks created:')).toBeVisible();
 	});
 
 	test('shows a validation error for an invalid user name (sad path)', async ({ page }) => {

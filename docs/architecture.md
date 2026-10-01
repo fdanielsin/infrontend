@@ -26,6 +26,7 @@ src/
     │   └── stats/
     ├── ui/                 # Composants visuels génériques
     ├── state/              # Classes d'état réactif ($state), fournies par contexte
+    ├── i18n/               # Messages d'erreur de l'API, formats de nombres, noms des langues
     ├── validation/         # Validation UX locale
     ├── config/             # Configuration injectée
     └── testing/            # Utilitaires de test
