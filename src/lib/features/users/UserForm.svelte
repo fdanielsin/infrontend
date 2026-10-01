@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { ref } from '$lib/ui/attachments';
+	import Button from '$lib/ui/Button.svelte';
+	import Card from '$lib/ui/Card.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { getAppState } from '$lib/state/app-state.svelte';
 	import { UserSchema, validationMessage } from '$lib/validation/schemas';
@@ -30,7 +32,7 @@
 	}
 </script>
 
-<div class="rounded-lg border border-gray-300 bg-white p-6 shadow">
+<Card>
 	<h2 class="mb-4 text-xl font-bold">{m.users_create_heading()}</h2>
 
 	{#if status.error}
@@ -82,13 +84,9 @@
 				</p>{/if}
 		</div>
 
-		<button
-			type="submit"
-			disabled={status.loading}
-			class="w-full rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:bg-gray-400"
-		>
+		<Button type="submit" disabled={status.loading}>
 			{status.loading ? m.users_creating() : m.users_create_button()}
-		</button>
+		</Button>
 	</form>
 
 	<div class="mt-6">
@@ -103,7 +101,7 @@
 						<button
 							type="button"
 							class={[
-								'w-full rounded p-1 text-left focus:ring-2 focus:ring-blue-500 focus:outline-none',
+								'w-full rounded-control p-1 text-left focus:ring-2 focus:ring-focus focus:outline-none',
 								selected && 'bg-blue-100 ring-2 ring-blue-600'
 							]}
 							aria-pressed={selected}
@@ -117,4 +115,4 @@
 			</ul>
 		{/if}
 	</div>
-</div>
+</Card>

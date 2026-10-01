@@ -2,6 +2,9 @@
 	import { tick } from 'svelte';
 	import type { Attachment } from 'svelte/attachments';
 	import { focusOnMount, ref } from '$lib/ui/attachments';
+	import Button from '$lib/ui/Button.svelte';
+	import Card from '$lib/ui/Card.svelte';
+	import IconButton from '$lib/ui/IconButton.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { getAppState } from '$lib/state/app-state.svelte';
 	import type { User } from '$lib/api/client';
@@ -160,12 +163,12 @@
 <svelte:window onkeydown={cancelEditingOnEscape} />
 
 {#if !user}
-	<div class="rounded-lg border border-gray-300 bg-white p-6 shadow">
+	<Card>
 		<p class="text-gray-500">{m.tasks_select_user()}</p>
-	</div>
+	</Card>
 {:else}
 	<div class="space-y-6">
-		<div class="rounded-lg border border-gray-300 bg-white p-6 shadow">
+		<Card>
 			<h2 class="mb-4 text-xl font-bold">{m.tasks_for_user({ name: user.name })}</h2>
 
 			{#if status.error}
@@ -215,13 +218,9 @@
 						</p>{/if}
 				</div>
 
-				<button
-					type="submit"
-					disabled={status.loading}
-					class="w-full rounded bg-green-700 px-4 py-2 text-white hover:bg-green-800 disabled:bg-gray-400"
-				>
+				<Button variant="success" type="submit" disabled={status.loading}>
 					{status.loading ? m.tasks_adding() : m.tasks_add_button()}
-				</button>
+				</Button>
 			</form>
 
 			<div>
@@ -292,20 +291,12 @@
 												{validationMessage(editErrors.description)}
 											</p>{/if}
 										<div class="flex gap-2">
-											<button
-												type="submit"
-												disabled={status.loading}
-												class="min-h-6 rounded bg-blue-700 px-2 py-1 text-sm text-white"
-											>
+											<Button variant="strong" type="submit" disabled={status.loading}>
 												{m.tasks_save()}
-											</button>
-											<button
-												type="button"
-												onclick={() => closeEditing(task.id)}
-												class="min-h-6 rounded border px-2 py-1 text-sm"
-											>
+											</Button>
+											<Button variant="outline" onclick={() => closeEditing(task.id)}>
 												{m.tasks_cancel()}
-											</button>
+											</Button>
 										</div>
 									</form>
 								{:else}
@@ -321,38 +312,26 @@
 										</label>
 										<p class="text-sm text-gray-600">{task.description}</p>
 									</div>
-									<button
-										type="button"
+									<Button
+										variant="link"
 										{@attach registerEditButton(task.id)}
 										onclick={() => startEditing(task)}
 										aria-label={m.tasks_edit_named({ title: task.title })}
-										class="ml-2 min-h-6 rounded px-1 text-blue-700 hover:text-blue-900"
+										class="ml-2"
 									>
 										{m.tasks_edit()}
-									</button>
+									</Button>
 								{/if}
-								<button
-									type="button"
+								<IconButton
+									label={m.tasks_delete_named({ title: task.title })}
 									onclick={() => void handleRemoveTask(task.id)}
-									aria-label={m.tasks_delete_named({ title: task.title })}
-									class="ml-2 inline-flex min-h-6 min-w-6 items-center justify-center rounded text-red-700 hover:text-red-900"
-								>
-									<svg
-										aria-hidden="true"
-										viewBox="0 0 20 20"
-										class="h-4 w-4"
-										fill="none"
-										stroke="currentColor"
-										stroke-width="2"
-									>
-										<path d="M5 5l10 10M15 5L5 15" />
-									</svg>
-								</button>
+									class="ml-2"
+								/>
 							</li>
 						{/each}
 					</ul>
 				{/if}
 			</div>
-		</div>
+		</Card>
 	</div>
 {/if}

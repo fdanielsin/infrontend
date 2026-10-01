@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { m } from '$lib/paraglide/messages';
+	import IconButton from '$lib/ui/IconButton.svelte';
 	import { getAppState } from '$lib/state/app-state.svelte';
 	import type { Notification as Toast } from '$lib/state/notification.svelte';
 
@@ -68,23 +69,12 @@
 		}}
 	>
 		<p class="flex-1">{toast.message}</p>
-		<button
-			type="button"
-			onclick={(event) => void dismiss(toast.id, event.currentTarget)}
-			aria-label={m.notifications_dismiss()}
-			class="inline-flex min-h-6 min-w-6 items-center justify-center rounded hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-		>
-			<svg
-				aria-hidden="true"
-				viewBox="0 0 20 20"
-				class="h-4 w-4"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="2"
-			>
-				<path d="M5 5l10 10M15 5L5 15" />
-			</svg>
-		</button>
+		<IconButton
+			tone="inverse"
+			label={m.notifications_dismiss()}
+			onclick={(event: MouseEvent & { currentTarget: HTMLButtonElement }) =>
+				void dismiss(toast.id, event.currentTarget)}
+		/>
 	</div>
 {/snippet}
 

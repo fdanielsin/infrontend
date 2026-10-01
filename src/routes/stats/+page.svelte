@@ -5,6 +5,7 @@
 	import { formatNumber } from '$lib/i18n/format';
 	import LanguageSwitcher from '$lib/ui/LanguageSwitcher.svelte';
 	import { m } from '$lib/paraglide/messages';
+	import Card from '$lib/ui/Card.svelte';
 	import { getAppState } from '$lib/state/app-state.svelte';
 	import { RequestStatus } from '$lib/state/request-status.svelte';
 
@@ -37,9 +38,9 @@
 		</h1>
 
 		{#if status.loading}
-			<div class="rounded-lg bg-white p-8 text-center shadow-lg">
+			<Card variant="flat" padding="lg" class="text-center">
 				<p class="text-gray-600">{m.stats_loading()}</p>
-			</div>
+			</Card>
 		{:else if status.error}
 			<div class="rounded-lg border border-red-200 bg-red-50 p-8 shadow-lg">
 				<p class="font-semibold text-red-700">
@@ -49,23 +50,23 @@
 			</div>
 		{:else if stats}
 			<div class="grid grid-cols-2 gap-6">
-				<div class="rounded-lg bg-white p-6 shadow-lg transition hover:shadow-xl">
+				<Card variant="raised">
 					<div class="text-5xl font-bold text-blue-600">{formatNumber(stats.users)}</div>
 					<p class="mt-2 text-lg text-gray-600">
 						<span aria-hidden="true">👥</span>
 						{m.stats_users()}
 					</p>
-				</div>
-				<div class="rounded-lg bg-white p-6 shadow-lg transition hover:shadow-xl">
+				</Card>
+				<Card variant="raised">
 					<div class="text-5xl font-bold text-indigo-600">{formatNumber(stats.tasks)}</div>
 					<p class="mt-2 text-lg text-gray-600">
 						<span aria-hidden="true">✅</span>
 						{m.stats_tasks()}
 					</p>
-				</div>
+				</Card>
 			</div>
 
-			<div class="mt-8 rounded-lg bg-white p-6 shadow-lg">
+			<Card variant="flat" class="mt-8">
 				<h2 class="mb-4 text-lg font-semibold text-gray-800">{m.stats_summary()}</h2>
 				<ul class="space-y-2 text-gray-600">
 					<li>• {m.stats_total_users()} <strong>{formatNumber(stats.users)}</strong></li>
@@ -82,7 +83,7 @@
 						>
 					</li>
 				</ul>
-			</div>
+			</Card>
 		{:else}
 			<div class="rounded-lg border border-yellow-200 bg-yellow-50 p-8 shadow-lg">
 				<p class="text-yellow-700">{m.stats_no_data()}</p>
