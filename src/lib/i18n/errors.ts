@@ -25,6 +25,7 @@ function isKnownCode(code: string): code is ErrorCode {
 export function failureMessage(failure: ApiFailure, fallback: () => string): string {
 	if (failure.code && isKnownCode(failure.code)) return MESSAGE_BY_CODE[failure.code]();
 	if (failure.kind === 'invalid_response') return m.error_invalid_response();
+	if (failure.kind === 'timeout') return m.error_timeout();
 	if (failure.kind === 'unknown') return m.error_unknown();
 	return failure.error || fallback();
 }

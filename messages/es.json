@@ -64,5 +64,6 @@
 	"error_route_not_found": "Ruta no encontrada",
 	"error_method_not_allowed": "Método no permitido",
 	"error_payload_too_large": "Cuerpo de la solicitud demasiado grande",
-	"error_database_unavailable": "Base de datos no disponible"
+	"error_database_unavailable": "Base de datos no disponible",
+	"error_timeout": "El servidor tarda demasiado en responder"
 }

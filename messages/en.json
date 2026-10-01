@@ -64,5 +64,6 @@
 	"error_route_not_found": "Route not found",
 	"error_method_not_allowed": "Method not allowed",
 	"error_payload_too_large": "Request body too large",
-	"error_database_unavailable": "Database unavailable"
+	"error_database_unavailable": "Database unavailable",
+	"error_timeout": "The server took too long to respond"
 }

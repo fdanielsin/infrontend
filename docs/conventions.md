@@ -34,7 +34,13 @@ nouvelles instructions ni utilisées comme référence de validation.
   (`client.ts`) : une réponse qui ne le respecte pas devient un échec
   `invalid_response`, jamais une donnée à moitié exacte. Les corps d'erreur ne
   sont pas validés (le contrat peut ajouter des codes) ; `health` ne l'est pas non
-  plus, le contrat y fige des constantes (version, messages).
+  plus, le contrat y fige des constantes (version, messages). Les champs inconnus
+  dans `data` sont conservés mais jamais lus : ne pas itérer sur les clés d'une
+  réponse.
+- Un appel qui ne reçoit aucune réponse en 10 s (`API_TIMEOUT_MS`) échoue avec
+  `kind: 'timeout'` et le message traduit `error_timeout`, sans relance
+  automatique. Le message ne suggère pas de renvoyer : une écriture a pu aboutir
+  côté serveur (le contrat n'a pas de clé d'idempotence).
 - Les erreurs ne sont pas transformées silencieusement en succès ou en liste
   vide.
 - Les tests API couvrent les succès, les erreurs et les réponses sans contenu.

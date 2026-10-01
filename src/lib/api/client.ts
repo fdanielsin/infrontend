@@ -45,7 +45,7 @@ export interface ApiFailure {
 	success: false;
 	error: string;
 	// Failures born in the client, which the interface words itself (the server sent no message).
-	kind?: 'invalid_response' | 'unknown';
+	kind?: 'invalid_response' | 'timeout' | 'unknown';
 	status?: number;
 	// Stable codes are listed by `ErrorCode`, but the contract lets the server add new ones.
 	code?: string;
@@ -56,15 +56,27 @@ export type ApiResult<T> = ApiSuccess<T> | ApiFailure;
 const API_BASE = PUBLIC_API_URL || 'http://localhost:8080';
 const INVALID_RESPONSE = 'Invalid server response';
 
+// Longest wait for an answer. The backend cuts its own readiness probe at 2 s, so this leaves room
+// for a slow database without leaving the screen waiting indefinitely.
+export const API_TIMEOUT_MS = 10_000;
+
 // The body is read as text and parsed here: a malformed JSON body must become an
 // ApiFailure carrying the HTTP status, not an exception.
-const http = createClient<paths>({
-	baseUrl: API_BASE,
-	fetch: (request) => {
-		request.headers.set('Accept-Language', getLocale());
-		return globalThis.fetch(request);
-	}
-});
+function createHttp(timeoutMs: number) {
+	return createClient<paths>({
+		baseUrl: API_BASE,
+		fetch: (request) => {
+			request.headers.set('Accept-Language', getLocale());
+			const timeout = AbortSignal.timeout(timeoutMs);
+			// Older browsers lack AbortSignal.any: they keep the timeout only.
+			const signal =
+				typeof AbortSignal.any === 'function'
+					? AbortSignal.any([request.signal, timeout])
+					: timeout;
+			return globalThis.fetch(new Request(request, { signal }));
+		}
+	});
+}
 
 interface Outcome {
 	data?: unknown;
@@ -118,23 +130,41 @@ async function toResult<T>(
 		const checked = schema.safeParse(body);
 		return checked.success ? (checked.data as ApiSuccess<T>) : invalidResponse(response.status);
 	} catch (error) {
-		return error instanceof Error
-			? { success: false, error: error.message }
-			: { success: false, error: 'Unknown error', kind: 'unknown' };
+		return failureFromThrown(error);
 	}
 }
 
+// What a rejected fetch gives. The checks are structural, not `instanceof Error`: a DOMException
+// from another realm (a test environment, an iframe) is not an Error but carries a name and message.
+function failureFromThrown(error: unknown): ApiFailure {
+	const thrown =
+		typeof error === 'object' && error !== null
+			? (error as { name?: unknown; message?: unknown })
+			: undefined;
+	if (thrown?.name === 'TimeoutError') {
+		return { success: false, error: 'Request timed out', kind: 'timeout' };
+	}
+	if (typeof thrown?.message === 'string') return { success: false, error: thrown.message };
+	return { success: false, error: 'Unknown error', kind: 'unknown' };
+}
+
 export class ApiClient {
+	readonly #http: ReturnType<typeof createHttp>;
+
+	constructor({ timeoutMs = API_TIMEOUT_MS }: { timeoutMs?: number } = {}) {
+		this.#http = createHttp(timeoutMs);
+	}
+
 	// Users
 	async getUsers(): Promise<ApiResult<SuccessData<paths['/api/v1/users']['get']>>> {
-		return toResult(() => http.GET('/api/v1/users', { parseAs: 'text' }), {
+		return toResult(() => this.#http.GET('/api/v1/users', { parseAs: 'text' }), {
 			schema: zListUsersResponse
 		});
 	}
 
 	async getUser(id: number): Promise<ApiResult<SuccessData<paths['/api/v1/users/{id}']['get']>>> {
 		return toResult(
-			() => http.GET('/api/v1/users/{id}', { params: { path: { id } }, parseAs: 'text' }),
+			() => this.#http.GET('/api/v1/users/{id}', { params: { path: { id } }, parseAs: 'text' }),
 			{ schema: zGetUserResponse }
 		);
 	}
@@ -142,7 +172,7 @@ export class ApiClient {
 	async createUser(
 		user: CreateUserRequest
 	): Promise<ApiResult<SuccessData<paths['/api/v1/users']['post']>>> {
-		return toResult(() => http.POST('/api/v1/users', { body: user, parseAs: 'text' }), {
+		return toResult(() => this.#http.POST('/api/v1/users', { body: user, parseAs: 'text' }), {
 			schema: zCreateUserResponse
 		});
 	}
@@ -153,7 +183,7 @@ export class ApiClient {
 	): Promise<ApiResult<SuccessData<paths['/api/v1/users/{id}/tasks']['get']>>> {
 		return toResult(
 			() =>
-				http.GET('/api/v1/users/{id}/tasks', {
+				this.#http.GET('/api/v1/users/{id}/tasks', {
 					params: { path: { id: userId } },
 					parseAs: 'text'
 				}),
@@ -164,7 +194,7 @@ export class ApiClient {
 	async createTask(
 		task: CreateTaskRequest
 	): Promise<ApiResult<SuccessData<paths['/api/v1/tasks']['post']>>> {
-		return toResult(() => http.POST('/api/v1/tasks', { body: task, parseAs: 'text' }), {
+		return toResult(() => this.#http.POST('/api/v1/tasks', { body: task, parseAs: 'text' }), {
 			schema: zCreateTaskResponse
 		});
 	}
@@ -175,7 +205,11 @@ export class ApiClient {
 	): Promise<ApiResult<SuccessData<paths['/api/v1/tasks/{id}']['put']>>> {
 		return toResult(
 			() =>
-				http.PUT('/api/v1/tasks/{id}', { params: { path: { id } }, body: task, parseAs: 'text' }),
+				this.#http.PUT('/api/v1/tasks/{id}', {
+					params: { path: { id } },
+					body: task,
+					parseAs: 'text'
+				}),
 			{ schema: zUpdateTaskResponse }
 		);
 	}
@@ -184,13 +218,13 @@ export class ApiClient {
 		id: number
 	): Promise<ApiResult<SuccessData<paths['/api/v1/tasks/{id}']['delete']>>> {
 		return toResult(
-			() => http.DELETE('/api/v1/tasks/{id}', { params: { path: { id } }, parseAs: 'text' }),
+			() => this.#http.DELETE('/api/v1/tasks/{id}', { params: { path: { id } }, parseAs: 'text' }),
 			{ schema: zDeleteTaskResponse, hasData: false }
 		);
 	}
 
 	async getStats(): Promise<ApiResult<SuccessData<paths['/api/v1/stats']['get']>>> {
-		return toResult(() => http.GET('/api/v1/stats', { parseAs: 'text' }), {
+		return toResult(() => this.#http.GET('/api/v1/stats', { parseAs: 'text' }), {
 			schema: zGetStatsResponse
 		});
 	}
@@ -198,7 +232,7 @@ export class ApiClient {
 	// Health: not validated, the contract pins its constants (version, messages) which would turn
 	// a backend upgrade into an invalid response.
 	async health(): Promise<ApiResult<SuccessData<paths['/health']['get']>>> {
-		return toResult(() => http.GET('/health', { parseAs: 'text' }));
+		return toResult(() => this.#http.GET('/health', { parseAs: 'text' }));
 	}
 }
 

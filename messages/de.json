@@ -64,5 +64,6 @@
 	"error_route_not_found": "Route nicht gefunden",
 	"error_method_not_allowed": "Methode nicht erlaubt",
 	"error_payload_too_large": "Anfrageinhalt zu groß",
-	"error_database_unavailable": "Datenbank nicht verfügbar"
+	"error_database_unavailable": "Datenbank nicht verfügbar",
+	"error_timeout": "Der Server antwortet zu langsam"
 }

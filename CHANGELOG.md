@@ -6,6 +6,8 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- A call that gets no answer within 10 seconds fails with a translated message instead of
+  waiting forever.
 - Interface in English, French, German and Spanish: the browser language decides
   on the first visit, then a selector in the header (kept in a cookie set only
   on that choice). API errors are translated from their `error_code`, numbers
