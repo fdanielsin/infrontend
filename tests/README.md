@@ -64,6 +64,13 @@ composants mockent `$lib/api/client` avec `vi.mock` ; les tests du client, et
 ceux qui vérifient ce que l'état fait d'une panne de transport
 (`stores/stores-real-client.test.ts`), remplacent seulement `fetch`.
 
+Le client valide chaque réponse contre le contrat : une réponse simulée doit
+être complète et conforme, sinon elle devient un échec `invalid_response`.
+Pour tester le délai, instancier `new ApiClient({ timeoutMs })` avec un fetch
+qui ne répond jamais et rejette sur `request.signal`. `AbortSignal.timeout`
+tourne sur un minuteur natif que les faux minuteurs de Vitest ne pilotent pas :
+`api/timeout.test.ts` le double par un équivalent sur le `setTimeout` simulé.
+
 Chaque test construit son propre `new AppState()` (ou `NotificationState`,
 `RequestStatus`) : aucun état de module n'est partagé, il n'y a rien à remettre
 à zéro entre deux tests. Le test prépare et inspecte l'état directement
