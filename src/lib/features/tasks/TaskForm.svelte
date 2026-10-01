@@ -2,6 +2,7 @@
 	import { tick } from 'svelte';
 	import type { Attachment } from 'svelte/attachments';
 	import { focusOnMount, ref } from '$lib/ui/attachments';
+	import Alert from '$lib/ui/Alert.svelte';
 	import Button from '$lib/ui/Button.svelte';
 	import Card from '$lib/ui/Card.svelte';
 	import IconButton from '$lib/ui/IconButton.svelte';
@@ -165,7 +166,7 @@
 
 {#if !user}
 	<Card>
-		<p class="text-gray-500">{m.tasks_select_user()}</p>
+		<p class="text-subtle">{m.tasks_select_user()}</p>
 	</Card>
 {:else}
 	<div class="space-y-6">
@@ -173,7 +174,7 @@
 			<h2 class="mb-4 text-xl font-bold">{m.tasks_for_user({ name: user.name })}</h2>
 
 			{#if status.error}
-				<div class="mb-4 rounded bg-red-100 p-3 text-red-700">{status.error}</div>
+				<Alert class="mb-4">{status.error}</Alert>
 			{/if}
 
 			<form
@@ -216,11 +217,11 @@
 					{m.tasks_list_heading({ count: tasks.tasks.length })}
 				</h3>
 				{#if tasks.tasks.length === 0}
-					<p class="text-gray-500">{m.tasks_empty()}</p>
+					<p class="text-subtle">{m.tasks_empty()}</p>
 				{:else}
 					<ul class="space-y-2">
 						{#each tasks.tasks as task (task.id)}
-							<li class="flex items-start rounded bg-gray-100 p-3">
+							<li class="flex items-start rounded-control bg-surface-muted p-3">
 								<input
 									id={`task-${task.id}`}
 									type="checkbox"
@@ -276,14 +277,11 @@
 									<div class="flex-1">
 										<label
 											for={`task-${task.id}`}
-											class={[
-												'block',
-												task.completed ? 'text-gray-600 line-through' : 'font-medium'
-											]}
+											class={['block', task.completed ? 'text-muted line-through' : 'font-medium']}
 										>
 											{task.title}
 										</label>
-										<p class="text-sm text-gray-600">{task.description}</p>
+										<p class="text-sm text-muted">{task.description}</p>
 									</div>
 									<Button
 										variant="link"

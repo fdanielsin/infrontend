@@ -1,9 +1,7 @@
 <script lang="ts">
 	import { tick } from 'svelte';
-	import { m } from '$lib/paraglide/messages';
-	import IconButton from '$lib/ui/IconButton.svelte';
+	import ToastItem from '$lib/ui/ToastItem.svelte';
 	import { getAppState } from '$lib/state/app-state.svelte';
-	import type { Notification as Toast } from '$lib/state/notification.svelte';
 
 	const { notifications } = getAppState();
 
@@ -45,68 +43,26 @@
 	}
 </script>
 
-{#snippet toastView(toast: Toast)}
-	<!-- Hover and focus only pause the timer; the close button is the keyboard path. -->
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div
-		data-toast
-		class={[
-			'animate-slide-in flex items-start gap-3 rounded-lg px-4 py-3 text-white shadow-lg',
-			{
-				'bg-green-700': toast.type === 'success',
-				'bg-red-700': toast.type === 'error',
-				'bg-blue-700': toast.type === 'info',
-				'bg-amber-700': toast.type === 'warning'
-			}
-		]}
-		onmouseenter={() => notifications.pause(toast.id)}
-		onmouseleave={(event) => {
-			if (!event.currentTarget.matches(':focus-within')) notifications.resume(toast.id);
-		}}
-		onfocusin={() => notifications.pause(toast.id)}
-		onfocusout={(event) => {
-			if (!event.currentTarget.matches(':hover')) notifications.resume(toast.id);
-		}}
-	>
-		<p class="flex-1">{toast.message}</p>
-		<IconButton
-			tone="inverse"
-			label={m.notifications_dismiss()}
-			onclick={(event: MouseEvent & { currentTarget: HTMLButtonElement }) =>
-				void dismiss(toast.id, event.currentTarget)}
-		/>
-	</div>
-{/snippet}
-
 <!-- The handler only records where focus came from; it adds no interaction. -->
 <div class="fixed top-0 right-0 z-50 flex flex-col gap-2 p-4" onfocusin={rememberFocusOrigin}>
 	<div role="status" aria-atomic="false" class="space-y-2">
 		{#each notifications.statuses as toast (toast.id)}
-			{@render toastView(toast)}
+			<ToastItem
+				{toast}
+				onpause={() => notifications.pause(toast.id)}
+				onresume={() => notifications.resume(toast.id)}
+				ondismiss={(closeButton: HTMLElement) => void dismiss(toast.id, closeButton)}
+			/>
 		{/each}
 	</div>
 	<div role="alert" aria-atomic="false" class="space-y-2">
 		{#each notifications.alerts as toast (toast.id)}
-			{@render toastView(toast)}
+			<ToastItem
+				{toast}
+				onpause={() => notifications.pause(toast.id)}
+				onresume={() => notifications.resume(toast.id)}
+				ondismiss={(closeButton: HTMLElement) => void dismiss(toast.id, closeButton)}
+			/>
 		{/each}
 	</div>
 </div>
-
-<style>
-	@keyframes slideIn {
-		from {
-			transform: translateX(400px);
-			opacity: 0;
-		}
-		to {
-			transform: translateX(0);
-			opacity: 1;
-		}
-	}
-
-	@media (prefers-reduced-motion: no-preference) {
-		.animate-slide-in {
-			animation: slideIn 0.3s ease-out;
-		}
-	}
-</style>

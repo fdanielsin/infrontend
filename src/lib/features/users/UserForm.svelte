@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { ref } from '$lib/ui/attachments';
+	import Alert from '$lib/ui/Alert.svelte';
 	import Button from '$lib/ui/Button.svelte';
 	import Card from '$lib/ui/Card.svelte';
 	import TextField from '$lib/ui/TextField.svelte';
@@ -37,7 +38,7 @@
 	<h2 class="mb-4 text-xl font-bold">{m.users_create_heading()}</h2>
 
 	{#if status.error}
-		<div class="mb-4 rounded bg-red-100 p-3 text-red-700">{status.error}</div>
+		<Alert class="mb-4">{status.error}</Alert>
 	{/if}
 
 	<form
@@ -78,12 +79,12 @@
 	<div class="mt-6">
 		<h3 class="mb-3 font-semibold">{m.users_list_heading({ count: users.users.length })}</h3>
 		{#if users.users.length === 0}
-			<p class="text-gray-500">{m.users_empty()}</p>
+			<p class="text-subtle">{m.users_empty()}</p>
 		{:else}
 			<ul class="space-y-2">
 				{#each users.users as user (user.id)}
 					{@const selected = users.selected?.id === user.id}
-					<li class="rounded bg-gray-100 p-3">
+					<li class="rounded-control bg-surface-muted p-3">
 						<button
 							type="button"
 							class={[
@@ -94,7 +95,7 @@
 							onclick={() => users.select(user.id)}
 						>
 							<p class="font-medium">{user.name}</p>
-							<p class="text-sm text-gray-600">{user.email}</p>
+							<p class="text-sm text-muted">{user.email}</p>
 						</button>
 					</li>
 				{/each}

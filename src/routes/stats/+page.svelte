@@ -39,7 +39,7 @@
 
 		{#if status.loading}
 			<Card variant="flat" padding="lg" class="text-center">
-				<p class="text-gray-600">{m.stats_loading()}</p>
+				<p class="text-muted">{m.stats_loading()}</p>
 			</Card>
 		{:else if status.error}
 			<div class="rounded-lg border border-red-200 bg-red-50 p-8 shadow-lg">
@@ -52,14 +52,14 @@
 			<div class="grid grid-cols-2 gap-6">
 				<Card variant="raised">
 					<div class="text-5xl font-bold text-blue-600">{formatNumber(stats.users)}</div>
-					<p class="mt-2 text-lg text-gray-600">
+					<p class="mt-2 text-lg text-muted">
 						<span aria-hidden="true">👥</span>
 						{m.stats_users()}
 					</p>
 				</Card>
 				<Card variant="raised">
 					<div class="text-5xl font-bold text-indigo-600">{formatNumber(stats.tasks)}</div>
-					<p class="mt-2 text-lg text-gray-600">
+					<p class="mt-2 text-lg text-muted">
 						<span aria-hidden="true">✅</span>
 						{m.stats_tasks()}
 					</p>
@@ -68,7 +68,7 @@
 
 			<Card variant="flat" class="mt-8">
 				<h2 class="mb-4 text-lg font-semibold text-gray-800">{m.stats_summary()}</h2>
-				<ul class="space-y-2 text-gray-600">
+				<ul class="space-y-2 text-muted">
 					<li>• {m.stats_total_users()} <strong>{formatNumber(stats.users)}</strong></li>
 					<li>• {m.stats_total_tasks()} <strong>{formatNumber(stats.tasks)}</strong></li>
 					<li>
@@ -93,7 +93,7 @@
 		<div class="mt-8">
 			<a
 				href={resolve('/')}
-				class="inline-block rounded-lg bg-blue-600 px-6 py-2 text-white transition hover:bg-blue-700"
+				class="inline-block rounded-card bg-primary px-6 py-2 text-white transition hover:bg-primary-hover"
 			>
 				{m.stats_back_home()}
 			</a>

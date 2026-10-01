@@ -31,7 +31,7 @@
 				<span aria-hidden="true">📋</span>
 				{m.home_heading()}
 			</h1>
-			<p class="mt-2 text-gray-600">{m.home_subtitle()}</p>
+			<p class="mt-2 text-muted">{m.home_subtitle()}</p>
 			<div class="mt-4">
 				<a
 					href={resolve('/stats')}
