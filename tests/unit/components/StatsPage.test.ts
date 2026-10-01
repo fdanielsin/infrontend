@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render } from '@testing-library/svelte';
-import { get } from 'svelte/store';
+import { cleanup } from '@testing-library/svelte';
 import { api, type ApiResult, type Stats } from '$lib/api/client';
-import { notifications } from '$lib/stores/notification';
+import { AppState } from '$lib/state/app-state.svelte';
 import StatsPage from '../../../src/routes/stats/+page.svelte';
+import { renderWithApp } from '../support/render-with-app';
 
 vi.mock('$lib/api/client', () => ({
 	api: { getStats: vi.fn() }
@@ -17,8 +17,11 @@ function averageText(container: HTMLElement): string | undefined {
 }
 
 describe('stats page', () => {
+	let app: AppState;
+
 	beforeEach(() => {
 		vi.resetAllMocks();
+		app = new AppState();
 	});
 
 	afterEach(() => {
@@ -30,7 +33,7 @@ describe('stats page', () => {
 		vi.mocked(api.getStats).mockResolvedValue({ success: true, data: { users: 3, tasks: 10 } });
 
 		// WHEN: The page is rendered.
-		const { findByText, container } = render(StatsPage);
+		const { findByText, container } = renderWithApp(app, StatsPage);
 
 		// THEN: Both counters and 10 / 3 rounded are shown.
 		expect(await findByText('Résumé')).toBeTruthy();
@@ -43,7 +46,7 @@ describe('stats page', () => {
 		vi.mocked(api.getStats).mockResolvedValue({ success: true, data: { users: 0, tasks: 2 } });
 
 		// WHEN: The page is rendered.
-		const { findByText, container } = render(StatsPage);
+		const { findByText, container } = renderWithApp(app, StatsPage);
 
 		// THEN: The average is 0, not NaN or Infinity.
 		await findByText('Résumé');
@@ -55,7 +58,7 @@ describe('stats page', () => {
 		vi.mocked(api.getStats).mockResolvedValue({ success: false, error: 'HTTP 500' });
 
 		// WHEN: The page is rendered.
-		const { findByText } = render(StatsPage);
+		const { findByText } = renderWithApp(app, StatsPage);
 
 		// THEN: The error is displayed.
 		expect(await findByText('Erreur: HTTP 500')).toBeTruthy();
@@ -66,7 +69,7 @@ describe('stats page', () => {
 		vi.mocked(api.getStats).mockResolvedValue({ success: true, data: { users: 3, tasks: 1 } });
 
 		// WHEN: The page is rendered.
-		const { findByText, container } = render(StatsPage);
+		const { findByText, container } = renderWithApp(app, StatsPage);
 
 		// THEN: 1 / 3 is shown as 0.33.
 		await findByText('Résumé');
@@ -75,18 +78,16 @@ describe('stats page', () => {
 
 	it('notifies a stats failure as an error (sad path, QM-02)', async () => {
 		// GIVEN: The API reports a failure.
-		notifications.set([]);
 		vi.mocked(api.getStats).mockResolvedValue({ success: false, error: 'HTTP 500' });
 
 		// WHEN: The page is rendered.
-		const { findByText } = render(StatsPage);
+		const { findByText } = renderWithApp(app, StatsPage);
 
 		// THEN: The error is displayed and notified.
 		await findByText('Erreur: HTTP 500');
-		expect(get(notifications)).toEqual([
+		expect(app.notifications.items).toEqual([
 			expect.objectContaining({ message: 'HTTP 500', type: 'error' })
 		]);
-		notifications.set([]);
 	});
 
 	it('shows the loading state until the answer, then the error when the call throws (exception)', async () => {
@@ -97,7 +98,7 @@ describe('stats page', () => {
 		);
 
 		// WHEN: The page is rendered.
-		const { getByText, findByText, queryByText } = render(StatsPage);
+		const { getByText, findByText, queryByText } = renderWithApp(app, StatsPage);
 
 		// THEN: The loading message is shown, then replaced by the error.
 		expect(getByText('Chargement des statistiques...')).toBeTruthy();

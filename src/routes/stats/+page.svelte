@@ -2,14 +2,16 @@
 	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
 	import { api, type Stats } from '$lib/api/client';
-	import { createRequestStatus } from '$lib/stores/request-status';
+	import { getAppState } from '$lib/state/app-state.svelte';
+	import { RequestStatus } from '$lib/state/request-status.svelte';
 
-	const { loading, error, run } = createRequestStatus();
-	loading.set(true);
+	const status = new RequestStatus(getAppState().notifications, true);
 	let stats = $state.raw<Stats | null>(null);
 
 	onMount(async () => {
-		const result = await run(() => api.getStats(), { fallbackMessage: 'Failed to fetch stats' });
+		const result = await status.run(() => api.getStats(), {
+			fallbackMessage: 'Failed to fetch stats'
+		});
 		if (result.success) stats = result.data;
 	});
 </script>
@@ -28,14 +30,14 @@
 			<span aria-hidden="true">📊</span> Statistiques
 		</h1>
 
-		{#if $loading}
+		{#if status.loading}
 			<div class="rounded-lg bg-white p-8 text-center shadow-lg">
 				<p class="text-gray-600">Chargement des statistiques...</p>
 			</div>
-		{:else if $error}
+		{:else if status.error}
 			<div class="rounded-lg border border-red-200 bg-red-50 p-8 shadow-lg">
 				<p class="font-semibold text-red-700">
-					<span aria-hidden="true">❌</span> Erreur: {$error}
+					<span aria-hidden="true">❌</span> Erreur: {status.error}
 				</p>
 			</div>
 		{:else if stats}

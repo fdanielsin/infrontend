@@ -3,11 +3,12 @@
 ## Statut
 
 Architecture retenue pour une modularisation progressive. `users` et `tasks`
-sont réellement modularisés (composant et store dédiés chacun) ; `stats`
-reste dans sa route (`routes/stats/+page.svelte`), rien n'y justifie encore
-un dossier de fonctionnalité séparé. `loading`/`error` sont propres à chaque domaine (`usersStatus`,
-`tasksStatus`, fabrique `createRequestStatus` dans
-`lib/stores/request-status.ts`).
+sont réellement modularisés (composant dédié chacun) ; `stats` reste dans sa
+route (`routes/stats/+page.svelte`), rien n'y justifie encore un dossier de
+fonctionnalité séparé. L'état partagé vit dans des classes `.svelte.ts`
+(`lib/state/`), créées une fois dans `+layout.svelte` et fournies par
+`createContext` ; `loading`/`error` sont propres à chaque domaine (une
+instance de `RequestStatus` par classe d'état).
 
 ## Cible
 
@@ -24,7 +25,7 @@ src/
     │   ├── tasks/
     │   └── stats/
     ├── ui/                 # Composants visuels génériques
-    ├── stores/             # État partagé transversal réellement nécessaire
+    ├── state/              # Classes d'état réactif ($state), fournies par contexte
     ├── validation/         # Validation UX locale
     ├── config/             # Configuration injectée
     └── testing/            # Utilitaires de test
@@ -78,21 +79,23 @@ type LoadState<T> =
 	| { status: 'error'; message: string };
 ```
 
-Les stores sont une responsabilité explicite de l'architecture :
+L'état partagé est une responsabilité explicite de l'architecture :
 
-- un store de fonctionnalité vit près de sa fonctionnalité lorsqu'il porte son
-  état et ses actions (`users`, `tasks`, `stats`) ;
-- un store transversal vit dans `lib/stores` uniquement lorsqu'il est partagé
-  entre plusieurs fonctionnalités ou routes ;
+- il est porté par des classes `.svelte.ts` dans `lib/state/` (`UserState`,
+  `TaskState`, `NotificationState`, `RequestStatus`), sans singleton de module ;
+  leurs dépendances arrivent par le constructeur ;
+- `AppState` les assemble ; `+layout.svelte` en crée une instance et la
+  fournit avec `setAppState` ; les composants la lisent avec `getAppState`
+  (`createContext`, sans clé à gérer). Une instance par arbre de composants :
+  pas d'état partagé entre deux requêtes côté serveur ni entre deux tests ;
 - l'état temporaire d'un formulaire ou d'un écran reste local au composant ou
-  à la route ;
-- un store ne doit pas mélanger plusieurs domaines sans frontière claire ;
-- les appels API et les stores restent séparés : le store orchestre l'état,
-  le client API exécute la communication.
+  à la route (la page stats crée son propre `RequestStatus`) ;
+- une classe ne mélange pas plusieurs domaines sans frontière claire ;
+- les appels API et l'état restent séparés : la classe orchestre l'état, le
+  client API exécute la communication.
 
-Un store global n'est donc justifié que si l'état est partagé entre plusieurs
-routes ou fonctionnalités. Sinon, l'état reste local à la fonctionnalité ou à
-la route.
+L'état global n'est justifié que s'il est partagé entre plusieurs routes ou
+fonctionnalités. Sinon, il reste local à la fonctionnalité ou à la route.
 
 ## Évolution future
 

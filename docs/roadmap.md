@@ -27,10 +27,11 @@ périmètre, rien n'y justifie encore un dossier de fonctionnalité séparé.
       `lib/features/tasks/`).
 - [x] Séparer progressivement API, stores, état local et présentation.
 - [x] Décider pour chaque store s'il est propre à une fonctionnalité ou
-      transversal (`lib/features/tasks/store.ts` propre à `tasks` ;
-      `loading`/`error` transversaux dans `lib/stores/request-status.ts`).
+      transversal (désormais classes `TaskState`, `UserState`, `RequestStatus`
+      et `NotificationState` dans `lib/state/`).
 - [x] Scinder le store utilisateur actuel selon ces frontières sans changer le
-      comportement (`lib/stores/user.ts` supprimé, contenu redistribué).
+      comportement (`lib/stores/user.ts` supprimé, contenu redistribué ; F6 a ensuite remplacé
+      les stores par des classes, voir `handoff.md`).
 - [x] Conserver les routes comme des compositions d'écrans.
 - [x] Ajouter les tests comportementaux au fil des déplacements.
 

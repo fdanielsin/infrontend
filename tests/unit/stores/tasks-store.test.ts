@@ -1,17 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { get } from 'svelte/store';
 import { api, type ApiResult, type UpdatedTask } from '$lib/api/client';
-import {
-	addTask,
-	editTask,
-	removeTask,
-	tasksStatus,
-	toggleTask,
-	userTasks
-} from '$lib/features/tasks/store';
-import { notifications } from '$lib/stores/notification';
-
-const { error, loading } = tasksStatus;
+import { AppState } from '$lib/state/app-state.svelte';
 
 function updated(task: { id: number; title: string; description: string; completed: boolean }) {
 	return {
@@ -46,12 +35,11 @@ describe('tasks store', () => {
 		completed: false
 	};
 
+	let app: AppState;
+
 	beforeEach(() => {
 		vi.resetAllMocks();
-		userTasks.set([]);
-		loading.set(false);
-		error.set(null);
-		notifications.set([]);
+		app = new AppState();
 	});
 
 	it('stores a task API failure without replacing existing tasks (sad path)', async () => {
@@ -63,16 +51,16 @@ describe('tasks store', () => {
 			user_id: 1,
 			completed: false
 		};
-		userTasks.set([existingTask]);
+		app.tasks.tasks = [existingTask];
 		vi.mocked(api.createTask).mockResolvedValue({ success: false, error: 'Task rejected' });
 
 		// WHEN: A task is added.
-		const result = await addTask('New task', 'Details', 1);
+		const result = await app.tasks.add('New task', 'Details', 1);
 
 		// THEN: The existing state remains intact and the error is exposed.
 		expect(result).toBeUndefined();
-		expect(get(userTasks)).toEqual([existingTask]);
-		expect(get(error)).toBe('Task rejected');
+		expect(app.tasks.tasks).toEqual([existingTask]);
+		expect(app.tasks.status.error).toBe('Task rejected');
 	});
 
 	it('edits a task and preserves its completion state (happy path)', async () => {
@@ -84,13 +72,13 @@ describe('tasks store', () => {
 			user_id: 1,
 			completed: true
 		};
-		userTasks.set([task]);
+		app.tasks.tasks = [task];
 		vi.mocked(api.updateTask).mockResolvedValue(
 			updated({ ...task, title: 'Review again', description: 'Review the updated code' })
 		);
 
 		// WHEN: The task title and description are edited.
-		const result = await editTask(task.id, 'Review again', 'Review the updated code');
+		const result = await app.tasks.edit(task.id, 'Review again', 'Review the updated code');
 
 		// THEN: The content changes while completion remains unchanged.
 		expect(result).toBe(true);
@@ -98,77 +86,77 @@ describe('tasks store', () => {
 			title: 'Review again',
 			description: 'Review the updated code'
 		});
-		expect(get(userTasks)).toEqual([
+		expect(app.tasks.tasks).toEqual([
 			{ ...task, title: 'Review again', description: 'Review the updated code' }
 		]);
 	});
 
 	it('reports an edit failure without changing the task (sad path)', async () => {
 		// GIVEN: The API rejects an edit.
-		userTasks.set([task]);
+		app.tasks.tasks = [task];
 		vi.mocked(api.updateTask).mockResolvedValue({ success: false, error: 'Task not found' });
 
 		// WHEN: The task is edited.
-		const result = await editTask(task.id, 'Changed', 'Changed description');
+		const result = await app.tasks.edit(task.id, 'Changed', 'Changed description');
 
 		// THEN: The original task and error remain available.
 		expect(result).toBe(false);
-		expect(get(userTasks)).toEqual([task]);
-		expect(get(error)).toBe('Task not found');
+		expect(app.tasks.tasks).toEqual([task]);
+		expect(app.tasks.status.error).toBe('Task not found');
 	});
 
 	it('reports failure and leaves the task untouched when the API rejects a toggle (sad path)', async () => {
 		// GIVEN: An existing task and an API that rejects the toggle.
-		userTasks.set([task]);
+		app.tasks.tasks = [task];
 		vi.mocked(api.updateTask).mockResolvedValue({ success: false, error: 'Task locked' });
 
 		// WHEN: The task is toggled.
-		const result = await toggleTask(task.id, true);
+		const result = await app.tasks.toggle(task.id, true);
 
 		// THEN: The caller learns the toggle failed, the task is unchanged, and
 		// the error is exposed (the caller is responsible for reverting any
 		// optimistic UI, e.g. the checkbox's own DOM element).
 		expect(result).toBe(false);
-		expect(get(userTasks)).toEqual([task]);
-		expect(get(error)).toBe('Task locked');
+		expect(app.tasks.tasks).toEqual([task]);
+		expect(app.tasks.status.error).toBe('Task locked');
 	});
 
 	it('reports failure and leaves the task untouched when toggling throws (sad path)', async () => {
 		// GIVEN: An existing task and an API call that throws.
-		userTasks.set([task]);
+		app.tasks.tasks = [task];
 		vi.mocked(api.updateTask).mockRejectedValue(new Error('Network down'));
 
 		// WHEN: The task is toggled.
-		const result = await toggleTask(task.id, true);
+		const result = await app.tasks.toggle(task.id, true);
 
 		// THEN: The caller learns the toggle failed and the task is unchanged.
 		expect(result).toBe(false);
-		expect(get(userTasks)).toEqual([task]);
-		expect(get(error)).toBe('Network down');
+		expect(app.tasks.tasks).toEqual([task]);
+		expect(app.tasks.status.error).toBe('Network down');
 	});
 
 	it('reports success when the API accepts a toggle (happy path)', async () => {
 		// GIVEN: An existing task and an API that accepts the toggle.
-		userTasks.set([task]);
+		app.tasks.tasks = [task];
 		vi.mocked(api.updateTask).mockResolvedValue(updated({ ...task, completed: true }));
 
 		// WHEN: The task is toggled.
-		const result = await toggleTask(task.id, true);
+		const result = await app.tasks.toggle(task.id, true);
 
 		// THEN: Only completed is sent, the caller learns the toggle succeeded and the task is updated.
 		expect(api.updateTask).toHaveBeenCalledWith(task.id, { completed: true });
 		expect(result).toBe(true);
-		expect(get(userTasks)).toEqual([{ ...task, completed: true }]);
+		expect(app.tasks.tasks).toEqual([{ ...task, completed: true }]);
 	});
 
 	it('appends and returns the created task (happy path)', async () => {
 		// GIVEN: One task listed and an API that accepts the new one.
-		userTasks.set([task]);
+		app.tasks.tasks = [task];
 		const created = { ...task, id: 11, title: 'New task', description: 'Details' };
 		vi.mocked(api.createTask).mockResolvedValue({ success: true, data: created });
 
 		// WHEN: A task is added.
-		const result = await addTask('New task', 'Details', 1);
+		const result = await app.tasks.add('New task', 'Details', 1);
 
 		// THEN: The API receives an uncompleted task and the store appends it.
 		expect(result).toEqual(created);
@@ -178,62 +166,62 @@ describe('tasks store', () => {
 			user_id: 1,
 			completed: false
 		});
-		expect(get(userTasks)).toEqual([task, created]);
-		expect(get(error)).toBeNull();
-		expect(get(loading)).toBe(false);
+		expect(app.tasks.tasks).toEqual([task, created]);
+		expect(app.tasks.status.error).toBeNull();
+		expect(app.tasks.status.loading).toBe(false);
 	});
 
 	it('removes only the deleted task (happy path)', async () => {
 		// GIVEN: Two tasks and an API that accepts the deletion.
 		const other = { ...task, id: 11, title: 'Other' };
-		userTasks.set([task, other]);
+		app.tasks.tasks = [task, other];
 		vi.mocked(api.deleteTask).mockResolvedValue({ success: true, message: 'Task deleted' });
 
 		// WHEN: The first task is removed.
-		await removeTask(task.id);
+		await app.tasks.remove(task.id);
 
 		// THEN: Only the other task remains.
 		expect(api.deleteTask).toHaveBeenCalledWith(task.id);
-		expect(get(userTasks)).toEqual([other]);
+		expect(app.tasks.tasks).toEqual([other]);
 	});
 
 	it('keeps the task and exposes the error when the API refuses the deletion (sad path)', async () => {
 		// GIVEN: The API refuses the deletion.
-		userTasks.set([task]);
+		app.tasks.tasks = [task];
 		vi.mocked(api.deleteTask).mockResolvedValue({ success: false, error: 'HTTP 500' });
 
 		// WHEN: The task is removed.
-		await removeTask(task.id);
+		await app.tasks.remove(task.id);
 
 		// THEN: The task is still listed and the error is exposed.
-		expect(get(userTasks)).toEqual([task]);
-		expect(get(error)).toBe('HTTP 500');
+		expect(app.tasks.tasks).toEqual([task]);
+		expect(app.tasks.status.error).toBe('HTTP 500');
 	});
 
 	it('leaves the list unchanged for an id that is not listed (boundary)', async () => {
 		// GIVEN: The API accepts every call for an id absent from the local list.
-		userTasks.set([task]);
+		app.tasks.tasks = [task];
 		vi.mocked(api.updateTask).mockResolvedValue(updated({ ...task, id: 999 }));
 		vi.mocked(api.deleteTask).mockResolvedValue({ success: true });
 
 		// WHEN: The unknown id is toggled, edited and removed.
-		await toggleTask(999, true);
-		await editTask(999, 'Changed', 'Changed description');
-		await removeTask(999);
+		await app.tasks.toggle(999, true);
+		await app.tasks.edit(999, 'Changed', 'Changed description');
+		await app.tasks.remove(999);
 
 		// THEN: The listed task is untouched.
-		expect(get(userTasks)).toEqual([task]);
+		expect(app.tasks.tasks).toEqual([task]);
 	});
 
 	it.each([
-		['addTask', () => addTask('New task', 'Details', 1)],
-		['editTask', () => editTask(10, 'Changed', 'Changed description')],
-		['removeTask', () => removeTask(10)]
+		['addTask', () => app.tasks.add('New task', 'Details', 1)],
+		['editTask', () => app.tasks.edit(10, 'Changed', 'Changed description')],
+		['removeTask', () => app.tasks.remove(10)]
 	] as const)(
 		'%s keeps the list and exposes the message when the API call throws (exception)',
 		async (_name, action) => {
 			// GIVEN: Every API call rejects.
-			userTasks.set([task]);
+			app.tasks.tasks = [task];
 			vi.mocked(api.createTask).mockRejectedValue(new Error('Network down'));
 			vi.mocked(api.updateTask).mockRejectedValue(new Error('Network down'));
 			vi.mocked(api.deleteTask).mockRejectedValue(new Error('Network down'));
@@ -242,9 +230,9 @@ describe('tasks store', () => {
 			await action();
 
 			// THEN: The list is unchanged, the error is exposed and loading is over.
-			expect(get(userTasks)).toEqual([task]);
-			expect(get(error)).toBe('Network down');
-			expect(get(loading)).toBe(false);
+			expect(app.tasks.tasks).toEqual([task]);
+			expect(app.tasks.status.error).toBe('Network down');
+			expect(app.tasks.status.loading).toBe(false);
 		}
 	);
 
@@ -252,22 +240,23 @@ describe('tasks store', () => {
 		'%s clears the previous error at start and after success (happy path, QM-03)',
 		async (action) => {
 			// GIVEN: A previous failure and a request that has not answered yet.
-			userTasks.set([task]);
-			error.set('previous failure');
+			app.tasks.tasks = [task];
+			app.tasks.status.error = 'previous failure';
 			let answer!: (value: ApiResult<UpdatedTask>) => void;
 			vi.mocked(api.updateTask).mockReturnValue(new Promise((resolve) => (answer = resolve)));
 			let answerDelete!: (value: ApiResult<void>) => void;
 			vi.mocked(api.deleteTask).mockReturnValue(new Promise((resolve) => (answerDelete = resolve)));
 
 			// WHEN: The action starts, then succeeds.
-			const running = action === 'toggleTask' ? toggleTask(task.id, true) : removeTask(task.id);
-			expect(get(error)).toBeNull();
+			const running =
+				action === 'toggleTask' ? app.tasks.toggle(task.id, true) : app.tasks.remove(task.id);
+			expect(app.tasks.status.error).toBeNull();
 			if (action === 'toggleTask') answer(updated({ ...task, completed: true }));
 			else answerDelete({ success: true, message: 'Task deleted' });
 			await running;
 
 			// THEN: The error stays cleared.
-			expect(get(error)).toBeNull();
+			expect(app.tasks.status.error).toBeNull();
 		}
 	);
 
@@ -275,48 +264,49 @@ describe('tasks store', () => {
 		'%s never switches loading on, so the forms stay usable (limit, F-02)',
 		async (action) => {
 			// GIVEN: A slow API.
-			userTasks.set([task]);
+			app.tasks.tasks = [task];
 			let answer!: (value: ApiResult<UpdatedTask>) => void;
 			vi.mocked(api.updateTask).mockReturnValue(new Promise((resolve) => (answer = resolve)));
 			let answerDelete!: (value: ApiResult<void>) => void;
 			vi.mocked(api.deleteTask).mockReturnValue(new Promise((resolve) => (answerDelete = resolve)));
 
 			// WHEN: The background action runs.
-			const running = action === 'toggleTask' ? toggleTask(task.id, true) : removeTask(task.id);
+			const running =
+				action === 'toggleTask' ? app.tasks.toggle(task.id, true) : app.tasks.remove(task.id);
 
 			// THEN: loading never becomes true.
-			expect(get(loading)).toBe(false);
+			expect(app.tasks.status.loading).toBe(false);
 			if (action === 'toggleTask') answer(updated({ ...task, completed: true }));
 			else answerDelete({ success: true });
 			await running;
-			expect(get(loading)).toBe(false);
+			expect(app.tasks.status.loading).toBe(false);
 		}
 	);
 
 	it('publishes a failed toggle as an error notification (sad path, QM-02)', async () => {
 		// GIVEN: The API refuses the toggle.
-		userTasks.set([task]);
+		app.tasks.tasks = [task];
 		vi.mocked(api.updateTask).mockResolvedValue({ success: false, error: 'Task not found' });
 
 		// WHEN: The task is toggled.
-		await toggleTask(task.id, true);
+		await app.tasks.toggle(task.id, true);
 
 		// THEN: The same message is notified as an error.
-		expect(get(notifications)).toEqual([
+		expect(app.notifications.items).toEqual([
 			expect.objectContaining({ message: 'Task not found', type: 'error', duration: 6000 })
 		]);
 	});
 
 	it.each([
-		['addTask', () => addTask('New task', 'Details', 1), 'Failed to create task'],
-		['toggleTask', () => toggleTask(10, true), 'Failed to update task'],
-		['editTask', () => editTask(10, 'Changed', ''), 'Failed to update task'],
-		['removeTask', () => removeTask(10), 'Failed to delete task']
+		['addTask', () => app.tasks.add('New task', 'Details', 1), 'Failed to create task'],
+		['toggleTask', () => app.tasks.toggle(10, true), 'Failed to update task'],
+		['editTask', () => app.tasks.edit(10, 'Changed', ''), 'Failed to update task'],
+		['removeTask', () => app.tasks.remove(10), 'Failed to delete task']
 	] as const)(
 		'%s shows its own fallback message when the failure has none (limit)',
 		async (_name, action, fallback) => {
 			// GIVEN: Every API call fails without a message.
-			userTasks.set([task]);
+			app.tasks.tasks = [task];
 			const failure = { success: false as const, error: '' };
 			vi.mocked(api.createTask).mockResolvedValue(failure);
 			vi.mocked(api.updateTask).mockResolvedValue(failure);
@@ -326,8 +316,8 @@ describe('tasks store', () => {
 			await action();
 
 			// THEN: The action's fallback is shown and notified.
-			expect(get(error)).toBe(fallback);
-			expect(get(notifications)).toEqual([expect.objectContaining({ message: fallback })]);
+			expect(app.tasks.status.error).toBe(fallback);
+			expect(app.notifications.items).toEqual([expect.objectContaining({ message: fallback })]);
 		}
 	);
 });

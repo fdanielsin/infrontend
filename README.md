@@ -80,7 +80,7 @@ Par défaut le contrat est lu dans `../inbackend/` ; ailleurs (worktree), fourni
 
 `bun run mutate` lance Stryker sur les modules TypeScript de `src/lib` (hors
 `.svelte`), à la demande et sans bloquer la CI ; rapport dans
-`reports/mutation/`. Pour un fichier : `bunx stryker run --mutate src/lib/stores/request-status.ts`.
+`reports/mutation/`. Pour un fichier : `bunx stryker run --mutate src/lib/state/request-status.svelte.ts`.
 
 ## Docker
 
@@ -97,10 +97,10 @@ docker run --rm -p 3000:3000 infrontend
 ```
 src/
 ├── routes/       # File-based routing and screen composition
-├── lib/          # API, features, stores, UI and validation
+├── lib/          # API, features, state, UI and validation
 │   ├── api/      # Shared HTTP client
-│   ├── features/ # Feature-specific components and stores
-│   └── stores/   # Shared cross-feature state
+│   ├── features/ # Feature-specific components
+│   └── state/    # Reactive state classes, provided by context
 └── app.html      # HTML shell
 ```
 

@@ -1,6 +1,5 @@
-import { writable } from 'svelte/store';
 import type { ApiFailure, ApiResult } from '$lib/api/client';
-import { notifyError } from './notification';
+import type { NotificationState } from './notification.svelte';
 
 interface RunOptions {
 	fallbackMessage: string;
@@ -13,11 +12,18 @@ interface RunOptions {
 }
 
 // One instance per domain: a failure in one feature must not show up in another.
-export function createRequestStatus() {
-	const loading = writable(false);
-	const error = writable<string | null>(null);
+export class RequestStatus {
+	loading: boolean;
+	error: string | null = $state(null);
 
-	async function run<T>(
+	readonly #notifications: NotificationState;
+
+	constructor(notifications: NotificationState, initialLoading = false) {
+		this.#notifications = notifications;
+		this.loading = $state(initialLoading);
+	}
+
+	async run<T>(
 		action: () => Promise<ApiResult<T>>,
 		{
 			fallbackMessage,
@@ -26,8 +32,8 @@ export function createRequestStatus() {
 			isHandled = () => false
 		}: RunOptions
 	): Promise<ApiResult<T>> {
-		if (tracksLoading) loading.set(true);
-		error.set(null);
+		if (tracksLoading) this.loading = true;
+		this.error = null;
 		let result: ApiResult<T>;
 		try {
 			result = await action();
@@ -37,13 +43,11 @@ export function createRequestStatus() {
 		if (isCurrent()) {
 			if (!result.success && !isHandled(result)) {
 				const message = result.error || fallbackMessage;
-				error.set(message);
-				notifyError(message);
+				this.error = message;
+				this.#notifications.notifyError(message);
 			}
-			if (tracksLoading) loading.set(false);
+			if (tracksLoading) this.loading = false;
 		}
 		return result;
 	}
-
-	return { loading, error, run };
 }

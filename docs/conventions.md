@@ -49,14 +49,17 @@ nouvelles instructions ni utilisées comme référence de validation.
 ## Fonctionnalités
 
 Une fonctionnalité regroupe son orchestration, ses composants spécifiques, ses
-types, ses stores et ses tests. Elle ne doit pas importer une route.
+types, son état et ses tests. Elle ne doit pas importer une route.
 
 Les composants génériques vont dans `lib/ui` et ne doivent pas connaître les
-stores ou les endpoints d'une fonctionnalité.
+l'état partagé ni les endpoints d'une fonctionnalité.
 
-Un store doit exposer un état cohérent et les actions qui le modifient. Il ne
-doit pas devenir un second client HTTP ni contenir des données appartenant à
-plusieurs fonctionnalités sans justification.
+Une classe d'état (`lib/state/`) expose un état cohérent et les actions qui le
+modifient. Elle ne doit pas devenir un second client HTTP ni contenir des
+données appartenant à plusieurs fonctionnalités sans justification. Pas de
+singleton de module : les composants obtiennent l'état par `getAppState()`, les
+tests créent un `new AppState()` par cas. Un test qui utilise `$effect` vit
+dans un fichier `*.svelte.test.ts`.
 
 ## Validation
 
@@ -135,11 +138,7 @@ un piège sans présenter cette information comme une garantie.
   règle du projet (runes, `$derived` plutôt que `$effect`, `onclick`,
   snippets, props typées, blocs `each` à clé, attributs `class` en tableau,
   `{@attach}` plutôt qu'une action ou `getElementById`).
-  Écarts connus :
-  - **Planifié (F6)** : l'état partagé utilise `svelte/store` (`writable`) au
-    niveau module ; il passera en classes `.svelte.ts` avec `$state`, fournies
-    par `createContext` depuis `+layout.svelte`, sans changement de
-    comportement.
+  Écart connu :
   - **Volontaire** : le chargement initial se fait dans `onMount` (accueil et
     stats) et non dans une fonction `load` SvelteKit ; la page de bonnes
     pratiques ne le demande pas et `load` changerait l'architecture (rendu

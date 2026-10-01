@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, waitFor, within } from '@testing-library/svelte';
+import { cleanup, fireEvent, waitFor, within } from '@testing-library/svelte';
 import { tick } from 'svelte';
-import { get } from 'svelte/store';
-import { addNotification, notifications } from '$lib/stores/notification';
+import { AppState } from '$lib/state/app-state.svelte';
 import Notification from '$lib/ui/Notification.svelte';
+import { renderWithApp } from '../support/render-with-app';
 
 function messagesIn(region: HTMLElement) {
 	return Array.from(region.querySelectorAll('p')).map((message) => message.textContent?.trim());
@@ -19,24 +19,25 @@ function itemAt<T>(items: T[], index: number): T {
 }
 
 describe('Notification component', () => {
+	let app: AppState;
+
 	beforeEach(() => {
-		notifications.set([]);
+		app = new AppState();
 	});
 
 	afterEach(() => {
 		cleanup();
 		vi.useRealTimers();
-		notifications.set([]);
 	});
 
 	it('shows the notifications of the store (happy path)', async () => {
 		// GIVEN: A rendered, empty notification area.
-		const { getByRole, getByText } = render(Notification);
+		const { getByRole, getByText } = renderWithApp(app, Notification);
 		expect(messagesIn(getByRole('status'))).toEqual([]);
 		expect(messagesIn(getByRole('alert'))).toEqual([]);
 
 		// WHEN: A notification is published.
-		notifications.set([{ id: 'n1', message: 'Saved', type: 'success' }]);
+		app.notifications.items = [{ id: 'n1', message: 'Saved', type: 'success' }];
 
 		// THEN: It is displayed.
 		await waitFor(() => expect(getByText('Saved')).toBeTruthy());
@@ -44,7 +45,7 @@ describe('Notification component', () => {
 
 	it('keeps both live regions in the page while no notification is shown (limit)', () => {
 		// GIVEN / WHEN: The area is rendered without any notification.
-		const { getAllByRole, getByRole } = render(Notification);
+		const { getAllByRole, getByRole } = renderWithApp(app, Notification);
 
 		// THEN: One status and one alert region already exist, empty, so that a later
 		// message is announced by assistive technologies.
@@ -56,14 +57,14 @@ describe('Notification component', () => {
 
 	it('stacks several notifications in order (limit)', () => {
 		// GIVEN: Three notifications.
-		notifications.set([
+		app.notifications.items = [
 			{ id: 'n1', message: 'First', type: 'info' },
 			{ id: 'n2', message: 'Second', type: 'warning' },
 			{ id: 'n3', message: 'Third', type: 'success' }
-		]);
+		];
 
 		// WHEN: The area is rendered.
-		const { getByRole } = render(Notification);
+		const { getByRole } = renderWithApp(app, Notification);
 
 		// THEN: All are shown, in publication order.
 		expect(messagesIn(getByRole('status'))).toEqual(['First', 'Second', 'Third']);
@@ -71,15 +72,15 @@ describe('Notification component', () => {
 
 	it('announces errors in the alert region and the other types in the status region (boundary)', () => {
 		// GIVEN: One notification of each type.
-		notifications.set([
+		app.notifications.items = [
 			{ id: 'e', message: 'Error', type: 'error' },
 			{ id: 's', message: 'Success', type: 'success' },
 			{ id: 'i', message: 'Info', type: 'info' },
 			{ id: 'w', message: 'Warning', type: 'warning' }
-		]);
+		];
 
 		// WHEN: The area is rendered.
-		const { getByRole } = render(Notification);
+		const { getByRole } = renderWithApp(app, Notification);
 
 		// THEN: Only the error interrupts assistive technologies.
 		expect(messagesIn(getByRole('alert'))).toEqual(['Error']);
@@ -88,9 +89,9 @@ describe('Notification component', () => {
 
 	it('closes only the notification whose dismiss button is pressed (happy path)', async () => {
 		// GIVEN: Two notifications without timer.
-		const keptId = addNotification('Kept', 'info', 0);
-		addNotification('Closed', 'error', 0);
-		const view = render(Notification);
+		const keptId = app.notifications.add('Kept', 'info', 0);
+		app.notifications.add('Closed', 'error', 0);
+		const view = renderWithApp(app, Notification);
 
 		// WHEN: The dismiss button of the error is pressed.
 		await fireEvent.click(
@@ -98,7 +99,7 @@ describe('Notification component', () => {
 		);
 
 		// THEN: Only that notification is gone.
-		expect(get(notifications).map((toast) => toast.id)).toEqual([keptId]);
+		expect(app.notifications.items.map((toast) => toast.id)).toEqual([keptId]);
 		expect(view.queryByText('Closed')).toBeNull();
 		expect(view.getByText('Kept')).toBeTruthy();
 	});
@@ -106,8 +107,8 @@ describe('Notification component', () => {
 	it('pauses a notification while hovered and resumes it with the time left (happy path)', async () => {
 		// GIVEN: A 1 s notification, hovered after 400 ms.
 		vi.useFakeTimers();
-		addNotification('Saved', 'success', 1000);
-		const view = render(Notification);
+		app.notifications.add('Saved', 'success', 1000);
+		const view = renderWithApp(app, Notification);
 		vi.advanceTimersByTime(400);
 		await fireEvent.mouseEnter(toastOf(view, 'Saved'));
 
@@ -130,8 +131,8 @@ describe('Notification component', () => {
 		// GIVEN: A 1 s notification and a control outside of it.
 		vi.useFakeTimers();
 		const outside = document.body.appendChild(document.createElement('button'));
-		addNotification('Saved', 'success', 1000);
-		const view = render(Notification);
+		app.notifications.add('Saved', 'success', 1000);
+		const view = renderWithApp(app, Notification);
 
 		// WHEN: Its dismiss button gets the focus for longer than the duration, then loses it.
 		view.getByRole('button', { name: 'Dismiss notification' }).focus();
@@ -153,8 +154,8 @@ describe('Notification component', () => {
 	it('stays paused when the pointer leaves while the focus is still inside (limit)', async () => {
 		// GIVEN: A focused and hovered 1 s notification.
 		vi.useFakeTimers();
-		addNotification('Saved', 'success', 1000);
-		const view = render(Notification);
+		app.notifications.add('Saved', 'success', 1000);
+		const view = renderWithApp(app, Notification);
 		view.getByRole('button', { name: 'Dismiss notification' }).focus();
 		await fireEvent.mouseEnter(toastOf(view, 'Saved'));
 
@@ -189,10 +190,10 @@ describe('Notification component', () => {
 
 		it('moves to the dismiss button of the next notification of the same region (happy path)', async () => {
 			// GIVEN: Two errors and a status; the keyboard user comes from a field to the first error.
-			addNotification('First error', 'error', 0);
-			addNotification('Second error', 'error', 0);
-			addNotification('Saved', 'success', 0);
-			const view = render(Notification);
+			app.notifications.add('First error', 'error', 0);
+			app.notifications.add('Second error', 'error', 0);
+			app.notifications.add('Saved', 'success', 0);
+			const view = renderWithApp(app, Notification);
 			field.focus();
 			const { first, second: maybeSecond } = dismissButtons(view.getByRole('alert'));
 			const second = maybeSecond as HTMLElement;
@@ -208,10 +209,10 @@ describe('Notification component', () => {
 
 		it('prefers the next notification over the previous one when dismissing a middle one (limit)', async () => {
 			// GIVEN: Three errors; the focus is on the dismiss button of the middle one.
-			addNotification('First error', 'error', 0);
-			addNotification('Second error', 'error', 0);
-			addNotification('Third error', 'error', 0);
-			const view = render(Notification);
+			app.notifications.add('First error', 'error', 0);
+			app.notifications.add('Second error', 'error', 0);
+			app.notifications.add('Third error', 'error', 0);
+			const view = renderWithApp(app, Notification);
 			field.focus();
 			const buttons = within(view.getByRole('alert')).getAllByRole('button', {
 				name: 'Dismiss notification'
@@ -229,9 +230,9 @@ describe('Notification component', () => {
 
 		it('moves to the dismiss button of the previous notification when the last one is dismissed (boundary)', async () => {
 			// GIVEN: Two errors; the focus is on the dismiss button of the last one.
-			addNotification('First error', 'error', 0);
-			addNotification('Second error', 'error', 0);
-			const view = render(Notification);
+			app.notifications.add('First error', 'error', 0);
+			app.notifications.add('Second error', 'error', 0);
+			const view = renderWithApp(app, Notification);
 			field.focus();
 			const { first, second: maybeSecond } = dismissButtons(view.getByRole('alert'));
 			const second = maybeSecond as HTMLElement;
@@ -247,9 +248,9 @@ describe('Notification component', () => {
 
 		it('goes back to the field it came from when the region has no other notification (happy path)', async () => {
 			// GIVEN: One error and one status; the keyboard user tabs from a field to the error.
-			addNotification('Only error', 'error', 0);
-			addNotification('Saved', 'success', 0);
-			const view = render(Notification);
+			app.notifications.add('Only error', 'error', 0);
+			app.notifications.add('Saved', 'success', 0);
+			const view = renderWithApp(app, Notification);
 			field.focus();
 			const { first: dismiss } = dismissButtons(view.getByRole('alert'));
 			dismiss.focus();
@@ -264,9 +265,9 @@ describe('Notification component', () => {
 
 		it('remembers the field it came from while moving between notifications (limit)', async () => {
 			// GIVEN: The keyboard user tabs from a field through two errors.
-			addNotification('First error', 'error', 0);
-			addNotification('Second error', 'error', 0);
-			const view = render(Notification);
+			app.notifications.add('First error', 'error', 0);
+			app.notifications.add('Second error', 'error', 0);
+			const view = renderWithApp(app, Notification);
 			field.focus();
 			const { first, second: maybeSecond } = dismissButtons(view.getByRole('alert'));
 			const second = maybeSecond as HTMLElement;
@@ -287,9 +288,9 @@ describe('Notification component', () => {
 		it('does not send the focus back to a field left before an earlier visit (limit)', async () => {
 			// GIVEN: The user tabbed from the field into the notifications once, then left them
 			// for the page body.
-			addNotification('First error', 'error', 0);
-			addNotification('Saved', 'success', 0);
-			const view = render(Notification);
+			app.notifications.add('First error', 'error', 0);
+			app.notifications.add('Saved', 'success', 0);
+			const view = renderWithApp(app, Notification);
 			field.focus();
 			within(view.getByRole('status'))
 				.getByRole('button', { name: 'Dismiss notification' })
@@ -309,9 +310,9 @@ describe('Notification component', () => {
 		it('leaves the focus in the field when a toast is closed with a click that did not focus it (sad path)', async () => {
 			// GIVEN: The user types in a field while two errors are shown (Safari does not
 			// focus a button on click).
-			addNotification('First error', 'error', 0);
-			addNotification('Second error', 'error', 0);
-			const view = render(Notification);
+			app.notifications.add('First error', 'error', 0);
+			app.notifications.add('Second error', 'error', 0);
+			const view = renderWithApp(app, Notification);
 			field.focus();
 			const { first } = dismissButtons(view.getByRole('alert'));
 
@@ -326,8 +327,8 @@ describe('Notification component', () => {
 
 		it('falls back to the main landmark when the previous element is gone (exception)', async () => {
 			// GIVEN: The field the user came from is removed while the notification has the focus.
-			addNotification('Only error', 'error', 0);
-			const view = render(Notification);
+			app.notifications.add('Only error', 'error', 0);
+			const view = renderWithApp(app, Notification);
 			field.focus();
 			const { first: dismiss } = dismissButtons(view.getByRole('alert'));
 			dismiss.focus();

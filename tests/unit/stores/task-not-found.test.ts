@@ -1,14 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { get } from 'svelte/store';
 import { api, type ApiFailure, type Task } from '$lib/api/client';
-import {
-	editTask,
-	removeTask,
-	tasksStatus,
-	toggleTask,
-	userTasks
-} from '$lib/features/tasks/store';
-import { notifications } from '$lib/stores/notification';
+import { AppState } from '$lib/state/app-state.svelte';
 
 vi.mock('$lib/api/client', () => ({
 	api: {
@@ -38,19 +30,19 @@ function failWith(failure: ApiFailure) {
 	vi.mocked(api.deleteTask).mockResolvedValue(failure);
 }
 
+let app: AppState;
+
 const actions = [
-	['removeTask', (id: number) => removeTask(id)],
-	['toggleTask', (id: number) => toggleTask(id, true)],
-	['editTask', (id: number) => editTask(id, 'Changed', '')]
+	['removeTask', (id: number) => app.tasks.remove(id)],
+	['toggleTask', (id: number) => app.tasks.toggle(id, true)],
+	['editTask', (id: number) => app.tasks.edit(id, 'Changed', '')]
 ] as const;
 
 describe('a task already deleted on the server (TASK_NOT_FOUND)', () => {
 	beforeEach(() => {
 		vi.resetAllMocks();
-		userTasks.set([first, second, third]);
-		tasksStatus.loading.set(false);
-		tasksStatus.error.set(null);
-		notifications.set([]);
+		app = new AppState();
+		app.tasks.tasks = [first, second, third];
 	});
 
 	it.each(actions)(
@@ -63,11 +55,11 @@ describe('a task already deleted on the server (TASK_NOT_FOUND)', () => {
 			const result = await action(second.id);
 
 			// THEN: Only that task leaves the list, an information is shown, no error.
-			expect(get(userTasks)).toEqual([first, third]);
-			expect(get(notifications)).toEqual([
+			expect(app.tasks.tasks).toEqual([first, third]);
+			expect(app.notifications.items).toEqual([
 				expect.objectContaining({ message: 'Task already deleted', type: 'info' })
 			]);
-			expect(get(tasksStatus.error)).toBeNull();
+			expect(app.tasks.status.error).toBeNull();
 			if (_name !== 'removeTask') expect(result).toBe(false);
 		}
 	);
@@ -101,15 +93,15 @@ describe('a task already deleted on the server (TASK_NOT_FOUND)', () => {
 
 		for (const [, action] of actions) {
 			// WHEN: Each action runs.
-			notifications.set([]);
+			app.notifications.items = [];
 			await action(second.id);
 
 			// THEN: The error is shown and notified as an error, the task stays.
-			expect(get(tasksStatus.error)).toBe(failure.error);
-			expect(get(notifications)).toEqual([
+			expect(app.tasks.status.error).toBe(failure.error);
+			expect(app.notifications.items).toEqual([
 				expect.objectContaining({ message: failure.error, type: 'error' })
 			]);
-			expect(get(userTasks)).toEqual([first, second, third]);
+			expect(app.tasks.tasks).toEqual([first, second, third]);
 		}
 	});
 
@@ -117,16 +109,16 @@ describe('a task already deleted on the server (TASK_NOT_FOUND)', () => {
 		'%s stays silent when the task is no longer listed (limit: second delete, user switched)',
 		async (_name, action) => {
 			// GIVEN: The task is already gone from the current list.
-			userTasks.set([first]);
+			app.tasks.tasks = [first];
 			failWith(gone);
 
 			// WHEN: The action answers TASK_NOT_FOUND.
 			await action(second.id);
 
 			// THEN: Nothing changes and nothing is announced.
-			expect(get(userTasks)).toEqual([first]);
-			expect(get(notifications)).toEqual([]);
-			expect(get(tasksStatus.error)).toBeNull();
+			expect(app.tasks.tasks).toEqual([first]);
+			expect(app.notifications.items).toEqual([]);
+			expect(app.tasks.status.error).toBeNull();
 		}
 	);
 
@@ -135,39 +127,39 @@ describe('a task already deleted on the server (TASK_NOT_FOUND)', () => {
 		failWith({ ...gone, error: 'Gone <b>for good</b>' });
 
 		// WHEN: The task is removed.
-		await removeTask(second.id);
+		await app.tasks.remove(second.id);
 
 		// THEN: The fixed information text is shown, never the server message.
-		expect(get(notifications).map((n) => n.message)).toEqual(['Task already deleted']);
+		expect(app.notifications.items.map((n) => n.message)).toEqual(['Task already deleted']);
 	});
 
 	it('empties a one-task list (boundary)', async () => {
 		// GIVEN: A single task, already deleted on the server.
-		userTasks.set([second]);
+		app.tasks.tasks = [second];
 		failWith(gone);
 
 		// WHEN: It is toggled.
-		await toggleTask(second.id, true);
+		await app.tasks.toggle(second.id, true);
 
 		// THEN: The list is empty.
-		expect(get(userTasks)).toEqual([]);
+		expect(app.tasks.tasks).toEqual([]);
 	});
 
 	it('keeps the error cleared for the next successful action (boundary)', async () => {
 		// GIVEN: A task found gone, then a successful toggle of another one.
 		failWith(gone);
-		await removeTask(second.id);
+		await app.tasks.remove(second.id);
 		vi.mocked(api.updateTask).mockResolvedValue({
 			success: true,
 			data: { id: first.id, title: first.title, description: '', completed: true }
 		});
 
 		// WHEN: Another task is toggled.
-		await toggleTask(first.id, true);
+		await app.tasks.toggle(first.id, true);
 
 		// THEN: No error appears.
-		expect(get(tasksStatus.error)).toBeNull();
-		expect(get(userTasks)).toEqual([{ ...first, completed: true }, third]);
+		expect(app.tasks.status.error).toBeNull();
+		expect(app.tasks.tasks).toEqual([{ ...first, completed: true }, third]);
 	});
 
 	it('treats a network failure during a delete as an error (exception)', async () => {
@@ -175,10 +167,10 @@ describe('a task already deleted on the server (TASK_NOT_FOUND)', () => {
 		vi.mocked(api.deleteTask).mockRejectedValue(new TypeError('Failed to fetch'));
 
 		// WHEN: The task is removed.
-		await removeTask(second.id);
+		await app.tasks.remove(second.id);
 
 		// THEN: The error is shown and the task stays.
-		expect(get(tasksStatus.error)).toBe('Failed to fetch');
-		expect(get(userTasks)).toEqual([first, second, third]);
+		expect(app.tasks.status.error).toBe('Failed to fetch');
+		expect(app.tasks.tasks).toEqual([first, second, third]);
 	});
 });

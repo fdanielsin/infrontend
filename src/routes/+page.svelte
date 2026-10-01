@@ -1,12 +1,14 @@
 <script lang="ts">
 	import UserForm from '$lib/features/users/UserForm.svelte';
 	import TaskForm from '$lib/features/tasks/TaskForm.svelte';
-	import { fetchUsers, selectedUser } from '$lib/features/users/store';
+	import { getAppState } from '$lib/state/app-state.svelte';
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
 
+	const { users } = getAppState();
+
 	onMount(() => {
-		void fetchUsers();
+		void users.fetch();
 	});
 </script>
 
@@ -39,7 +41,7 @@
 				<UserForm />
 			</div>
 			<div>
-				<TaskForm user={$selectedUser} />
+				<TaskForm user={users.selected} />
 			</div>
 		</div>
 	</div>

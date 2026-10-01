@@ -79,10 +79,9 @@ regroupe les dépendances) et tourne sous l'utilisateur `bun`.
 
 ## État de la structure
 
-- `users` et `tasks` possèdent chacun leur composant et leur store dédiés
-  dans `src/lib/features/`.
-- Les stores transversaux (`request-status.ts`, `notification.ts`) restent
-  dans `src/lib/stores/`. Les composants visuels génériques
+- `users` et `tasks` possèdent chacun leur composant dans
+  `src/lib/features/`. L'état est dans `src/lib/state/` (classes `.svelte.ts`,
+  voir le lot « état par contexte »). Les composants visuels génériques
   (`Notification.svelte`) sont dans `src/lib/ui/`.
 - Le client HTTP partagé reste dans `src/lib/api/`.
 - Les routes composent les écrans sans déplacer la logique backend.
@@ -102,9 +101,6 @@ regroupe les dépendances) et tourne sous l'utilisateur `bun`.
 - `src/lib/api/client.ts` lit `PUBLIC_API_URL` via `$env/static/public`, alors
   qu'`architecture.md` L.49-51 vise une URL injectée plutôt que lue
   directement par un module réutilisable.
-- `features/users/store.ts` dépend de `features/tasks/store.ts` (sélectionner
-  un utilisateur charge ses tâches), raison documentée en commentaire dans le
-  fichier.
 
 ## Contraintes
 
@@ -163,7 +159,7 @@ premier rendu serveur) n'est pas observable sous jsdom : à couvrir par un E2E.
 Supprimer, cocher ou éditer une tâche qui n'existe plus côté serveur
 (`error_code` `TASK_NOT_FOUND`) la retire de la liste et affiche la notification
 info « Task already deleted » : ce n'est pas une erreur (`isHandled` de
-`createRequestStatus().run`, `features/tasks/store.ts`). Le retrait et la
+`RequestStatus.run`, `TaskState` dans `lib/state/tasks.svelte.ts`). Le retrait et la
 notification n'ont lieu que si la tâche est encore dans la liste courante
 (double action, changement d'utilisateur pendant la requête : rien). Les autres
 404 (`USER_NOT_FOUND`, `ROUTE_NOT_FOUND`, sans code) restent des erreurs.
@@ -186,13 +182,30 @@ insuffisants (erreur `red-600` sur `red-50` à 4,41:1, vide `yellow-600` sur
 Échap, Save, suppression et validation invalide ; toast en pause au survol,
 disparaît 6 s après la sortie, se ferme avec le bouton.
 
+## Lot « état par contexte » (branche `refactor/frontend-state-context`, F6)
+
+Refactor sans changement de comportement : les stores `writable` de module
+(`features/*/store.ts`, `stores/*.ts`) sont remplacés par des classes
+`.svelte.ts` avec `$state` dans `src/lib/state/` : `NotificationState`,
+`RequestStatus`, `TaskState`, `UserState`, assemblées dans `AppState`.
+`+layout.svelte` en crée une instance (`setAppState`), les composants la lisent
+avec `getAppState()` (`createContext`). La page stats crée son `RequestStatus`.
+Les dépendances passent par le constructeur (users dépend de tasks, plus
+d'import de module à module). Les ids de toasts sont par instance.
+
+Exception à la règle « un refactoring ne modifie pas les tests », décidée par
+l'utilisateur et limitée à F6 : les tests importaient les singletons supprimés,
+donc `qa-front` les a portés mécaniquement (mêmes scénarios et assertions, un
+`new AppState()` par test, composant hôte de test dans `tests/unit/support/`
+pour le contexte ; 12 fichiers portés, `stores.test.ts` remplacé par `app-state.test.ts` ; équivalence prouvée par 27 mutants et Stryker). Aucun helper
+d'export réservé aux tests.
+
 ## Prochaine étape
 
 Docker/CI, contrat généré (openapi-typescript, openapi-fetch, `api:check`) et
 B-04 côté interface (404 sur une tâche absente) sont faits, ainsi que F5
 (`refactor/frontend-svelte-style` : `$state.raw` pour les objets réaffectés,
-`class` en tableau, `:global` inutile retiré). Reste F6
-(`refactor/frontend-state-context` : stores `writable` vers classes
-`.svelte.ts` et `createContext`). La modularisation de `stats` reste ouverte,
+`class` en tableau, `:global` inutile retiré). F6 est fait
+(`refactor/frontend-state-context`, voir le lot « état par contexte »). La modularisation de `stats` reste ouverte,
 uniquement si elle apporte une séparation claire. La CI frontend attend le
 secret `INBACKEND_READ_TOKEN`.

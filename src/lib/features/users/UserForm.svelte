@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { ref } from '$lib/ui/attachments';
-	import { users, selectedUser, usersStatus, addUser, selectUser } from './store';
+	import { getAppState } from '$lib/state/app-state.svelte';
 	import { UserSchema } from '$lib/validation/schemas';
 	import { zodIssuesToFieldErrors } from '$lib/validation/field-errors';
-	const { loading, error } = usersStatus;
+	const { users } = getAppState();
+	const status = users.status;
 	const USER_FIELDS = ['name', 'email'] as const;
 	let name = $state('');
 	let email = $state('');
@@ -20,7 +21,7 @@
 			(fieldErrors.name ? refs.nameInput : refs.emailInput)?.focus();
 			return;
 		}
-		const created = await addUser(result.data.name, result.data.email);
+		const created = await users.add(result.data.name, result.data.email);
 		if (created) {
 			name = '';
 			email = '';
@@ -31,8 +32,8 @@
 <div class="rounded-lg border border-gray-300 bg-white p-6 shadow">
 	<h2 class="mb-4 text-xl font-bold">Create User</h2>
 
-	{#if $error}
-		<div class="mb-4 rounded bg-red-100 p-3 text-red-700">{$error}</div>
+	{#if status.error}
+		<div class="mb-4 rounded bg-red-100 p-3 text-red-700">{status.error}</div>
 	{/if}
 
 	<form
@@ -78,21 +79,21 @@
 
 		<button
 			type="submit"
-			disabled={$loading}
+			disabled={status.loading}
 			class="w-full rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:bg-gray-400"
 		>
-			{$loading ? 'Creating...' : 'Create User'}
+			{status.loading ? 'Creating...' : 'Create User'}
 		</button>
 	</form>
 
 	<div class="mt-6">
-		<h3 class="mb-3 font-semibold">Users ({$users.length})</h3>
-		{#if $users.length === 0}
+		<h3 class="mb-3 font-semibold">Users ({users.users.length})</h3>
+		{#if users.users.length === 0}
 			<p class="text-gray-500">No users yet</p>
 		{:else}
 			<ul class="space-y-2">
-				{#each $users as user (user.id)}
-					{@const selected = $selectedUser?.id === user.id}
+				{#each users.users as user (user.id)}
+					{@const selected = users.selected?.id === user.id}
 					<li class="rounded bg-gray-100 p-3">
 						<button
 							type="button"
@@ -101,7 +102,7 @@
 								selected && 'bg-blue-100 ring-2 ring-blue-600'
 							]}
 							aria-pressed={selected}
-							onclick={() => selectUser(user.id)}
+							onclick={() => users.select(user.id)}
 						>
 							<p class="font-medium">{user.name}</p>
 							<p class="text-sm text-gray-600">{user.email}</p>

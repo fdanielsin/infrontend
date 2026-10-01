@@ -5,8 +5,9 @@ Tous les tests du frontend vivent sous `tests/`.
 - `tests/unit/` contient les tests unitaires et les tests de composants,
   organisés par domaine :
   - `tests/unit/api/` pour le client et les façades API ;
-  - `tests/unit/stores/` pour les stores ;
-  - `tests/unit/components/` pour les composants lorsque nécessaire.
+  - `tests/unit/stores/` pour l'état de l'application (`src/lib/state/`) ;
+  - `tests/unit/components/` pour les composants lorsque nécessaire ;
+  - `tests/unit/support/` pour les aides partagées (hôte de contexte).
 - `tests/e2e/` contient les scénarios Playwright de bout en bout contre
   l'application et l'API `inbackend`.
 
@@ -25,7 +26,9 @@ l'hydratation est effacée.
 Vitest exécute les tests dans un ordre aléatoire (`sequence.shuffle`, graine affichée
 en tête de run) : un test ne doit dépendre ni d'un autre ni de l'ordre.
 
-Chaque fichier de test utilise le suffixe `.test.ts` ou `.test.svelte`.
+Chaque fichier de test utilise le suffixe `.test.ts`. Un test qui utilise une
+rune (`$effect`, `$effect.root`, `$state`) dans son propre code prend le
+suffixe `.svelte.test.ts`, pour être compilé par Svelte.
 
 Les scénarios suivent une structure explicite :
 
@@ -41,10 +44,15 @@ Les noms décrivent le comportement attendu et finissent par sa catégorie
 règle de validation actuelle, dont le comportement peut encore être décidé
 autrement, commence par `current rule:`.
 
-Les tests ne dépendent d'aucun backend réel : les stores et les composants
-mockent `$lib/api/client` avec `vi.mock` ; les tests du client, et ceux qui
-vérifient ce que les stores font d'une panne de transport
+Les tests ne dépendent d'aucun backend réel : les tests d'état et de
+composants mockent `$lib/api/client` avec `vi.mock` ; les tests du client, et
+ceux qui vérifient ce que l'état fait d'une panne de transport
 (`stores/stores-real-client.test.ts`), remplacent seulement `fetch`.
+
+Chaque test construit son propre `new AppState()` (ou `NotificationState`,
+`RequestStatus`) : aucun état de module n'est partagé, il n'y a rien à remettre
+à zéro entre deux tests. Le test prépare et inspecte l'état directement
+(`app.tasks.tasks = [...]`, `app.users.status.error`).
 
 `bun run verify` exige `PUBLIC_API_URL` (lu via `$env/static/public`) : la CI
 le fixe dans son workflow ; en local, il vient de `.env.local` ou de la ligne

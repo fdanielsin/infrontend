@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, waitFor } from '@testing-library/svelte';
+import { cleanup, fireEvent, waitFor } from '@testing-library/svelte';
 import { api } from '$lib/api/client';
-import { tasksStatus, userTasks } from '$lib/features/tasks/store';
-import { usersStatus } from '$lib/features/users/store';
+import { AppState } from '$lib/state/app-state.svelte';
 import TaskForm from '$lib/features/tasks/TaskForm.svelte';
+import { renderWithApp } from '../support/render-with-app';
 
 vi.mock('$lib/api/client', () => ({
 	api: {
@@ -42,13 +42,12 @@ function addTaskForm(view: { getByLabelText: (label: string) => HTMLElement }) {
 }
 
 describe('TaskForm', () => {
+	let app: AppState;
+
 	beforeEach(() => {
 		vi.resetAllMocks();
-		userTasks.set([task]);
-		for (const status of [tasksStatus, usersStatus]) {
-			status.loading.set(false);
-			status.error.set(null);
-		}
+		app = new AppState();
+		app.tasks.tasks = [task];
 	});
 
 	afterEach(() => {
@@ -58,7 +57,7 @@ describe('TaskForm', () => {
 	it('reverts the checkbox to the real state when the API rejects the toggle (sad path)', async () => {
 		// GIVEN: A rendered task list and an API that rejects the toggle request.
 		vi.mocked(api.updateTask).mockResolvedValue({ success: false, error: 'Task locked' });
-		const { getByRole, getByText } = render(TaskForm, { props: { user } });
+		const { getByRole, getByText } = renderWithApp(app, TaskForm, { user });
 		const checkbox = getByRole('checkbox', { name: 'Review' }) as HTMLInputElement;
 
 		// WHEN: The user clicks the checkbox (the browser flips it natively before
@@ -73,7 +72,7 @@ describe('TaskForm', () => {
 
 	it('asks to select a user when none is selected (happy path)', () => {
 		// GIVEN / WHEN: The form is rendered without a user.
-		const { getByText, queryByRole } = render(TaskForm, { props: { user: null } });
+		const { getByText, queryByRole } = renderWithApp(app, TaskForm, { user: null });
 
 		// THEN: Only the invitation is shown, no task form.
 		expect(getByText('Select a user to manage tasks')).toBeTruthy();
@@ -84,7 +83,7 @@ describe('TaskForm', () => {
 		// GIVEN: An API that accepts the task.
 		const created = { ...task, id: 11, title: 'Buy milk', description: 'Semi-skimmed' };
 		vi.mocked(api.createTask).mockResolvedValue({ success: true, data: created });
-		const view = render(TaskForm, { props: { user } });
+		const view = renderWithApp(app, TaskForm, { user });
 		const form = addTaskForm(view);
 
 		// WHEN: A valid task is submitted.
@@ -104,7 +103,7 @@ describe('TaskForm', () => {
 
 	it('cancels an edit without calling the API (happy path)', async () => {
 		// GIVEN: A task being edited with a changed title.
-		const view = render(TaskForm, { props: { user } });
+		const view = renderWithApp(app, TaskForm, { user });
 		await fireEvent.click(view.getByRole('button', { name: 'Edit Review' }));
 		const editTitle = view.getByDisplayValue('Review') as HTMLInputElement;
 		await fireEvent.input(editTitle, { target: { value: 'Changed' } });
@@ -120,7 +119,7 @@ describe('TaskForm', () => {
 
 	it('refuses an empty title, whatever the description (sad path)', async () => {
 		// GIVEN: A rendered form.
-		const view = render(TaskForm, { props: { user } });
+		const view = renderWithApp(app, TaskForm, { user });
 
 		// WHEN: An empty title is submitted with a short description.
 		await addTaskForm(view).submit('', 'ab');
@@ -134,7 +133,7 @@ describe('TaskForm', () => {
 
 	it('current rule: refuses an edit with an empty title (sad path)', async () => {
 		// GIVEN: A task being edited.
-		const view = render(TaskForm, { props: { user } });
+		const view = renderWithApp(app, TaskForm, { user });
 		await fireEvent.click(view.getByRole('button', { name: 'Edit Review' }));
 		const editTitle = view.getByDisplayValue('Review') as HTMLInputElement;
 
@@ -154,7 +153,7 @@ describe('TaskForm', () => {
 			success: true,
 			data: { ...task, id: 11, title: 'B', description: '' }
 		});
-		const view = render(TaskForm, { props: { user } });
+		const view = renderWithApp(app, TaskForm, { user });
 
 		// WHEN: The shortest accepted values are submitted.
 		await addTaskForm(view).submit('B', '');
@@ -178,7 +177,7 @@ describe('TaskForm', () => {
 			success: true,
 			data: { ...task, id: 11, title: 'Long', description }
 		});
-		const view = render(TaskForm, { props: { user } });
+		const view = renderWithApp(app, TaskForm, { user });
 
 		// WHEN: It is submitted.
 		await addTaskForm(view).submit('Long', description);
@@ -200,7 +199,7 @@ describe('TaskForm', () => {
 			success: true,
 			data: { id: task.id, title: task.title, description: '', completed: task.completed }
 		});
-		const view = render(TaskForm, { props: { user } });
+		const view = renderWithApp(app, TaskForm, { user });
 		await fireEvent.click(view.getByRole('button', { name: 'Edit Review' }));
 		const editDescription = view.getByDisplayValue('Review code') as HTMLTextAreaElement;
 
@@ -218,8 +217,8 @@ describe('TaskForm', () => {
 
 	it('shows "No tasks yet" for an empty list (limit)', () => {
 		// GIVEN / WHEN: The user has no task.
-		userTasks.set([]);
-		const { getByText } = render(TaskForm, { props: { user } });
+		app.tasks.tasks = [];
+		const { getByText } = renderWithApp(app, TaskForm, { user });
 
 		// THEN: The empty state and a zero count are shown.
 		expect(getByText('No tasks yet')).toBeTruthy();
@@ -228,10 +227,10 @@ describe('TaskForm', () => {
 
 	it('renders titles with markup as plain text (limit)', () => {
 		// GIVEN: A task whose title contains HTML.
-		userTasks.set([{ ...task, title: '<img src=x onerror=alert(1)>' }]);
+		app.tasks.tasks = [{ ...task, title: '<img src=x onerror=alert(1)>' }];
 
 		// WHEN: The list is rendered.
-		const { getByText, container } = render(TaskForm, { props: { user } });
+		const { getByText, container } = renderWithApp(app, TaskForm, { user });
 
 		// THEN: The title is shown as typed and no element is injected.
 		expect(getByText('<img src=x onerror=alert(1)>')).toBeTruthy();
@@ -241,7 +240,7 @@ describe('TaskForm', () => {
 	it('reverts the checkbox when the toggle request throws (exception)', async () => {
 		// GIVEN: A toggle request that rejects.
 		vi.mocked(api.updateTask).mockRejectedValue(new Error('Network down'));
-		const { getByRole, getByText } = render(TaskForm, { props: { user } });
+		const { getByRole, getByText } = renderWithApp(app, TaskForm, { user });
 		const checkbox = getByRole('checkbox', { name: 'Review' }) as HTMLInputElement;
 
 		// WHEN: The checkbox is clicked.
@@ -254,10 +253,10 @@ describe('TaskForm', () => {
 
 	it('keeps "Add Task" usable while the users are loading (sad path, F-02)', () => {
 		// GIVEN: The users feature is loading.
-		usersStatus.loading.set(true);
+		app.users.status.loading = true;
 
 		// WHEN: The task form is rendered.
-		const { getByRole } = render(TaskForm, { props: { user } });
+		const { getByRole } = renderWithApp(app, TaskForm, { user });
 
 		// THEN: Adding a task is not blocked by another feature.
 		expect((getByRole('button', { name: 'Add Task' }) as HTMLButtonElement).disabled).toBe(false);
@@ -265,10 +264,10 @@ describe('TaskForm', () => {
 
 	it('does not show a users error in the task form (sad path, F-02)', () => {
 		// GIVEN: The users feature failed.
-		usersStatus.error.set('Email already in use');
+		app.users.status.error = 'Email already in use';
 
 		// WHEN: The task form is rendered.
-		const { queryByText } = render(TaskForm, { props: { user } });
+		const { queryByText } = renderWithApp(app, TaskForm, { user });
 
 		// THEN: The error stays in its own feature.
 		expect(queryByText('Email already in use')).toBeNull();
@@ -286,7 +285,7 @@ describe('TaskForm', () => {
 		it('closes the edit of a task that is gone, and removes its line (happy path)', async () => {
 			// GIVEN: A task being edited, already deleted on the server.
 			vi.mocked(api.updateTask).mockResolvedValue(gone);
-			const view = render(TaskForm, { props: { user } });
+			const view = renderWithApp(app, TaskForm, { user });
 			await fireEvent.click(view.getByRole('button', { name: 'Edit Review' }));
 			const editTitle = view.getByDisplayValue('Review') as HTMLInputElement;
 
@@ -303,9 +302,9 @@ describe('TaskForm', () => {
 
 		it('keeps the edit of another task open when a different task disappears (limit)', async () => {
 			// GIVEN: Two tasks; the second is being edited, the first is gone on the server.
-			userTasks.set([task, other]);
+			app.tasks.tasks = [task, other];
 			vi.mocked(api.deleteTask).mockResolvedValue(gone);
-			const view = render(TaskForm, { props: { user } });
+			const view = renderWithApp(app, TaskForm, { user });
 			await fireEvent.click(view.getByRole('button', { name: 'Edit Other' }));
 			const editTitle = view.getByDisplayValue('Other') as HTMLInputElement;
 			await fireEvent.input(editTitle, { target: { value: 'Other draft' } });
@@ -321,7 +320,7 @@ describe('TaskForm', () => {
 		it('removes the line of a gone task on toggle, without error banner (boundary)', async () => {
 			// GIVEN: A listed task already deleted on the server.
 			vi.mocked(api.updateTask).mockResolvedValue(gone);
-			const { getByRole, queryByRole, queryByText } = render(TaskForm, { props: { user } });
+			const { getByRole, queryByRole, queryByText } = renderWithApp(app, TaskForm, { user });
 
 			// WHEN: Its checkbox is clicked.
 			await fireEvent.click(getByRole('checkbox', { name: 'Review' }));

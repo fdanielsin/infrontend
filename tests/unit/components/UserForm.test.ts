@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, waitFor } from '@testing-library/svelte';
+import { cleanup, fireEvent, waitFor } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import { api, type ApiResult, type User } from '$lib/api/client';
-import { fetchUsers, selectedUser, users, usersStatus } from '$lib/features/users/store';
-import { tasksStatus } from '$lib/features/tasks/store';
+import { AppState } from '$lib/state/app-state.svelte';
 import UserForm from '$lib/features/users/UserForm.svelte';
+import { renderWithApp } from '../support/render-with-app';
 
 vi.mock('$lib/api/client', () => ({
 	api: {
@@ -18,8 +18,10 @@ vi.mock('$lib/api/client', () => ({
 	}
 }));
 
+let app: AppState;
+
 function renderForm() {
-	const view = render(UserForm);
+	const view = renderWithApp(app, UserForm);
 	const nameInput = view.getByLabelText('Name') as HTMLInputElement;
 	const emailInput = view.getByLabelText('Email') as HTMLInputElement;
 	const form = nameInput.closest('form') as HTMLFormElement;
@@ -34,12 +36,7 @@ function renderForm() {
 describe('UserForm', () => {
 	beforeEach(() => {
 		vi.resetAllMocks();
-		users.set([]);
-		selectedUser.set(null);
-		for (const status of [usersStatus, tasksStatus]) {
-			status.loading.set(false);
-			status.error.set(null);
-		}
+		app = new AppState();
 	});
 
 	afterEach(() => {
@@ -109,10 +106,10 @@ describe('UserForm', () => {
 
 	it('renders names with markup or Unicode as plain text (limit)', () => {
 		// GIVEN: Users whose names contain HTML and Unicode.
-		users.set([
+		app.users.users = [
 			{ id: 1, name: '<b>Bold</b>', email: 'b@example.com' },
 			{ id: 2, name: 'Zoë 🚀 日本語', email: 'z@example.com' }
-		]);
+		];
 
 		// WHEN: The list is rendered.
 		const { getByText, container } = renderForm();
@@ -149,7 +146,7 @@ describe('UserForm', () => {
 		const { findByText, getByText } = renderForm();
 
 		// WHEN: The page loads the users.
-		await fetchUsers();
+		await app.users.fetch();
 
 		// THEN: The failure is shown and the list stays empty.
 		expect(await findByText('Failed to fetch')).toBeTruthy();
@@ -178,7 +175,7 @@ describe('UserForm', () => {
 
 	it('does not show a tasks error in the user form (sad path, F-02)', () => {
 		// GIVEN: The tasks feature failed.
-		tasksStatus.error.set('Task not found');
+		app.tasks.status.error = 'Task not found';
 
 		// WHEN: The user form is rendered.
 		const { queryByText } = renderForm();
@@ -266,7 +263,7 @@ describe('UserForm', () => {
 		// GIVEN: Two listed users and an API that returns each of them without tasks.
 		const ada = { id: 1, name: 'Ada', email: 'ada@example.com' };
 		const grace = { id: 2, name: 'Grace', email: 'grace@example.com' };
-		users.set([ada, grace]);
+		app.users.users = [ada, grace];
 		vi.mocked(api.getUser).mockImplementation((id: number) =>
 			Promise.resolve({ success: true, data: id === ada.id ? ada : grace })
 		);

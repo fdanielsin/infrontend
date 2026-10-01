@@ -1,15 +1,9 @@
 <script lang="ts">
 	import { tick } from 'svelte';
-	import {
-		notifications,
-		pauseNotification,
-		removeNotification,
-		resumeNotification,
-		type Notification as Toast
-	} from '$lib/stores/notification';
+	import { getAppState } from '$lib/state/app-state.svelte';
+	import type { Notification as Toast } from '$lib/state/notification.svelte';
 
-	const alerts = $derived($notifications.filter((toast) => toast.type === 'error'));
-	const statuses = $derived($notifications.filter((toast) => toast.type !== 'error'));
+	const { notifications } = getAppState();
 
 	// Where focus was before it entered the toasts: a dismissal gives it back there.
 	let focusOrigin: HTMLElement | null = null;
@@ -31,7 +25,7 @@
 		const hadFocus = toastElement?.contains(document.activeElement) ?? false;
 		const neighbour = toastElement?.nextElementSibling ?? toastElement?.previousElementSibling;
 		const neighbourButton = neighbour?.querySelector<HTMLElement>('button') ?? null;
-		removeNotification(toastId);
+		notifications.remove(toastId);
 		if (!hadFocus) return;
 		await tick();
 		const candidates = [neighbourButton, focusOrigin, document.querySelector<HTMLElement>('main')];
@@ -63,13 +57,13 @@
 				'bg-amber-700': toast.type === 'warning'
 			}
 		]}
-		onmouseenter={() => pauseNotification(toast.id)}
+		onmouseenter={() => notifications.pause(toast.id)}
 		onmouseleave={(event) => {
-			if (!event.currentTarget.matches(':focus-within')) resumeNotification(toast.id);
+			if (!event.currentTarget.matches(':focus-within')) notifications.resume(toast.id);
 		}}
-		onfocusin={() => pauseNotification(toast.id)}
+		onfocusin={() => notifications.pause(toast.id)}
 		onfocusout={(event) => {
-			if (!event.currentTarget.matches(':hover')) resumeNotification(toast.id);
+			if (!event.currentTarget.matches(':hover')) notifications.resume(toast.id);
 		}}
 	>
 		<p class="flex-1">{toast.message}</p>
@@ -96,12 +90,12 @@
 <!-- The handler only records where focus came from; it adds no interaction. -->
 <div class="fixed top-0 right-0 z-50 flex flex-col gap-2 p-4" onfocusin={rememberFocusOrigin}>
 	<div role="status" aria-atomic="false" class="space-y-2">
-		{#each statuses as toast (toast.id)}
+		{#each notifications.statuses as toast (toast.id)}
 			{@render toastView(toast)}
 		{/each}
 	</div>
 	<div role="alert" aria-atomic="false" class="space-y-2">
-		{#each alerts as toast (toast.id)}
+		{#each notifications.alerts as toast (toast.id)}
 			{@render toastView(toast)}
 		{/each}
 	</div>

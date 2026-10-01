@@ -2,14 +2,15 @@
 	import { tick } from 'svelte';
 	import type { Attachment } from 'svelte/attachments';
 	import { focusOnMount, ref } from '$lib/ui/attachments';
-	import { userTasks, tasksStatus, addTask, editTask, toggleTask, removeTask } from './store';
+	import { getAppState } from '$lib/state/app-state.svelte';
 	import type { User } from '$lib/api/client';
 	import { TaskSchema } from '$lib/validation/schemas';
 	import { zodIssuesToFieldErrors } from '$lib/validation/field-errors';
 
 	type FieldErrors = { title?: string; description?: string };
 
-	const { loading, error } = tasksStatus;
+	const { tasks } = getAppState();
+	const status = tasks.status;
 	const TASK_FIELDS = ['title', 'description'] as const;
 	let { user = null }: { user: User | null } = $props();
 
@@ -98,8 +99,8 @@
 		}
 
 		const editedId = editingTaskId;
-		const updated = await editTask(editedId, result.data.title, result.data.description);
-		const stillListed = $userTasks.some((task) => task.id === editedId);
+		const updated = await tasks.edit(editedId, result.data.title, result.data.description);
+		const stillListed = tasks.tasks.some((task) => task.id === editedId);
 		if (updated || !stillListed) closeEditing(editedId);
 	}
 
@@ -120,7 +121,7 @@
 				});
 				return;
 			}
-			const created = await addTask(result.data.title, result.data.description, user.id);
+			const created = await tasks.add(result.data.title, result.data.description, user.id);
 			if (created) {
 				taskTitle = '';
 				taskDescription = '';
@@ -135,19 +136,19 @@
 
 	// A task row leaves the list (deleted, or gone on the server) with focus inside it.
 	async function focusHeadingIfRowRemoved(taskId: number) {
-		if ($userTasks.some((task) => task.id === taskId)) return;
+		if (tasks.tasks.some((task) => task.id === taskId)) return;
 		await tick();
 		refs.tasksHeading?.focus();
 	}
 
 	async function handleRemoveTask(taskId: number) {
-		await removeTask(taskId);
+		await tasks.remove(taskId);
 		await focusHeadingIfRowRemoved(taskId);
 	}
 
 	async function handleToggleTask(checkbox: HTMLInputElement, taskId: number) {
 		const nextCompleted = checkbox.checked;
-		const ok = await toggleTask(taskId, nextCompleted);
+		const ok = await tasks.toggle(taskId, nextCompleted);
 		if (ok) return;
 		// Revert the native click if the update failed (see toggleTask).
 		checkbox.checked = !nextCompleted;
@@ -166,8 +167,8 @@
 		<div class="rounded-lg border border-gray-300 bg-white p-6 shadow">
 			<h2 class="mb-4 text-xl font-bold">Tasks for {user.name}</h2>
 
-			{#if $error}
-				<div class="mb-4 rounded bg-red-100 p-3 text-red-700">{$error}</div>
+			{#if status.error}
+				<div class="mb-4 rounded bg-red-100 p-3 text-red-700">{status.error}</div>
 			{/if}
 
 			<form
@@ -213,22 +214,22 @@
 
 				<button
 					type="submit"
-					disabled={$loading}
+					disabled={status.loading}
 					class="w-full rounded bg-green-700 px-4 py-2 text-white hover:bg-green-800 disabled:bg-gray-400"
 				>
-					{$loading ? 'Adding...' : 'Add Task'}
+					{status.loading ? 'Adding...' : 'Add Task'}
 				</button>
 			</form>
 
 			<div>
 				<h3 {@attach ref(refs, 'tasksHeading')} tabindex="-1" class="mb-3 font-semibold">
-					Tasks ({$userTasks.length})
+					Tasks ({tasks.tasks.length})
 				</h3>
-				{#if $userTasks.length === 0}
+				{#if tasks.tasks.length === 0}
 					<p class="text-gray-500">No tasks yet</p>
 				{:else}
 					<ul class="space-y-2">
-						{#each $userTasks as task (task.id)}
+						{#each tasks.tasks as task (task.id)}
 							<li class="flex items-start rounded bg-gray-100 p-3">
 								<input
 									id={`task-${task.id}`}
@@ -286,7 +287,7 @@
 										<div class="flex gap-2">
 											<button
 												type="submit"
-												disabled={$loading}
+												disabled={status.loading}
 												class="min-h-6 rounded bg-blue-700 px-2 py-1 text-sm text-white"
 											>
 												Save
