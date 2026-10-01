@@ -33,8 +33,8 @@ nouvelles instructions ni utilisées comme référence de validation.
 - Toute réponse de succès est validée par le schéma zod généré de son opération
   (`client.ts`) : une réponse qui ne le respecte pas devient un échec
   `invalid_response`, jamais une donnée à moitié exacte. Les corps d'erreur ne
-  sont pas validés (le contrat peut ajouter des codes) ; `health` ne l'est pas non
-  plus, le contrat y fige des constantes (version, messages). Les champs inconnus
+  sont pas validés (le contrat peut ajouter des codes). Il n'y a pas de méthode
+  `ready` : aucun écran ne l'utilise (son schéma généré existe). Les champs inconnus
   dans `data` sont conservés mais jamais lus : ne pas itérer sur les clés d'une
   réponse.
 - Un appel qui ne reçoit aucune réponse en 10 s (`API_TIMEOUT_MS`) échoue avec

@@ -117,7 +117,6 @@ describe('API client', () => {
 	});
 
 	it.each([
-		['health', () => api.health(), { status: 'ok', version: '1.0.0', id: 'x' }],
 		['getUsers', () => api.getUsers(), [{ id: 1, name: 'Ada', email: 'ada@x.io' }]],
 		['getUser', () => api.getUser(1), { id: 1, name: 'Ada', email: 'ada@x.io' }],
 		[
@@ -150,6 +149,19 @@ describe('API client', () => {
 			await expect(call()).resolves.toEqual({ success: true, data });
 		}
 	);
+
+	it('health returns the data of the success envelope (happy path)', async () => {
+		// GIVEN: The backend answers the health check with its full envelope.
+		const envelope = {
+			success: true,
+			message: 'Service is healthy',
+			data: { status: 'ok', version: '1.0.0', id: '3f2c1e6a-8b4d-4c2a-9e1f-5a6b7c8d9e0f' }
+		};
+		mockFetch(jsonResponse(envelope));
+
+		// WHEN / THEN: The envelope reaches the caller unchanged.
+		await expect(api.health()).resolves.toEqual(envelope);
+	});
 
 	it('returns the 200 envelope as sent by the backend (happy path)', async () => {
 		// GIVEN: The backend returns statistics.

@@ -9,6 +9,7 @@ import {
 	zDeleteTaskResponse,
 	zGetStatsResponse,
 	zGetUserResponse,
+	zHealthCheckResponse,
 	zListUsersResponse,
 	zListUserTasksResponse,
 	zUpdateTaskResponse
@@ -229,10 +230,11 @@ export class ApiClient {
 		});
 	}
 
-	// Health: not validated, the contract pins its constants (version, messages) which would turn
-	// a backend upgrade into an invalid response.
+	// Health
 	async health(): Promise<ApiResult<SuccessData<paths['/health']['get']>>> {
-		return toResult(() => this.#http.GET('/health', { parseAs: 'text' }));
+		return toResult(() => this.#http.GET('/health', { parseAs: 'text' }), {
+			schema: zHealthCheckResponse
+		});
 	}
 }
 

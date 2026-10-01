@@ -228,8 +228,8 @@ describe('validation of the API responses against the contract', () => {
 		await expect(api.updateTask(10, { completed: true })).resolves.toEqual(invalid());
 	});
 
-	it.each([0, 2 ** 53 - 1])(
-		'keeps the stats counter %d as a number (boundary, int64 patch)',
+	it.each([0, 4294967296, 2 ** 53 - 1])(
+		'keeps the stats counter %d as a number (boundary)',
 		async (count) => {
 			// GIVEN: Counters at both ends of the safe integer range.
 			answer({ success: true, data: { users: count, tasks: count } });
@@ -243,8 +243,8 @@ describe('validation of the API responses against the contract', () => {
 		}
 	);
 
-	it.each([1.5, '3'])('refuses the stats counter %j (boundary)', async (count) => {
-		// GIVEN / WHEN / THEN: A fraction or a numeric string.
+	it.each([-1, 1.5, '3'])('refuses the stats counter %j (boundary)', async (count) => {
+		// GIVEN / WHEN / THEN: A negative count, a fraction or a numeric string.
 		answer({ success: true, data: { users: count, tasks: 1 } });
 		await expect(api.getStats()).resolves.toEqual(invalid());
 	});
@@ -269,15 +269,38 @@ describe('validation of the API responses against the contract', () => {
 		});
 	});
 
-	it('current rule: does not validate the health check (limit, decision)', async () => {
-		// GIVEN: A health body that does not match the contract (no version, no id).
-		answer({ success: true, message: 'whatever', data: { status: 'odd' } });
-
-		// WHEN / THEN: It is passed through; health and ready are not validated for now.
-		await expect(api.health()).resolves.toEqual({
+	it('validates the health check: any message language and version are accepted (happy path)', async () => {
+		// GIVEN: A health envelope with a French message and a new version.
+		const envelope = {
 			success: true,
-			message: 'whatever',
-			data: { status: 'odd' }
+			message: 'Le service fonctionne',
+			data: { status: 'ok', version: '2.0.0', id: '3f2c1e6a-8b4d-4c2a-9e1f-5a6b7c8d9e0f' }
+		};
+		answer(envelope);
+
+		// WHEN / THEN: It matches the contract and is returned.
+		await expect(api.health()).resolves.toEqual(envelope);
+	});
+
+	it.each([
+		[
+			'an unknown status',
+			{ status: 'odd', version: '2.0.0', id: '3f2c1e6a-8b4d-4c2a-9e1f-5a6b7c8d9e0f' }
+		],
+		['an id that is not a uuid', { status: 'ok', version: '2.0.0', id: 'x' }],
+		['no version', { status: 'ok', id: '3f2c1e6a-8b4d-4c2a-9e1f-5a6b7c8d9e0f' }]
+	])('refuses a health check with %s (sad path)', async (_case, data) => {
+		// GIVEN / WHEN / THEN: A health body that does not match the contract.
+		answer({ success: true, message: 'Service is healthy', data });
+		await expect(api.health()).resolves.toEqual(invalid());
+	});
+
+	it('refuses a health check without its message (sad path)', async () => {
+		// GIVEN / WHEN / THEN: The contract requires the message.
+		answer({
+			success: true,
+			data: { status: 'ok', version: '2.0.0', id: '3f2c1e6a-8b4d-4c2a-9e1f-5a6b7c8d9e0f' }
 		});
+		await expect(api.health()).resolves.toEqual(invalid());
 	});
 });

@@ -70,7 +70,7 @@ describe('generated zod schemas and generated types', () => {
 		expect(Object.keys(sameData)).toHaveLength(7);
 	});
 
-	it('types the stats counters as numbers, not bigint (boundary, int64 patch)', () => {
+	it('types the stats counters as numbers, not bigint (boundary)', () => {
 		// GIVEN / WHEN: The inferred type of a stats counter.
 		const counter: z.infer<typeof schemas.zStats>['users'] = 2 ** 53 - 1;
 
