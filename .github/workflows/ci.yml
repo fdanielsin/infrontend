@@ -65,7 +65,8 @@ jobs:
           repository: fdanielsin/inbackend
           ref: ${{ env.BACKEND_REF }}
           path: inbackend
-          token: ${{ secrets.INBACKEND_READ_TOKEN }}
+          ssh-key: ${{ secrets.INBACKEND_DEPLOY_KEY }}
+          persist-credentials: false
 
       - name: 'Setup Bun'
         uses: oven-sh/setup-bun@v2
@@ -119,7 +120,8 @@ jobs:
           repository: fdanielsin/inbackend
           ref: ${{ env.BACKEND_REF }}
           path: inbackend
-          token: ${{ secrets.INBACKEND_READ_TOKEN }}
+          ssh-key: ${{ secrets.INBACKEND_DEPLOY_KEY }}
+          persist-credentials: false
 
       - name: 'Setup Go'
         uses: actions/setup-go@v6
