@@ -114,6 +114,13 @@ contrat est lu dans `../inbackend/` ; ailleurs (worktree), fournir
 `OPENAPI_PATH=/chemin/vers/openapi.yaml`. En CI, le job `contract` exécute
 `api:check` sur le backend (branche au choix via `workflow_dispatch`).
 
+Les schémas zod des réponses (`src/lib/api/zod/zod.gen.ts`) sont générés par
+`@hey-api/openapi-ts` (version exacte : l'outil est pré-1.0) depuis le même
+contrat ; `api:generate` produit les deux fichiers et `api:check` compare les
+deux. La configuration est `openapi-ts.config.ts`. Provisoire : un patch retire
+`format: int64` des compteurs de `Stats` avant génération (le générateur en
+ferait un `bigint`) ; à retirer quand le contrat n'a plus ce format.
+
 ### Tests de mutation
 
 `bun run mutate` lance Stryker sur les modules TypeScript de `src/lib`

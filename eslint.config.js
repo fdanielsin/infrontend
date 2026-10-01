@@ -12,7 +12,7 @@ export default defineConfig(
 	includeIgnoreFile(gitignorePath),
 	js.configs.recommended,
 	ts.configs.recommended,
-	{ ignores: ['src/lib/api/schema.d.ts'] },
+	{ ignores: ['src/lib/api/schema.d.ts', 'src/lib/api/zod/**'] },
 	...ts.configs.recommendedTypeChecked.map((config) => ({
 		...config,
 		files: ['src/**/*.{ts,svelte}', 'tests/**/*.ts']

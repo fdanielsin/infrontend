@@ -5,6 +5,7 @@ yarn.lock
 
 # Miscellaneous
 src/lib/api/schema.d.ts
+src/lib/api/zod
 reports
 .stryker-tmp
 

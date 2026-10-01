@@ -15,8 +15,8 @@
 		"format": "prettier --write .",
 		"format:check": "prettier --check .",
 		"test:coverage": "bun run test -- --coverage",
-		"api:generate": "openapi-typescript \"${OPENAPI_PATH:-../inbackend/docs/specs/api/openapi.yaml}\" -o src/lib/api/schema.d.ts",
-		"api:check": "openapi-typescript \"${OPENAPI_PATH:-../inbackend/docs/specs/api/openapi.yaml}\" -o node_modules/.cache/schema.check.d.ts && diff -u src/lib/api/schema.d.ts node_modules/.cache/schema.check.d.ts",
+		"api:generate": "openapi-typescript \"${OPENAPI_PATH:-../inbackend/docs/specs/api/openapi.yaml}\" -o src/lib/api/schema.d.ts && openapi-ts",
+		"api:check": "openapi-typescript \"${OPENAPI_PATH:-../inbackend/docs/specs/api/openapi.yaml}\" -o node_modules/.cache/schema.check.d.ts && diff -u src/lib/api/schema.d.ts node_modules/.cache/schema.check.d.ts && openapi-ts -o node_modules/.cache/zod && diff -u src/lib/api/zod/zod.gen.ts node_modules/.cache/zod/zod.gen.ts",
 		"mutate": "stryker run",
 		"test:unit": "vitest",
 		"test": "bun run test:unit -- --run",
@@ -26,6 +26,7 @@
 	"devDependencies": {
 		"@axe-core/playwright": "^4.13.0",
 		"@eslint/js": "^10.0.1",
+		"@hey-api/openapi-ts": "0.99.0",
 		"@inlang/paraglide-js": "^2.18.2",
 		"@inlang/plugin-message-format": "^4.4.4",
 		"@playwright/test": "^1.63.0",
