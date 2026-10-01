@@ -155,7 +155,9 @@ export const zCreateTaskResponse = zSuccessResponse.and(z.object({
 /**
  * Tâche supprimée
  */
-export const zDeleteTaskResponse = zSuccessResponse.and(z.record(z.string(), z.unknown()));
+export const zDeleteTaskResponse = zSuccessResponse.and(z.object({
+    message: z.string()
+}));
 
 /**
  * Tâche mise à jour ; la réponse reflète l'état réellement persisté.
