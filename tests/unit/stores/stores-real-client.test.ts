@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { get } from 'svelte/store';
 import { addUser, fetchUsers, users, usersStatus } from '$lib/features/users/store';
-import { addTask, tasksStatus, userTasks } from '$lib/features/tasks/store';
+import { addTask, removeTask, tasksStatus, userTasks } from '$lib/features/tasks/store';
 import { notifications } from '$lib/stores/notification';
 
 // These tests keep the real API client and only replace fetch: they check what
@@ -73,6 +73,28 @@ describe('stores with the real API client', () => {
 		expect(get(usersStatus.error)).toBe('Email already in use');
 		expect(get(notifications)).toEqual([
 			expect.objectContaining({ message: 'Email already in use', type: 'error' })
+		]);
+	});
+
+	it('drops a task the server reports gone, through the real client (limit)', async () => {
+		// GIVEN: A listed task that the backend no longer knows.
+		const task = { id: 10, title: 'Gone', description: '', user_id: ada.id, completed: false };
+		userTasks.set([task]);
+		vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+			new Response(
+				JSON.stringify({ success: false, error: 'Task not found', error_code: 'TASK_NOT_FOUND' }),
+				{ status: 404 }
+			)
+		);
+
+		// WHEN: The task is removed.
+		await removeTask(task.id);
+
+		// THEN: It leaves the list with an information, not an error.
+		expect(get(userTasks)).toEqual([]);
+		expect(get(tasksStatus.error)).toBeNull();
+		expect(get(notifications)).toEqual([
+			expect.objectContaining({ message: 'Task already deleted', type: 'info' })
 		]);
 	});
 });

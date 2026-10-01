@@ -15,6 +15,8 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- E2E tests are never retried in the CI: an unstable test fails and gets fixed.
+- Unit tests run in random order (`sequence.shuffle`), locally and in the CI.
 - Reorganized `tasks` into its own feature alongside `users`, with
   `loading`/`error` state in a dedicated shared module.
 - Standardized commands, CI and deployment on Bun.
@@ -49,6 +51,10 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- `bun run verify` works from a fresh checkout: it generates the SvelteKit types
+  (with `PUBLIC_API_URL`) before linting.
+- Deleting, ticking or editing a task that no longer exists on the server removes
+  it from the list with an info notification instead of an error.
 - API errors now show the message sent by the backend instead of `HTTP <code>` (F-01).
 - A failure in the users form no longer appears in the tasks form, and the
   reverse (F-02).

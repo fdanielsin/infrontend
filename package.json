@@ -20,7 +20,7 @@
 		"test:unit": "vitest",
 		"test": "bun run test:unit -- --run",
 		"test:e2e": "playwright test",
-		"verify": "bun run lint && bun run check && bun run test:coverage && bun run build"
+		"verify": "svelte-kit sync && bun run lint && bun run check && bun run test:coverage && bun run build"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",

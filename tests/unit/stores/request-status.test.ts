@@ -60,6 +60,51 @@ describe('createRequestStatus', () => {
 	});
 });
 
+describe('createRequestStatus with a handled failure', () => {
+	beforeEach(() => {
+		notifications.set([]);
+	});
+
+	it('reports nothing for a failure the caller handles, and still ends the loading (limit)', async () => {
+		// GIVEN: A status with a previous error and a failure the caller declares handled.
+		const status = createRequestStatus();
+		status.error.set('previous');
+		const failure = { success: false as const, error: 'Task not found', code: 'TASK_NOT_FOUND' };
+
+		// WHEN: The action fails that way.
+		const result = await status.run(() => Promise.resolve(failure), {
+			fallbackMessage: 'fallback',
+			isHandled: (f) => f.code === 'TASK_NOT_FOUND'
+		});
+
+		// THEN: The failure is returned to the caller; no error, no notification, loading over.
+		expect(result).toEqual(failure);
+		expect(get(status.error)).toBeNull();
+		expect(get(notifications)).toEqual([]);
+		expect(get(status.loading)).toBe(false);
+	});
+
+	it('still reports a failure that the caller does not handle (sad path)', async () => {
+		// GIVEN: A handler that only accepts TASK_NOT_FOUND.
+		const status = createRequestStatus();
+
+		// WHEN: Another failure happens.
+		await status.run(
+			() => Promise.resolve({ success: false as const, error: 'Boom', code: 'INTERNAL_ERROR' }),
+			{
+				fallbackMessage: 'fallback',
+				isHandled: (f) => f.code === 'TASK_NOT_FOUND'
+			}
+		);
+
+		// THEN: It is shown and notified as an error.
+		expect(get(status.error)).toBe('Boom');
+		expect(get(notifications)).toEqual([
+			expect.objectContaining({ message: 'Boom', type: 'error' })
+		]);
+	});
+});
+
 describe('initial application state', () => {
 	it('starts with no user, no selection, no task and no notification (boundary)', async () => {
 		// GIVEN: Freshly loaded modules.

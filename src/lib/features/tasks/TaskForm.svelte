@@ -45,8 +45,10 @@
 			return;
 		}
 
-		const updated = await editTask(editingTaskId, result.data.title, result.data.description);
-		if (updated) cancelEditing();
+		const editedId = editingTaskId;
+		const updated = await editTask(editedId, result.data.title, result.data.description);
+		const stillListed = $userTasks.some((task) => task.id === editedId);
+		if (updated || !stillListed) cancelEditing();
 	}
 
 	async function handleAddTask() {

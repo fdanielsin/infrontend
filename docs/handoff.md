@@ -158,6 +158,18 @@ premier rendu serveur) n'est pas observable sous jsdom : à couvrir par un E2E.
   boucles identiques de TaskForm et UserForm.
 - Stryker : `bun run mutate`, config `stryker.config.json`, non bloquant.
 
+## Lot « tâche introuvable » (branche `fix/frontend-task-not-found`)
+
+Supprimer, cocher ou éditer une tâche qui n'existe plus côté serveur
+(`error_code` `TASK_NOT_FOUND`) la retire de la liste et affiche la notification
+info « Task already deleted » : ce n'est pas une erreur (`isHandled` de
+`createRequestStatus().run`, `features/tasks/store.ts`). Le retrait et la
+notification n'ont lieu que si la tâche est encore dans la liste courante
+(double action, changement d'utilisateur pendant la requête : rien). Les autres
+404 (`USER_NOT_FOUND`, `ROUTE_NOT_FOUND`, sans code) restent des erreurs.
+`TaskForm` ferme l'édition si la tâche éditée a disparu. Tests à écrire par qa
+après le lot C backend.
+
 ## Prochaine étape
 
 Lots suivants : Docker/CI/doc, contrat généré (openapi-typescript et

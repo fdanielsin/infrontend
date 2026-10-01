@@ -1,5 +1,5 @@
 import { writable } from 'svelte/store';
-import type { ApiResult } from '$lib/api/client';
+import type { ApiFailure, ApiResult } from '$lib/api/client';
 import { notifyError } from './notification';
 
 interface RunOptions {
@@ -8,6 +8,8 @@ interface RunOptions {
 	tracksLoading?: boolean;
 	// A superseded request leaves `loading` and `error` to the newer one.
 	isCurrent?: () => boolean;
+	// A handled failure is an expected outcome: the caller deals with it, nothing is reported.
+	isHandled?: (failure: ApiFailure) => boolean;
 }
 
 // One instance per domain: a failure in one feature must not show up in another.
@@ -17,7 +19,12 @@ export function createRequestStatus() {
 
 	async function run<T>(
 		action: () => Promise<ApiResult<T>>,
-		{ fallbackMessage, tracksLoading = true, isCurrent = () => true }: RunOptions
+		{
+			fallbackMessage,
+			tracksLoading = true,
+			isCurrent = () => true,
+			isHandled = () => false
+		}: RunOptions
 	): Promise<ApiResult<T>> {
 		if (tracksLoading) loading.set(true);
 		error.set(null);
@@ -28,7 +35,7 @@ export function createRequestStatus() {
 			result = { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
 		}
 		if (isCurrent()) {
-			if (!result.success) {
+			if (!result.success && !isHandled(result)) {
 				const message = result.error || fallbackMessage;
 				error.set(message);
 				notifyError(message);

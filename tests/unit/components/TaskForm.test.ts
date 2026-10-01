@@ -277,4 +277,64 @@ describe('TaskForm', () => {
 		// THEN: The error stays in its own feature.
 		expect(queryByText('Email already in use')).toBeNull();
 	});
+
+	describe('a task already deleted on the server', () => {
+		const other = { ...task, id: 11, title: 'Other', description: 'Other code' };
+		const gone = {
+			success: false as const,
+			error: 'Task not found',
+			status: 404,
+			code: 'TASK_NOT_FOUND'
+		};
+
+		it('closes the edit of a task that is gone, and removes its line (happy path)', async () => {
+			// GIVEN: A task being edited, already deleted on the server.
+			vi.mocked(api.updateTask).mockResolvedValue(gone);
+			const view = render(TaskForm, { props: { user } });
+			await fireEvent.click(view.getByRole('button', { name: 'Edit Review' }));
+			const editTitle = view.getByDisplayValue('Review') as HTMLInputElement;
+
+			// WHEN: The edit is saved.
+			await fireEvent.input(editTitle, { target: { value: 'Changed' } });
+			await fireEvent.submit(editTitle.closest('form') as HTMLFormElement);
+
+			// THEN: The edit closes, the task is gone and no error banner is shown.
+			await waitFor(() => expect(view.queryByDisplayValue('Changed')).toBeNull());
+			expect(view.queryByText('Review')).toBeNull();
+			expect(view.queryByText('Task not found')).toBeNull();
+			expect(view.getByText('No tasks yet')).toBeTruthy();
+		});
+
+		it('keeps the edit of another task open when a different task disappears (limit)', async () => {
+			// GIVEN: Two tasks; the second is being edited, the first is gone on the server.
+			userTasks.set([task, other]);
+			vi.mocked(api.deleteTask).mockResolvedValue(gone);
+			const view = render(TaskForm, { props: { user } });
+			await fireEvent.click(view.getByRole('button', { name: 'Edit Other' }));
+			const editTitle = view.getByDisplayValue('Other') as HTMLInputElement;
+			await fireEvent.input(editTitle, { target: { value: 'Other draft' } });
+
+			// WHEN: The first task is deleted and turns out to be gone already.
+			await fireEvent.click(view.getByRole('button', { name: 'Delete Review' }));
+
+			// THEN: The first line disappears and the draft of the second stays open.
+			await waitFor(() => expect(view.queryByText('Review')).toBeNull());
+			expect((view.getByDisplayValue('Other draft') as HTMLInputElement).value).toBe('Other draft');
+		});
+
+		it('removes the line of a gone task on toggle, without error banner (boundary)', async () => {
+			// GIVEN: A listed task already deleted on the server.
+			vi.mocked(api.updateTask).mockResolvedValue(gone);
+			const { getByRole, queryByRole, queryByText } = render(TaskForm, { props: { user } });
+
+			// WHEN: Its checkbox is clicked.
+			await fireEvent.click(getByRole('checkbox', { name: /mark review as complete/i }));
+
+			// THEN: The line disappears and no error is shown.
+			await waitFor(() =>
+				expect(queryByRole('checkbox', { name: /mark review as complete/i })).toBeNull()
+			);
+			expect(queryByText('Task not found')).toBeNull();
+		});
+	});
 });

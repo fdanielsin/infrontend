@@ -14,6 +14,9 @@ Les E2E locaux nécessitent un backend `inbackend` disponible sur
 `http://localhost:8080`. La CI démarre automatiquement `inbackend` avec une
 base PostgreSQL de service.
 
+Vitest exécute les tests dans un ordre aléatoire (`sequence.shuffle`, graine affichée
+en tête de run) : un test ne doit dépendre ni d'un autre ni de l'ordre.
+
 Chaque fichier de test utilise le suffixe `.test.ts` ou `.test.svelte`.
 
 Les scénarios suivent une structure explicite :
