@@ -189,9 +189,10 @@ disparaît 6 s après la sortie, se ferme avec le bouton.
 ## Prochaine étape
 
 Docker/CI, contrat généré (openapi-typescript, openapi-fetch, `api:check`) et
-B-04 côté interface (404 sur une tâche absente) sont faits. Restent, dans
-l'ordre : F5 (`refactor/frontend-svelte-style` : `$state.raw`, `class` en
-tableau, `:global` inutile), puis F6 (`refactor/frontend-state-context` :
-stores `writable` vers classes `.svelte.ts` et `createContext`). La
-modularisation de `stats` reste ouverte, uniquement si elle apporte une
-séparation claire. La CI frontend attend le secret `INBACKEND_READ_TOKEN`.
+B-04 côté interface (404 sur une tâche absente) sont faits, ainsi que F5
+(`refactor/frontend-svelte-style` : `$state.raw` pour les objets réaffectés,
+`class` en tableau, `:global` inutile retiré). Reste F6
+(`refactor/frontend-state-context` : stores `writable` vers classes
+`.svelte.ts` et `createContext`). La modularisation de `stats` reste ouverte,
+uniquement si elle apporte une séparation claire. La CI frontend attend le
+secret `INBACKEND_READ_TOKEN`.

@@ -261,4 +261,41 @@ describe('UserForm', () => {
 			expect(document.activeElement).not.toBe(view.emailInput);
 		});
 	});
+
+	it('marks only the selected user as pressed and highlighted, moving with the selection (happy path)', async () => {
+		// GIVEN: Two listed users and an API that returns each of them without tasks.
+		const ada = { id: 1, name: 'Ada', email: 'ada@example.com' };
+		const grace = { id: 2, name: 'Grace', email: 'grace@example.com' };
+		users.set([ada, grace]);
+		vi.mocked(api.getUser).mockImplementation((id: number) =>
+			Promise.resolve({ success: true, data: id === ada.id ? ada : grace })
+		);
+		vi.mocked(api.getUserTasks).mockResolvedValue({ success: true, data: [] });
+		const view = renderForm();
+		const adaButton = view.getByRole('button', { name: /Ada/ });
+		const graceButton = view.getByRole('button', { name: /Grace/ });
+		const highlight = ['bg-blue-100', 'ring-2', 'ring-blue-600'];
+		const isHighlighted = (button: HTMLElement) =>
+			highlight.every((name) => button.classList.contains(name));
+		expect(adaButton.getAttribute('aria-pressed')).toBe('false');
+		expect(graceButton.getAttribute('aria-pressed')).toBe('false');
+
+		// WHEN: The second user is selected.
+		await fireEvent.click(graceButton);
+
+		// THEN: Only that user is pressed and highlighted.
+		await waitFor(() => expect(graceButton.getAttribute('aria-pressed')).toBe('true'));
+		expect(isHighlighted(graceButton)).toBe(true);
+		expect(adaButton.getAttribute('aria-pressed')).toBe('false');
+		expect(highlight.some((name) => adaButton.classList.contains(name))).toBe(false);
+
+		// WHEN: The selection moves to the first user.
+		await fireEvent.click(adaButton);
+
+		// THEN: The first user is pressed and highlighted, the second one no longer.
+		await waitFor(() => expect(adaButton.getAttribute('aria-pressed')).toBe('true'));
+		expect(isHighlighted(adaButton)).toBe(true);
+		expect(graceButton.getAttribute('aria-pressed')).toBe('false');
+		expect(highlight.some((name) => graceButton.classList.contains(name))).toBe(false);
+	});
 });

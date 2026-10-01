@@ -6,7 +6,7 @@
 
 	const { loading, error, run } = createRequestStatus();
 	loading.set(true);
-	let stats = $state<Stats | null>(null);
+	let stats = $state.raw<Stats | null>(null);
 
 	onMount(async () => {
 		const result = await run(() => api.getStats(), { fallbackMessage: 'Failed to fetch stats' });

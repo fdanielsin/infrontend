@@ -8,7 +8,7 @@
 	const USER_FIELDS = ['name', 'email'] as const;
 	let name = $state('');
 	let email = $state('');
-	let fieldErrors = $state<{ name?: string; email?: string }>({});
+	let fieldErrors = $state.raw<{ name?: string; email?: string }>({});
 	const refs: Partial<Record<'nameInput' | 'emailInput', HTMLElement>> = {};
 
 	async function handleSubmit() {
@@ -92,13 +92,15 @@
 		{:else}
 			<ul class="space-y-2">
 				{#each $users as user (user.id)}
+					{@const selected = $selectedUser?.id === user.id}
 					<li class="rounded bg-gray-100 p-3">
 						<button
 							type="button"
-							class={$selectedUser?.id === user.id
-								? 'w-full rounded bg-blue-100 p-1 text-left ring-2 ring-blue-600 focus:ring-2 focus:ring-blue-500 focus:outline-none'
-								: 'w-full rounded p-1 text-left focus:ring-2 focus:ring-blue-500 focus:outline-none'}
-							aria-pressed={$selectedUser?.id === user.id}
+							class={[
+								'w-full rounded p-1 text-left focus:ring-2 focus:ring-blue-500 focus:outline-none',
+								selected && 'bg-blue-100 ring-2 ring-blue-600'
+							]}
+							aria-pressed={selected}
 							onclick={() => selectUser(user.id)}
 						>
 							<p class="font-medium">{user.name}</p>

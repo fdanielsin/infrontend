@@ -15,11 +15,11 @@
 
 	let taskTitle = $state('');
 	let taskDescription = $state('');
-	let fieldErrors = $state<FieldErrors>({});
+	let fieldErrors = $state.raw<FieldErrors>({});
 	let editingTaskId = $state<number | null>(null);
 	let editingTitle = $state('');
 	let editingDescription = $state('');
-	let editErrors = $state<FieldErrors>({});
+	let editErrors = $state.raw<FieldErrors>({});
 
 	const refs: Partial<
 		Record<

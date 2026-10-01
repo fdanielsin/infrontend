@@ -120,7 +120,7 @@
 	}
 
 	@media (prefers-reduced-motion: no-preference) {
-		:global(.animate-slide-in) {
+		.animate-slide-in {
 			animation: slideIn 0.3s ease-out;
 		}
 	}
