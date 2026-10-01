@@ -30,4 +30,5 @@ vite.config.ts.timestamp-*
 /.stryker-tmp
 # Paraglide
 src/lib/paraglide
-project.inlang/cache/
+project.inlang/*
+!project.inlang/settings.json
