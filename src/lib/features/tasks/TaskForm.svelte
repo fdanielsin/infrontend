@@ -5,6 +5,7 @@
 	import Button from '$lib/ui/Button.svelte';
 	import Card from '$lib/ui/Card.svelte';
 	import IconButton from '$lib/ui/IconButton.svelte';
+	import TextField from '$lib/ui/TextField.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { getAppState } from '$lib/state/app-state.svelte';
 	import type { User } from '$lib/api/client';
@@ -183,39 +184,26 @@
 				class="mb-6 space-y-4"
 			>
 				<div>
-					<label for="title" class="block text-sm font-medium text-gray-700"
-						>{m.tasks_title_label()}</label
-					>
-					<input
+					<TextField
 						id="title"
-						type="text"
+						label={m.tasks_title_label()}
 						bind:value={taskTitle}
 						{@attach ref(refs, 'titleInput')}
 						required
-						aria-invalid={!!fieldErrors.title}
-						aria-describedby={fieldErrors.title ? 'title-error' : undefined}
-						class="mt-1 w-full rounded border border-gray-300 px-3 py-2"
+						error={fieldErrors.title ? validationMessage(fieldErrors.title) : undefined}
 					/>
-					{#if fieldErrors.title}<p id="title-error" class="mt-1 text-sm text-red-600">
-							{validationMessage(fieldErrors.title)}
-						</p>{/if}
 				</div>
 
 				<div>
-					<label for="description" class="block text-sm font-medium text-gray-700">
-						{m.tasks_description_label()}
-					</label>
-					<textarea
+					<TextField
 						id="description"
+						multiline
+						rows={3}
+						label={m.tasks_description_label()}
 						bind:value={taskDescription}
 						{@attach ref(refs, 'descriptionInput')}
-						class="mt-1 w-full rounded border border-gray-300 px-3 py-2"
-						rows="3"
-						aria-invalid={!!fieldErrors.description}
-						aria-describedby={fieldErrors.description ? 'description-error' : undefined}></textarea>
-					{#if fieldErrors.description}<p id="description-error" class="mt-1 text-sm text-red-600">
-							{validationMessage(fieldErrors.description)}
-						</p>{/if}
+						error={fieldErrors.description ? validationMessage(fieldErrors.description) : undefined}
+					/>
 				</div>
 
 				<Button variant="success" type="submit" disabled={status.loading}>
@@ -250,46 +238,31 @@
 											void handleEditTask();
 										}}
 									>
-										<label class="sr-only" for={`edit-title-${task.id}`}
-											>{m.tasks_title_label()}</label
-										>
-										<input
+										<TextField
+											compact
+											labelHidden
 											id={`edit-title-${task.id}`}
-											type="text"
+											errorId={`edit-title-error-${task.id}`}
+											label={m.tasks_title_label()}
 											bind:value={editingTitle}
 											{@attach focusOnMount}
 											{@attach ref(refs, 'editTitleInput')}
-											aria-invalid={!!editErrors.title}
-											aria-describedby={editErrors.title
-												? `edit-title-error-${task.id}`
-												: undefined}
-											class="w-full rounded border border-gray-300 px-2 py-1"
+											error={editErrors.title ? validationMessage(editErrors.title) : undefined}
 										/>
-										{#if editErrors.title}<p
-												id={`edit-title-error-${task.id}`}
-												class="text-sm text-red-700"
-											>
-												{validationMessage(editErrors.title)}
-											</p>{/if}
-										<label class="sr-only" for={`edit-description-${task.id}`}
-											>{m.tasks_description_label()}</label
-										>
-										<textarea
+										<TextField
+											compact
+											labelHidden
+											multiline
+											rows={2}
 											id={`edit-description-${task.id}`}
+											errorId={`edit-description-error-${task.id}`}
+											label={m.tasks_description_label()}
 											bind:value={editingDescription}
 											{@attach ref(refs, 'editDescriptionInput')}
-											aria-invalid={!!editErrors.description}
-											aria-describedby={editErrors.description
-												? `edit-description-error-${task.id}`
+											error={editErrors.description
+												? validationMessage(editErrors.description)
 												: undefined}
-											class="w-full rounded border border-gray-300 px-2 py-1"
-											rows="2"></textarea>
-										{#if editErrors.description}<p
-												id={`edit-description-error-${task.id}`}
-												class="text-sm text-red-700"
-											>
-												{validationMessage(editErrors.description)}
-											</p>{/if}
+										/>
 										<div class="flex gap-2">
 											<Button variant="strong" type="submit" disabled={status.loading}>
 												{m.tasks_save()}

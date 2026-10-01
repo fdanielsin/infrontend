@@ -3,6 +3,7 @@
 	import { ref } from '$lib/ui/attachments';
 	import Button from '$lib/ui/Button.svelte';
 	import Card from '$lib/ui/Card.svelte';
+	import TextField from '$lib/ui/TextField.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { getAppState } from '$lib/state/app-state.svelte';
 	import { UserSchema, validationMessage } from '$lib/validation/schemas';
@@ -47,41 +48,26 @@
 		class="space-y-4"
 	>
 		<div>
-			<label for="name" class="block text-sm font-medium text-gray-700"
-				>{m.users_name_label()}</label
-			>
-			<input
+			<TextField
 				id="name"
-				type="text"
+				label={m.users_name_label()}
 				bind:value={name}
 				{@attach ref(refs, 'nameInput')}
 				required
-				aria-invalid={!!fieldErrors.name}
-				aria-describedby={fieldErrors.name ? 'name-error' : undefined}
-				class="mt-1 w-full rounded border border-gray-300 px-3 py-2"
+				error={fieldErrors.name ? validationMessage(fieldErrors.name) : undefined}
 			/>
-			{#if fieldErrors.name}<p id="name-error" class="mt-1 text-sm text-red-600">
-					{validationMessage(fieldErrors.name)}
-				</p>{/if}
 		</div>
 
 		<div>
-			<label for="email" class="block text-sm font-medium text-gray-700"
-				>{m.users_email_label()}</label
-			>
-			<input
+			<TextField
 				id="email"
 				type="email"
+				label={m.users_email_label()}
 				bind:value={email}
 				{@attach ref(refs, 'emailInput')}
 				required
-				aria-invalid={!!fieldErrors.email}
-				aria-describedby={fieldErrors.email ? 'email-error' : undefined}
-				class="mt-1 w-full rounded border border-gray-300 px-3 py-2"
+				error={fieldErrors.email ? validationMessage(fieldErrors.email) : undefined}
 			/>
-			{#if fieldErrors.email}<p id="email-error" class="mt-1 text-sm text-red-600">
-					{validationMessage(fieldErrors.email)}
-				</p>{/if}
 		</div>
 
 		<Button type="submit" disabled={status.loading}>
