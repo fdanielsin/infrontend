@@ -98,3 +98,49 @@ formatage, lint, typage, tests et build.
 Un commentaire affirmant une propriété durable doit être garanti par un type
 ou par un test. Sinon, le commentaire doit expliquer une raison, une limite ou
 un piège sans présenter cette information comme une garantie.
+
+## Accessibilité (WCAG 2.2 AA)
+
+- Un contrôle a un nom accessible stable : label visible, jamais un
+  `aria-label` qui change avec l'état (case à cocher = titre de la tâche).
+- Un bouton d'icône a un `aria-label` et une icône `aria-hidden` ; toute cible
+  fait au moins 24 px (`min-h-6 min-w-6`).
+- Les erreurs de champ sont reliées par `aria-describedby` et `aria-invalid` ;
+  après un échec de validation, le focus va au premier champ invalide.
+- Après une action qui retire l'élément focalisé (suppression, fermeture d'une
+  édition, tâche disparue du serveur à la coche, à l'édition ou à la
+  suppression), le focus va à un endroit logique (titre de la liste ou bouton
+  d'origine), jamais au `body`. Échap annule une édition. Fermer un toast
+  qui avait le focus (mesuré avant la suppression) le déplace vers le bouton de fermeture du toast voisin (suivant, sinon
+  précédent), sinon vers l'élément qui l'avait avant l'entrée dans les toasts,
+  sinon vers `main` (`tabindex="-1"`) ; un toast fermé à la souris sans
+  focus (Safari) laisse le focus où il est.
+- Les notifications vivent dans deux régions persistantes : `role="status"`
+  (info, succès, avertissement) et `role="alert"` (erreur). Un toast se met en
+  pause au survol et au focus et peut être fermé. Les bannières d'erreur en
+  ligne n'ont pas de rôle : une seule annonce, par le toast.
+- Contraste texte 4,5:1 minimum : teintes 700 sur fond coloré. Le texte posé
+  sur le dégradé de la page n'est pas mesurable par axe (« incomplet ») ; il a
+  été calculé à la main (> 6:1).
+- Les émojis décoratifs sont `aria-hidden` ; le contenu en français de la page
+  stats porte `lang="fr"`.
+- Animations désactivées avec `prefers-reduced-motion`.
+- Limite connue : le bouton d'envoi est `disabled` pendant une requête, ce qui
+  fait perdre le focus à qui valide au bouton ; non corrigé volontairement (les
+  tests s'appuient sur `disabled`, gain faible).
+
+## Références
+
+- [Svelte, bonnes pratiques](https://svelte.dev/docs/svelte/best-practices) :
+  règle du projet (runes, `$derived` plutôt que `$effect`, `onclick`,
+  snippets, props typées, blocs `each` à clé, attributs `class` en tableau,
+  `{@attach}` plutôt qu'une action ou `getElementById`).
+  Écarts connus :
+  - **Planifié (F6)** : l'état partagé utilise `svelte/store` (`writable`) au
+    niveau module ; il passera en classes `.svelte.ts` avec `$state`, fournies
+    par `createContext` depuis `+layout.svelte`, sans changement de
+    comportement.
+  - **Volontaire** : le chargement initial se fait dans `onMount` (accueil et
+    stats) et non dans une fonction `load` SvelteKit ; la page de bonnes
+    pratiques ne le demande pas et `load` changerait l'architecture (rendu
+    serveur des données).

@@ -1,8 +1,13 @@
 <script lang="ts">
+	import { tick } from 'svelte';
+	import type { Attachment } from 'svelte/attachments';
+	import { focusOnMount, ref } from '$lib/ui/attachments';
 	import { userTasks, tasksStatus, addTask, editTask, toggleTask, removeTask } from './store';
 	import type { User } from '$lib/api/client';
 	import { TaskSchema } from '$lib/validation/schemas';
 	import { zodIssuesToFieldErrors } from '$lib/validation/field-errors';
+
+	type FieldErrors = { title?: string; description?: string };
 
 	const { loading, error } = tasksStatus;
 	const TASK_FIELDS = ['title', 'description'] as const;
@@ -10,11 +15,49 @@
 
 	let taskTitle = $state('');
 	let taskDescription = $state('');
-	let fieldErrors = $state<{ title?: string; description?: string }>({});
+	let fieldErrors = $state<FieldErrors>({});
 	let editingTaskId = $state<number | null>(null);
 	let editingTitle = $state('');
 	let editingDescription = $state('');
-	let editErrors = $state<{ title?: string; description?: string }>({});
+	let editErrors = $state<FieldErrors>({});
+
+	const refs: Partial<
+		Record<
+			| 'tasksHeading'
+			| 'titleInput'
+			| 'descriptionInput'
+			| 'editForm'
+			| 'editTitleInput'
+			| 'editDescriptionInput',
+			HTMLElement
+		>
+	> = {};
+	const editButtons: Record<number, HTMLElement | undefined> = {};
+
+	function registerEditButton(taskId: number): Attachment<HTMLElement> {
+		return (button) => {
+			editButtons[taskId] = button;
+			return () => {
+				if (editButtons[taskId] === button) delete editButtons[taskId];
+			};
+		};
+	}
+
+	async function focusFirstInvalidField(
+		errors: FieldErrors,
+		fields: Record<'title' | 'description', HTMLElement | undefined>
+	) {
+		await tick();
+		const invalidField = TASK_FIELDS.find((field) => errors[field]);
+		if (invalidField) fields[invalidField]?.focus();
+	}
+
+	// After the edit form closes, focus goes back to the task's Edit button, or
+	// to the list heading when the task is gone.
+	async function focusAfterEditing(taskId: number) {
+		await tick();
+		(editButtons[taskId] ?? refs.tasksHeading)?.focus();
+	}
 
 	function startEditing(task: { id: number; title: string; description: string }) {
 		editingTaskId = task.id;
@@ -30,6 +73,11 @@
 		editErrors = {};
 	}
 
+	function closeEditing(taskId: number) {
+		cancelEditing();
+		void focusAfterEditing(taskId);
+	}
+
 	async function handleEditTask() {
 		if (editingTaskId === null) return;
 
@@ -42,13 +90,17 @@
 		});
 		if (!result.success) {
 			editErrors = zodIssuesToFieldErrors(result.error, TASK_FIELDS);
+			void focusFirstInvalidField(editErrors, {
+				title: refs.editTitleInput,
+				description: refs.editDescriptionInput
+			});
 			return;
 		}
 
 		const editedId = editingTaskId;
 		const updated = await editTask(editedId, result.data.title, result.data.description);
 		const stillListed = $userTasks.some((task) => task.id === editedId);
-		if (updated || !stillListed) cancelEditing();
+		if (updated || !stillListed) closeEditing(editedId);
 	}
 
 	async function handleAddTask() {
@@ -62,6 +114,10 @@
 			});
 			if (!result.success) {
 				fieldErrors = zodIssuesToFieldErrors(result.error, TASK_FIELDS);
+				void focusFirstInvalidField(fieldErrors, {
+					title: refs.titleInput,
+					description: refs.descriptionInput
+				});
 				return;
 			}
 			const created = await addTask(result.data.title, result.data.description, user.id);
@@ -71,7 +127,35 @@
 			}
 		}
 	}
+
+	function cancelEditingOnEscape(event: KeyboardEvent) {
+		if (event.key !== 'Escape' || editingTaskId === null) return;
+		if (refs.editForm?.contains(event.target as Node)) closeEditing(editingTaskId);
+	}
+
+	// A task row leaves the list (deleted, or gone on the server) with focus inside it.
+	async function focusHeadingIfRowRemoved(taskId: number) {
+		if ($userTasks.some((task) => task.id === taskId)) return;
+		await tick();
+		refs.tasksHeading?.focus();
+	}
+
+	async function handleRemoveTask(taskId: number) {
+		await removeTask(taskId);
+		await focusHeadingIfRowRemoved(taskId);
+	}
+
+	async function handleToggleTask(checkbox: HTMLInputElement, taskId: number) {
+		const nextCompleted = checkbox.checked;
+		const ok = await toggleTask(taskId, nextCompleted);
+		if (ok) return;
+		// Revert the native click if the update failed (see toggleTask).
+		checkbox.checked = !nextCompleted;
+		await focusHeadingIfRowRemoved(taskId);
+	}
 </script>
+
+<svelte:window onkeydown={cancelEditingOnEscape} />
 
 {#if !user}
 	<div class="rounded-lg border border-gray-300 bg-white p-6 shadow">
@@ -99,6 +183,7 @@
 						id="title"
 						type="text"
 						bind:value={taskTitle}
+						{@attach ref(refs, 'titleInput')}
 						required
 						aria-invalid={!!fieldErrors.title}
 						aria-describedby={fieldErrors.title ? 'title-error' : undefined}
@@ -116,6 +201,7 @@
 					<textarea
 						id="description"
 						bind:value={taskDescription}
+						{@attach ref(refs, 'descriptionInput')}
 						class="mt-1 w-full rounded border border-gray-300 px-3 py-2"
 						rows="3"
 						aria-invalid={!!fieldErrors.description}
@@ -128,14 +214,16 @@
 				<button
 					type="submit"
 					disabled={$loading}
-					class="w-full rounded bg-green-600 px-4 py-2 text-white hover:bg-green-700 disabled:bg-gray-400"
+					class="w-full rounded bg-green-700 px-4 py-2 text-white hover:bg-green-800 disabled:bg-gray-400"
 				>
 					{$loading ? 'Adding...' : 'Add Task'}
 				</button>
 			</form>
 
 			<div>
-				<h3 class="mb-3 font-semibold">Tasks ({$userTasks.length})</h3>
+				<h3 {@attach ref(refs, 'tasksHeading')} tabindex="-1" class="mb-3 font-semibold">
+					Tasks ({$userTasks.length})
+				</h3>
 				{#if $userTasks.length === 0}
 					<p class="text-gray-500">No tasks yet</p>
 				{:else}
@@ -146,19 +234,13 @@
 									id={`task-${task.id}`}
 									type="checkbox"
 									checked={task.completed}
-									onchange={(event: Event & { currentTarget: HTMLInputElement }) => {
-										const checkbox = event.currentTarget;
-										const nextCompleted = checkbox.checked;
-										void toggleTask(task.id, nextCompleted).then((ok) => {
-											// Revert the native click if the update failed (see toggleTask).
-											if (!ok) checkbox.checked = !nextCompleted;
-										});
-									}}
-									aria-label={`Mark ${task.title} as ${task.completed ? 'incomplete' : 'complete'}`}
-									class="mt-1 mr-3"
+									onchange={(event) => void handleToggleTask(event.currentTarget, task.id)}
+									aria-label={editingTaskId === task.id ? task.title : undefined}
+									class="mt-1 mr-3 h-4 w-4"
 								/>
 								{#if editingTaskId === task.id}
 									<form
+										{@attach ref(refs, 'editForm')}
 										class="flex-1 space-y-2"
 										onsubmit={(e) => {
 											e.preventDefault();
@@ -170,34 +252,49 @@
 											id={`edit-title-${task.id}`}
 											type="text"
 											bind:value={editingTitle}
+											{@attach focusOnMount}
+											{@attach ref(refs, 'editTitleInput')}
 											aria-invalid={!!editErrors.title}
+											aria-describedby={editErrors.title
+												? `edit-title-error-${task.id}`
+												: undefined}
 											class="w-full rounded border border-gray-300 px-2 py-1"
 										/>
-										{#if editErrors.title}<p class="text-sm text-red-600">
+										{#if editErrors.title}<p
+												id={`edit-title-error-${task.id}`}
+												class="text-sm text-red-700"
+											>
 												{editErrors.title}
 											</p>{/if}
 										<label class="sr-only" for={`edit-description-${task.id}`}>Description</label>
 										<textarea
 											id={`edit-description-${task.id}`}
 											bind:value={editingDescription}
+											{@attach ref(refs, 'editDescriptionInput')}
 											aria-invalid={!!editErrors.description}
+											aria-describedby={editErrors.description
+												? `edit-description-error-${task.id}`
+												: undefined}
 											class="w-full rounded border border-gray-300 px-2 py-1"
 											rows="2"></textarea>
-										{#if editErrors.description}<p class="text-sm text-red-600">
+										{#if editErrors.description}<p
+												id={`edit-description-error-${task.id}`}
+												class="text-sm text-red-700"
+											>
 												{editErrors.description}
 											</p>{/if}
 										<div class="flex gap-2">
 											<button
 												type="submit"
 												disabled={$loading}
-												class="rounded bg-blue-600 px-2 py-1 text-sm text-white"
+												class="min-h-6 rounded bg-blue-700 px-2 py-1 text-sm text-white"
 											>
 												Save
 											</button>
 											<button
 												type="button"
-												onclick={cancelEditing}
-												class="rounded border px-2 py-1 text-sm"
+												onclick={() => closeEditing(task.id)}
+												class="min-h-6 rounded border px-2 py-1 text-sm"
 											>
 												Cancel
 											</button>
@@ -205,27 +302,43 @@
 									</form>
 								{:else}
 									<div class="flex-1">
-										<p class={task.completed ? 'text-gray-500 line-through' : 'font-medium'}>
+										<label
+											for={`task-${task.id}`}
+											class={[
+												'block',
+												task.completed ? 'text-gray-600 line-through' : 'font-medium'
+											]}
+										>
 											{task.title}
-										</p>
+										</label>
 										<p class="text-sm text-gray-600">{task.description}</p>
 									</div>
 									<button
 										type="button"
+										{@attach registerEditButton(task.id)}
 										onclick={() => startEditing(task)}
 										aria-label={`Edit ${task.title}`}
-										class="ml-2 text-blue-600 hover:text-blue-800"
+										class="ml-2 min-h-6 rounded px-1 text-blue-700 hover:text-blue-900"
 									>
 										Edit
 									</button>
 								{/if}
 								<button
 									type="button"
-									onclick={() => removeTask(task.id)}
+									onclick={() => void handleRemoveTask(task.id)}
 									aria-label={`Delete ${task.title}`}
-									class="ml-2 text-red-600 hover:text-red-800"
+									class="ml-2 inline-flex min-h-6 min-w-6 items-center justify-center rounded text-red-700 hover:text-red-900"
 								>
-									×
+									<svg
+										aria-hidden="true"
+										viewBox="0 0 20 20"
+										class="h-4 w-4"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2"
+									>
+										<path d="M5 5l10 10M15 5L5 15" />
+									</svg>
 								</button>
 							</li>
 						{/each}

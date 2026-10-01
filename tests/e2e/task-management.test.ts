@@ -37,10 +37,10 @@ test.describe('Task management', () => {
 		await page.getByLabel('Description').nth(1).fill('Updated by the frontend E2E test');
 		await page.getByRole('button', { name: 'Save' }).click();
 		await expect(page.getByText(`${taskTitle} updated`)).toBeVisible();
-		await page.getByRole('checkbox', { name: `Mark ${taskTitle} updated as complete` }).check();
-		await expect(
-			page.getByRole('checkbox', { name: `Mark ${taskTitle} updated as incomplete` })
-		).toBeChecked();
+		const checkbox = page.getByRole('checkbox', { name: `${taskTitle} updated`, exact: true });
+		await expect(checkbox).not.toBeChecked();
+		await checkbox.check();
+		await expect(checkbox).toBeChecked();
 		await page.getByRole('button', { name: `Delete ${taskTitle} updated` }).click();
 		await expect(page.getByText(`${taskTitle} updated`)).not.toBeVisible();
 

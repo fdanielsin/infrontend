@@ -59,9 +59,7 @@ describe('TaskForm', () => {
 		// GIVEN: A rendered task list and an API that rejects the toggle request.
 		vi.mocked(api.updateTask).mockResolvedValue({ success: false, error: 'Task locked' });
 		const { getByRole, getByText } = render(TaskForm, { props: { user } });
-		const checkbox = getByRole('checkbox', {
-			name: /mark review as complete/i
-		}) as HTMLInputElement;
+		const checkbox = getByRole('checkbox', { name: 'Review' }) as HTMLInputElement;
 
 		// WHEN: The user clicks the checkbox (the browser flips it natively before
 		// the rejection is known).
@@ -244,9 +242,7 @@ describe('TaskForm', () => {
 		// GIVEN: A toggle request that rejects.
 		vi.mocked(api.updateTask).mockRejectedValue(new Error('Network down'));
 		const { getByRole, getByText } = render(TaskForm, { props: { user } });
-		const checkbox = getByRole('checkbox', {
-			name: /mark review as complete/i
-		}) as HTMLInputElement;
+		const checkbox = getByRole('checkbox', { name: 'Review' }) as HTMLInputElement;
 
 		// WHEN: The checkbox is clicked.
 		await fireEvent.click(checkbox);
@@ -328,12 +324,10 @@ describe('TaskForm', () => {
 			const { getByRole, queryByRole, queryByText } = render(TaskForm, { props: { user } });
 
 			// WHEN: Its checkbox is clicked.
-			await fireEvent.click(getByRole('checkbox', { name: /mark review as complete/i }));
+			await fireEvent.click(getByRole('checkbox', { name: 'Review' }));
 
 			// THEN: The line disappears and no error is shown.
-			await waitFor(() =>
-				expect(queryByRole('checkbox', { name: /mark review as complete/i })).toBeNull()
-			);
+			await waitFor(() => expect(queryByRole('checkbox', { name: 'Review' })).toBeNull());
 			expect(queryByText('Task not found')).toBeNull();
 		});
 	});

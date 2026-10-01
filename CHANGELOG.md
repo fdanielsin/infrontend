@@ -15,6 +15,13 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- Notifications: errors and other messages sit in two persistent live regions
+  (alert and status), pause on hover and focus, and have a close button
+  (WCAG 2.2.1, 4.1.3). The entry animation respects reduced motion.
+- Colors: notifications and the "Add Task" button use darker shades to reach a
+  4.5:1 contrast ratio (WCAG 1.4.3).
+- Task checkboxes are named by the visible task title instead of a label that
+  changed with the checked state.
 - E2E tests are never retried in the CI: an unstable test fails and gets fixed.
 - Unit tests run in random order (`sequence.shuffle`), locally and in the CI.
 - Reorganized `tasks` into its own feature alongside `users`, with
@@ -51,6 +58,12 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Keyboard and screen reader use: focus moves to the edit field, back to the
+  task's Edit button when the edit closes, to the task list heading after a
+  deletion and to the first invalid field after a failed validation; Escape
+  cancels an edit; edit errors are linked to their fields; icon buttons have a
+  24 px target; the pages have a `main` landmark, a title and the right
+  language (WCAG 2.4.3, 3.1.2, 3.3.1, 2.5.8).
 - `bun run verify` works from a fresh checkout: it generates the SvelteKit types
   (with `PUBLIC_API_URL`) before linting.
 - Deleting, ticking or editing a task that no longer exists on the server removes

@@ -1,17 +1,23 @@
 <script lang="ts">
+	import { tick } from 'svelte';
+	import { ref } from '$lib/ui/attachments';
 	import { users, selectedUser, usersStatus, addUser, selectUser } from './store';
 	import { UserSchema } from '$lib/validation/schemas';
 	import { zodIssuesToFieldErrors } from '$lib/validation/field-errors';
 	const { loading, error } = usersStatus;
+	const USER_FIELDS = ['name', 'email'] as const;
 	let name = $state('');
 	let email = $state('');
 	let fieldErrors = $state<{ name?: string; email?: string }>({});
+	const refs: Partial<Record<'nameInput' | 'emailInput', HTMLElement>> = {};
 
 	async function handleSubmit() {
 		const result = UserSchema.safeParse({ name, email });
 		fieldErrors = {};
 		if (!result.success) {
-			fieldErrors = zodIssuesToFieldErrors(result.error, ['name', 'email']);
+			fieldErrors = zodIssuesToFieldErrors(result.error, USER_FIELDS);
+			await tick();
+			(fieldErrors.name ? refs.nameInput : refs.emailInput)?.focus();
 			return;
 		}
 		const created = await addUser(result.data.name, result.data.email);
@@ -42,6 +48,7 @@
 				id="name"
 				type="text"
 				bind:value={name}
+				{@attach ref(refs, 'nameInput')}
 				required
 				aria-invalid={!!fieldErrors.name}
 				aria-describedby={fieldErrors.name ? 'name-error' : undefined}
@@ -58,6 +65,7 @@
 				id="email"
 				type="email"
 				bind:value={email}
+				{@attach ref(refs, 'emailInput')}
 				required
 				aria-invalid={!!fieldErrors.email}
 				aria-describedby={fieldErrors.email ? 'email-error' : undefined}

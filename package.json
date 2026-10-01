@@ -23,6 +23,7 @@
 		"verify": "svelte-kit sync && bun run lint && bun run check && bun run test:coverage && bun run build"
 	},
 	"devDependencies": {
+		"@axe-core/playwright": "^4.13.0",
 		"@eslint/js": "^10.0.1",
 		"@playwright/test": "^1.63.0",
 		"@stryker-mutator/core": "^10.0.0",

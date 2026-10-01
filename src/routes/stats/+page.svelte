@@ -14,9 +14,19 @@
 	});
 </script>
 
-<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
+<svelte:head>
+	<title>Statistiques - inBackend</title>
+</svelte:head>
+
+<main
+	lang="fr"
+	tabindex="-1"
+	class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8 focus:outline-none"
+>
 	<div class="mx-auto max-w-2xl">
-		<h1 class="mb-8 text-4xl font-bold text-gray-800">📊 Statistiques</h1>
+		<h1 class="mb-8 text-4xl font-bold text-gray-800">
+			<span aria-hidden="true">📊</span> Statistiques
+		</h1>
 
 		{#if $loading}
 			<div class="rounded-lg bg-white p-8 text-center shadow-lg">
@@ -24,17 +34,19 @@
 			</div>
 		{:else if $error}
 			<div class="rounded-lg border border-red-200 bg-red-50 p-8 shadow-lg">
-				<p class="font-semibold text-red-600">❌ Erreur: {$error}</p>
+				<p class="font-semibold text-red-700">
+					<span aria-hidden="true">❌</span> Erreur: {$error}
+				</p>
 			</div>
 		{:else if stats}
 			<div class="grid grid-cols-2 gap-6">
 				<div class="rounded-lg bg-white p-6 shadow-lg transition hover:shadow-xl">
 					<div class="text-5xl font-bold text-blue-600">{stats.users}</div>
-					<p class="mt-2 text-lg text-gray-600">👥 Utilisateurs</p>
+					<p class="mt-2 text-lg text-gray-600"><span aria-hidden="true">👥</span> Utilisateurs</p>
 				</div>
 				<div class="rounded-lg bg-white p-6 shadow-lg transition hover:shadow-xl">
 					<div class="text-5xl font-bold text-indigo-600">{stats.tasks}</div>
-					<p class="mt-2 text-lg text-gray-600">✅ Tâches</p>
+					<p class="mt-2 text-lg text-gray-600"><span aria-hidden="true">✅</span> Tâches</p>
 				</div>
 			</div>
 
@@ -51,7 +63,7 @@
 			</div>
 		{:else}
 			<div class="rounded-lg border border-yellow-200 bg-yellow-50 p-8 shadow-lg">
-				<p class="text-yellow-600">Pas de données disponibles</p>
+				<p class="text-yellow-700">Pas de données disponibles</p>
 			</div>
 		{/if}
 
@@ -64,4 +76,4 @@
 			</a>
 		</div>
 	</div>
-</div>
+</main>

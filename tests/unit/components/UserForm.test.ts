@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, waitFor } from '@testing-library/svelte';
+import { tick } from 'svelte';
 import { api, type ApiResult, type User } from '$lib/api/client';
 import { fetchUsers, selectedUser, users, usersStatus } from '$lib/features/users/store';
 import { tasksStatus } from '$lib/features/tasks/store';
@@ -184,5 +185,80 @@ describe('UserForm', () => {
 
 		// THEN: The error stays in its own feature.
 		expect(queryByText('Task not found')).toBeNull();
+	});
+
+	describe('focus after a failed validation', () => {
+		async function submitFromButton(
+			view: ReturnType<typeof renderForm>,
+			name: string,
+			email: string
+		) {
+			await fireEvent.input(view.nameInput, { target: { value: name } });
+			await fireEvent.input(view.emailInput, { target: { value: email } });
+			const create = view.getByRole('button', { name: 'Create User' });
+			create.focus();
+			await fireEvent.submit(create.closest('form') as HTMLFormElement);
+			await tick();
+		}
+
+		it('focuses the name, described by its error, when only the name is invalid (sad path)', async () => {
+			// GIVEN: A rendered form.
+			const view = renderForm();
+
+			// WHEN: A 1-character name is submitted from the button.
+			await submitFromButton(view, 'A', 'ada@example.com');
+
+			// THEN: The name is focused and described by its error.
+			expect(document.activeElement).toBe(view.nameInput);
+			expect(view.nameInput.getAttribute('aria-describedby')).toBe('name-error');
+			expect(document.getElementById('name-error')?.textContent?.trim()).toBe(
+				'Name must be at least 2 characters'
+			);
+			expect(view.emailInput.getAttribute('aria-invalid')).toBe('false');
+		});
+
+		it('focuses the email when only the email is invalid (boundary)', async () => {
+			// GIVEN: A rendered form.
+			const view = renderForm();
+
+			// WHEN: A valid 2-character name and an invalid email are submitted.
+			await submitFromButton(view, 'Al', 'ada@localhost');
+
+			// THEN: The email is focused and described by its error.
+			expect(document.activeElement).toBe(view.emailInput);
+			expect(view.emailInput.getAttribute('aria-describedby')).toBe('email-error');
+			expect(view.nameInput.getAttribute('aria-invalid')).toBe('false');
+		});
+
+		it('focuses the first field when both are invalid (boundary)', async () => {
+			// GIVEN: A rendered form.
+			const view = renderForm();
+
+			// WHEN: An invalid name and an invalid email are submitted.
+			await submitFromButton(view, 'A', 'not-an-email');
+
+			// THEN: The name, first in the form, is focused; both are marked invalid.
+			expect(document.activeElement).toBe(view.nameInput);
+			expect(view.nameInput.getAttribute('aria-invalid')).toBe('true');
+			expect(view.emailInput.getAttribute('aria-invalid')).toBe('true');
+			expect(api.createUser).not.toHaveBeenCalled();
+		});
+
+		it('does not move the focus to a field when the form is valid (happy path)', async () => {
+			// GIVEN: An API that accepts the user.
+			vi.mocked(api.createUser).mockResolvedValue({
+				success: true,
+				data: { id: 1, name: 'Ada', email: 'ada@example.com' }
+			});
+			const view = renderForm();
+
+			// WHEN: A valid form is submitted from the button.
+			await submitFromButton(view, 'Ada', 'ada@example.com');
+			await waitFor(() => expect(api.createUser).toHaveBeenCalledTimes(1));
+
+			// THEN: Neither field takes the focus.
+			expect(document.activeElement).not.toBe(view.nameInput);
+			expect(document.activeElement).not.toBe(view.emailInput);
+		});
 	});
 });

@@ -58,7 +58,7 @@ describe('stats page', () => {
 		const { findByText } = render(StatsPage);
 
 		// THEN: The error is displayed.
-		expect(await findByText('❌ Erreur: HTTP 500')).toBeTruthy();
+		expect(await findByText('Erreur: HTTP 500')).toBeTruthy();
 	});
 
 	it('rounds a repeating average to 2 decimals (limit)', async () => {
@@ -82,7 +82,7 @@ describe('stats page', () => {
 		const { findByText } = render(StatsPage);
 
 		// THEN: The error is displayed and notified.
-		await findByText('❌ Erreur: HTTP 500');
+		await findByText('Erreur: HTTP 500');
 		expect(get(notifications)).toEqual([
 			expect.objectContaining({ message: 'HTTP 500', type: 'error' })
 		]);
@@ -102,7 +102,7 @@ describe('stats page', () => {
 		// THEN: The loading message is shown, then replaced by the error.
 		expect(getByText('Chargement des statistiques...')).toBeTruthy();
 		fail(new Error('Failed to fetch'));
-		expect(await findByText('❌ Erreur: Failed to fetch')).toBeTruthy();
+		expect(await findByText('Erreur: Failed to fetch')).toBeTruthy();
 		expect(queryByText('Chargement des statistiques...')).toBeNull();
 	});
 });

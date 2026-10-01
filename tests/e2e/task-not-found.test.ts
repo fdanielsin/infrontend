@@ -40,7 +40,7 @@ test.describe('Task already deleted elsewhere', () => {
 		await expect(
 			page.getByRole('status').filter({ hasText: 'Task already deleted' })
 		).toBeVisible();
-		await expect(page.getByRole('alert')).toHaveCount(0);
+		await expect(page.getByRole('alert')).toBeEmpty();
 	});
 
 	test('checking it removes the line instead of showing an error (limit)', async ({
@@ -56,13 +56,13 @@ test.describe('Task already deleted elsewhere', () => {
 
 		// WHEN: The task is deleted through the API, then checked in the interface.
 		expect((await request.delete(`${API}/api/v1/tasks/${taskId}`)).status()).toBe(200);
-		await page.getByRole('checkbox', { name: `Mark ${title} as complete` }).click();
+		await page.getByRole('checkbox', { name: title, exact: true }).click();
 
 		// THEN: The line disappears with the information, and no error is shown.
 		await expect(page.getByText(title)).not.toBeVisible();
 		await expect(
 			page.getByRole('status').filter({ hasText: 'Task already deleted' })
 		).toBeVisible();
-		await expect(page.getByRole('alert')).toHaveCount(0);
+		await expect(page.getByRole('alert')).toBeEmpty();
 	});
 });

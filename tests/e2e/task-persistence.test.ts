@@ -62,25 +62,21 @@ test.describe('Task persistence across reloads', () => {
 
 		// WHEN: The task is completed and the page is reloaded.
 		const completed = waitForTaskUpdate(page);
-		await page.getByRole('checkbox', { name: `Mark ${taskTitle} as complete` }).check();
+		await page.getByRole('checkbox', { name: taskTitle, exact: true }).check();
 		expect((await completed).ok()).toBe(true);
 		await reloadAndSelect(page, userName);
 
 		// THEN: The completion survived the reload.
-		await expect(
-			page.getByRole('checkbox', { name: `Mark ${taskTitle} as incomplete` })
-		).toBeChecked();
+		await expect(page.getByRole('checkbox', { name: taskTitle, exact: true })).toBeChecked();
 
 		// WHEN: The task is unchecked and the page is reloaded.
 		const uncompleted = waitForTaskUpdate(page);
-		await page.getByRole('checkbox', { name: `Mark ${taskTitle} as incomplete` }).uncheck();
+		await page.getByRole('checkbox', { name: taskTitle, exact: true }).uncheck();
 		expect((await uncompleted).ok()).toBe(true);
 		await reloadAndSelect(page, userName);
 
 		// THEN: The task is still unchecked after the reload.
-		await expect(
-			page.getByRole('checkbox', { name: `Mark ${taskTitle} as complete` })
-		).not.toBeChecked();
+		await expect(page.getByRole('checkbox', { name: taskTitle, exact: true })).not.toBeChecked();
 	});
 
 	test('keeps edited content and completion after reload (happy path)', async ({ page }) => {
@@ -90,7 +86,7 @@ test.describe('Task persistence across reloads', () => {
 		const editedTitle = `${taskTitle} edited`;
 		await createUserWithTask(page, userName, taskTitle);
 		const completed = waitForTaskUpdate(page);
-		await page.getByRole('checkbox', { name: `Mark ${taskTitle} as complete` }).check();
+		await page.getByRole('checkbox', { name: taskTitle, exact: true }).check();
 		expect((await completed).ok()).toBe(true);
 
 		// WHEN: Title and description are edited and the page is reloaded.
@@ -105,8 +101,6 @@ test.describe('Task persistence across reloads', () => {
 		// THEN: The edit and the completion both survived the reload.
 		await expect(page.getByText(editedTitle)).toBeVisible();
 		await expect(page.getByText('Edited description')).toBeVisible();
-		await expect(
-			page.getByRole('checkbox', { name: `Mark ${editedTitle} as incomplete` })
-		).toBeChecked();
+		await expect(page.getByRole('checkbox', { name: editedTitle, exact: true })).toBeChecked();
 	});
 });

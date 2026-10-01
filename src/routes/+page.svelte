@@ -14,17 +14,22 @@
 	<title>inBackend - Task Management</title>
 </svelte:head>
 
-<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
+<main
+	tabindex="-1"
+	class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8 focus:outline-none"
+>
 	<div class="mx-auto max-w-6xl">
 		<header class="mb-8 text-center">
-			<h1 class="text-4xl font-bold text-gray-900">📋 Task Manager</h1>
+			<h1 class="text-4xl font-bold text-gray-900">
+				<span aria-hidden="true">📋</span> Task Manager
+			</h1>
 			<p class="mt-2 text-gray-600">Manage users and their tasks</p>
 			<div class="mt-4">
 				<a
 					href={resolve('/stats')}
 					class="inline-block rounded-lg bg-indigo-600 px-4 py-2 text-white transition hover:bg-indigo-700"
 				>
-					📊 View Statistics
+					<span aria-hidden="true">📊</span> View Statistics
 				</a>
 			</div>
 		</header>
@@ -38,4 +43,4 @@
 			</div>
 		</div>
 	</div>
-</div>
+</main>

@@ -170,10 +170,28 @@ notification n'ont lieu que si la tâche est encore dans la liste courante
 `TaskForm` ferme l'édition si la tâche éditée a disparu. Tests à écrire par qa
 après le lot C backend.
 
+## Lot « accessibilité » (branche `fix/frontend-a11y`)
+
+Audit et correctifs WCAG 2.2 AA : voir `conventions.md` (section
+Accessibilité) pour les règles. Mesuré avant/après avec axe (Chromium, API
+mockée) : avant, 1 violation `color-contrast` (3,21:1 bouton « Add Task » ; 4,39:1
+titre barré ; 3,8:1 et 3,76:1 toasts erreur/info) et `document-title` sur la page
+stats ; après, 0 violation sur l'accueil, l'utilisateur sélectionné, l'édition,
+les toasts erreur/info et la page stats. Restent « incomplets » (fond
+dégradé) le titre et le sous-titre de l'accueil et le titre de stats, calculés
+à la main. Lacune de la mesure initiale : les états d'erreur et « aucune
+donnée » de la page stats n'étaient pas parcourus ; ils avaient deux contrastes
+insuffisants (erreur `red-600` sur `red-50` à 4,41:1, vide `yellow-600` sur
+`yellow-50` à environ 2,8:1), corrigés en `700`. Comportement vérifié dans un vrai navigateur : focus après Edit,
+Échap, Save, suppression et validation invalide ; toast en pause au survol,
+disparaît 6 s après la sortie, se ferme avec le bouton.
+
 ## Prochaine étape
 
-Lots suivants : Docker/CI/doc, contrat généré (openapi-typescript et
-openapi-fetch, `api:check`), puis B-04 côté interface (404 sur la
-suppression d'une tâche absente, décision fonctionnelle en attente). La
+Docker/CI, contrat généré (openapi-typescript, openapi-fetch, `api:check`) et
+B-04 côté interface (404 sur une tâche absente) sont faits. Restent, dans
+l'ordre : F5 (`refactor/frontend-svelte-style` : `$state.raw`, `class` en
+tableau, `:global` inutile), puis F6 (`refactor/frontend-state-context` :
+stores `writable` vers classes `.svelte.ts` et `createContext`). La
 modularisation de `stats` reste ouverte, uniquement si elle apporte une
-séparation claire.
+séparation claire. La CI frontend attend le secret `INBACKEND_READ_TOKEN`.

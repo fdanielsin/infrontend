@@ -5,7 +5,9 @@ import {
 	ERROR_NOTIFICATION_DURATION,
 	notifications,
 	notifyError,
-	removeNotification
+	pauseNotification,
+	removeNotification,
+	resumeNotification
 } from '$lib/stores/notification';
 
 describe('notification store', () => {
@@ -104,5 +106,145 @@ describe('notification store', () => {
 		expect(get(notifications)).toEqual([{ id, message: 'Hello', type: 'info', duration: 3000 }]);
 		vi.advanceTimersByTime(3000);
 		expect(get(notifications)).toEqual([]);
+	});
+
+	describe('pause and resume (WCAG 2.2.1)', () => {
+		const ids = () => get(notifications).map((toast) => toast.id);
+
+		it('keeps a paused notification, then removes it after the time left once resumed (happy path)', () => {
+			// GIVEN: A 1 s notification paused after 400 ms.
+			const id = addNotification('Saved', 'success', 1000);
+			vi.advanceTimersByTime(400);
+			pauseNotification(id);
+
+			// WHEN: Much more than its duration elapses, then it is resumed.
+			vi.advanceTimersByTime(10_000);
+			expect(ids()).toEqual([id]);
+			resumeNotification(id);
+
+			// THEN: It is removed exactly 600 ms later.
+			vi.advanceTimersByTime(599);
+			expect(ids()).toEqual([id]);
+			vi.advanceTimersByTime(1);
+			expect(ids()).toEqual([]);
+		});
+
+		it('removes a notification paused 1 ms before its end exactly 1 ms after the resume (boundary)', () => {
+			// GIVEN: A 1 s notification paused at 999 ms.
+			const id = addNotification('Saved', 'success', 1000);
+			vi.advanceTimersByTime(999);
+			pauseNotification(id);
+			vi.advanceTimersByTime(5000);
+
+			// WHEN: It is resumed.
+			resumeNotification(id);
+
+			// THEN: It stays 0 ms more, then goes at 1 ms.
+			vi.advanceTimersByTime(0);
+			expect(ids()).toEqual([id]);
+			vi.advanceTimersByTime(1);
+			expect(ids()).toEqual([]);
+		});
+
+		it('keeps the whole duration when paused and resumed at once (boundary)', () => {
+			// GIVEN: A fresh 1 s notification.
+			const id = addNotification('Saved', 'success', 1000);
+
+			// WHEN: It is paused and resumed without time elapsing.
+			pauseNotification(id);
+			resumeNotification(id);
+
+			// THEN: It is removed at 1000 ms, not before.
+			vi.advanceTimersByTime(999);
+			expect(ids()).toEqual([id]);
+			vi.advanceTimersByTime(1);
+			expect(ids()).toEqual([]);
+		});
+
+		it('does not restart the count when paused twice (limit)', () => {
+			// GIVEN: A 1 s notification paused at 400 ms.
+			const id = addNotification('Saved', 'success', 1000);
+			vi.advanceTimersByTime(400);
+			pauseNotification(id);
+
+			// WHEN: It is paused again later, then resumed.
+			vi.advanceTimersByTime(3000);
+			pauseNotification(id);
+			resumeNotification(id);
+
+			// THEN: The 600 ms left are kept.
+			vi.advanceTimersByTime(599);
+			expect(ids()).toEqual([id]);
+			vi.advanceTimersByTime(1);
+			expect(ids()).toEqual([]);
+		});
+
+		it('ignores a resume of a running notification, which a later pause still stops (limit)', () => {
+			// GIVEN: A running 1 s notification resumed without having been paused.
+			const id = addNotification('Saved', 'success', 1000);
+			vi.advanceTimersByTime(400);
+			resumeNotification(id);
+
+			// WHEN: It is paused before its end.
+			vi.advanceTimersByTime(100);
+			pauseNotification(id);
+			vi.advanceTimersByTime(10_000);
+
+			// THEN: No second timer removed it behind the pause.
+			expect(ids()).toEqual([id]);
+		});
+
+		it('ignores pause and resume of an unknown notification (sad path)', () => {
+			// GIVEN: One running notification.
+			const id = addNotification('Saved', 'success', 1000);
+
+			// WHEN: An unknown id is paused and resumed.
+			pauseNotification('notif-unknown');
+			resumeNotification('notif-unknown');
+
+			// THEN: Nothing changes and the real one still ends on time.
+			expect(ids()).toEqual([id]);
+			vi.advanceTimersByTime(1000);
+			expect(ids()).toEqual([]);
+		});
+
+		it('never removes a duration-0 notification, even after pause and resume (boundary)', () => {
+			// GIVEN: A notification without timer.
+			const id = addNotification('Sticky', 'info', 0);
+
+			// WHEN: It is paused and resumed.
+			pauseNotification(id);
+			resumeNotification(id);
+			vi.advanceTimersByTime(60_000);
+
+			// THEN: It is still there and no timer is pending.
+			expect(ids()).toEqual([id]);
+			expect(vi.getTimerCount()).toBe(0);
+		});
+
+		it('does not bring back a notification dismissed while paused (exception)', () => {
+			// GIVEN: A paused notification.
+			const id = addNotification('Saved', 'success', 1000);
+			pauseNotification(id);
+
+			// WHEN: It is dismissed, then resumed (pointer leaving a removed toast).
+			removeNotification(id);
+			resumeNotification(id);
+
+			// THEN: It stays gone and no timer is left behind.
+			expect(ids()).toEqual([]);
+			expect(vi.getTimerCount()).toBe(0);
+		});
+
+		it('cancels the pending timer of a dismissed notification (exception)', () => {
+			// GIVEN: A running notification.
+			const id = addNotification('Saved', 'success', 1000);
+
+			// WHEN: It is dismissed before its end.
+			removeNotification(id);
+
+			// THEN: No timer is left behind.
+			expect(vi.getTimerCount()).toBe(0);
+		});
 	});
 });

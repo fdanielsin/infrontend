@@ -10,9 +10,17 @@ Tous les tests du frontend vivent sous `tests/`.
 - `tests/e2e/` contient les scénarios Playwright de bout en bout contre
   l'application et l'API `inbackend`.
 
-Les E2E locaux nécessitent un backend `inbackend` disponible sur
+Les E2E `task-*.test.ts` nécessitent un backend `inbackend` disponible sur
 `http://localhost:8080`. La CI démarre automatiquement `inbackend` avec une
 base PostgreSQL de service.
+
+Les E2E d'accessibilité (`accessibility.test.ts`, axe avec les règles par
+défaut) et de clavier (`keyboard-focus.test.ts`) mockent l'API avec
+`page.route` (`e2e/support/mock-api.ts`) et tournent sans backend :
+`PUBLIC_API_URL=http://localhost:8080 bun x playwright test accessibility keyboard-focus --project=chromium`.
+Les minuteries des toasts y sont pilotées par `page.clock`. Attendre la
+première réponse de l'API avant de remplir un champ : une saisie faite avant
+l'hydratation est effacée.
 
 Vitest exécute les tests dans un ordre aléatoire (`sequence.shuffle`, graine affichée
 en tête de run) : un test ne doit dépendre ni d'un autre ni de l'ordre.
