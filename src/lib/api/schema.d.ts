@@ -232,10 +232,10 @@ export interface paths {
          * Mettre à jour une tâche (mise à jour partielle)
          * @description Met à jour une tâche existante. Chaque propriété de `UpdateTaskRequest`
          *     est optionnelle : une propriété absente du corps JSON n'est pas
-         *     modifiée. Une propriété présente avec une valeur, y compris une
-         *     valeur "vide" (`completed: false`, `description: ""`), est appliquée
-         *     telle quelle. `title`, si présent, ne peut pas être une chaîne vide
-         *     (voir `400`).
+         *     modifiée. Une propriété présente est appliquée, y compris
+         *     `completed: false` et `description: ""`, après retrait des espaces de
+         *     début et de fin des textes ; `null` est refusé. `title`, si présent, ne
+         *     peut être ni vide ni fait d'espaces (voir `400`).
          */
         put: operations["updateTask"];
         post?: never;
@@ -426,6 +426,7 @@ export interface components {
             };
         };
         CreateUserRequest: {
+            /** @description Espaces de début et de fin retirés ; un nom fait d'espaces est refusé (400 `VALIDATION_FAILED`). */
             name: string;
             /**
              * @description Normalisé par le serveur : espaces de début et de fin retirés,
@@ -441,9 +442,14 @@ export interface components {
             email: string;
         };
         CreateTaskRequest: {
-            /** Format: uint32 */
+            /**
+             * Format: uint32
+             * @description Au-delà du maximum, 400 `VALIDATION_FAILED`.
+             */
             user_id: number;
+            /** @description Espaces de début et de fin retirés ; un titre fait d'espaces est refusé (400 `VALIDATION_FAILED`). */
             title: string;
+            /** @description Espaces de début et de fin retirés ; une description faite d'espaces devient `""`. */
             description?: string;
             /** @default false */
             completed: boolean;
@@ -451,12 +457,15 @@ export interface components {
         /**
          * @description Toutes les propriétés sont optionnelles. Une propriété absente du
          *     corps JSON laisse la valeur existante inchangée en base ; une
-         *     propriété présente est appliquée telle quelle, y compris une valeur
-         *     "vide" (`false`, `""`).
+         *     propriété présente est appliquée, y compris `false` pour `completed` et
+         *     une description vide (`""`) ou faite d'espaces, qui devient `""`.
+         *     `null` est refusé (400 `INVALID_BODY`), de même qu'un titre vide ou
+         *     fait d'espaces (400 `VALIDATION_FAILED`).
          */
         UpdateTaskRequest: {
-            /** @description Si fourni, ne peut pas être une chaîne vide (400 sinon). */
+            /** @description Si fourni, ne peut être ni vide ni fait d'espaces (400 sinon) ; espaces de début et de fin retirés. */
             title?: string;
+            /** @description Espaces de début et de fin retirés ; une description faite d'espaces devient `""`. */
             description?: string;
             completed?: boolean;
         };

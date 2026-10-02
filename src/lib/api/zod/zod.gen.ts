@@ -78,27 +78,29 @@ export const zReadyResponse = zSuccessResponse.and(z.object({
 }));
 
 export const zCreateUserRequest = z.object({
-    name: z.string().min(1),
-    email: z.string().min(1)
+    name: z.string().min(1).max(100),
+    email: z.string().min(1).max(254)
 });
 
 export const zCreateTaskRequest = z.object({
-    user_id: z.int().gte(1).max(4294967295, { error: 'Invalid value: Expected uint32 to be <= 4294967295' }),
-    title: z.string().min(1),
-    description: z.string().optional(),
+    user_id: z.int().gte(1).lte(4294967295),
+    title: z.string().min(1).max(200),
+    description: z.string().max(2000).optional(),
     completed: z.boolean().optional().default(false)
 });
 
 /**
  * Toutes les propriétés sont optionnelles. Une propriété absente du
  * corps JSON laisse la valeur existante inchangée en base ; une
- * propriété présente est appliquée telle quelle, y compris une valeur
- * "vide" (`false`, `""`).
+ * propriété présente est appliquée, y compris `false` pour `completed` et
+ * une description vide (`""`) ou faite d'espaces, qui devient `""`.
+ * `null` est refusé (400 `INVALID_BODY`), de même qu'un titre vide ou
+ * fait d'espaces (400 `VALIDATION_FAILED`).
  *
  */
 export const zUpdateTaskRequest = z.object({
-    title: z.string().min(1).optional(),
-    description: z.string().optional(),
+    title: z.string().min(1).max(200).optional(),
+    description: z.string().max(2000).optional(),
     completed: z.boolean().optional()
 });
 
