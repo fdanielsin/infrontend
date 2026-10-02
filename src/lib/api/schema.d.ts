@@ -92,7 +92,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Lister les utilisateurs */
+        /**
+         * Lister les utilisateurs
+         * @description Les utilisateurs sont retournés triés par `id` croissant (ordre de
+         *     création), garanti par le serveur.
+         */
         get: operations["listUsers"];
         put?: never;
         /** Créer un utilisateur */
