@@ -90,3 +90,121 @@ describe('zodIssuesToFieldErrors', () => {
 		expect(errors).toEqual({});
 	});
 });
+
+const EMOJI = '\u{1F600}';
+
+function keysOf(schema: typeof UserSchema | typeof TaskSchema, value: object, field: string) {
+	const result = schema.safeParse(value);
+	return (result.error?.issues ?? [])
+		.filter((issue) => issue.path[0] === field)
+		.map((issue) => issue.message);
+}
+
+describe('text length limits', () => {
+	const validUser = { name: 'Ada', email: 'ada@example.com' };
+	const emailOfLength = (length: number) => `${'a'.repeat(length - 12)}@example.com`;
+
+	it.each([
+		['name', UserSchema, validUser, 100, 'validation_name_max'],
+		['email', UserSchema, validUser, 254, 'validation_email_max'],
+		['title', TaskSchema, validTask, 200, 'validation_title_max'],
+		['description', TaskSchema, validTask, 2000, 'validation_description_max']
+	] as const)(
+		'accepts %s at its limit and refuses one more (boundary)',
+		(field, schema, base, limit, key) => {
+			// GIVEN: A value of exactly the limit, and one with a character more.
+			const build = (length: number) =>
+				field === 'email' ? emailOfLength(length) : 'a'.repeat(length);
+
+			// WHEN / THEN: The limit is accepted, the next length is refused with the "too long" key only.
+			expect(schema.safeParse({ ...base, [field]: build(limit) }).success).toBe(true);
+			expect(keysOf(schema, { ...base, [field]: build(limit + 1) }, field)).toEqual([key]);
+		}
+	);
+
+	it.each([
+		['name', UserSchema, validUser, 100, 'validation_name_max'],
+		['title', TaskSchema, validTask, 200, 'validation_title_max'],
+		['description', TaskSchema, validTask, 2000, 'validation_description_max']
+	] as const)(
+		'counts an emoji as one character on the %s limit (boundary)',
+		(field, schema, base, limit, key) => {
+			// GIVEN: A value of limit code points whose UTF-16 length is limit + 1.
+			const atLimit = 'a'.repeat(limit - 1) + EMOJI;
+			const overLimit = atLimit + 'a';
+
+			// WHEN / THEN: The server counts it as accepted; so does the client.
+			expect(atLimit.length).toBe(limit + 1);
+			expect(schema.safeParse({ ...base, [field]: atLimit }).success).toBe(true);
+			expect(keysOf(schema, { ...base, [field]: overLimit }, field)).toEqual([key]);
+		}
+	);
+
+	it('measures the limit before trimming, as the server does (limit)', () => {
+		// GIVEN: 100 characters framed by spaces: 102 raw, 100 once trimmed.
+		const framed = ` ${'a'.repeat(100)} `;
+
+		// WHEN / THEN: The raw length decides.
+		expect(keysOf(UserSchema, { ...validUser, name: framed }, 'name')).toEqual([
+			'validation_name_max'
+		]);
+	});
+
+	it('reports only "too long" for an email that is also malformed (limit)', () => {
+		// GIVEN: 255 characters without @.
+		// WHEN / THEN: A single issue, so the format message does not hide it.
+		expect(keysOf(UserSchema, { ...validUser, email: 'a'.repeat(255) }, 'email')).toEqual([
+			'validation_email_max'
+		]);
+	});
+
+	it('refuses a very long value without failing (limit)', () => {
+		// GIVEN / WHEN / THEN: 10 000 characters, with special characters.
+		expect(
+			keysOf(TaskSchema, { ...validTask, description: '\n<é>'.repeat(2500) }, 'description')
+		).toEqual(['validation_description_max']);
+	});
+});
+
+describe('trimmed values', () => {
+	it('trims the text fields of a user (happy path)', () => {
+		// GIVEN / WHEN: Values framed by spaces, tabs and new lines.
+		const result = UserSchema.safeParse({ name: '  Ada \t', email: '\n ada@example.com ' });
+
+		// THEN: The trimmed values are what the form sends.
+		expect(result.success && result.data).toEqual({ name: 'Ada', email: 'ada@example.com' });
+	});
+
+	it('trims the title and the description of a task (happy path)', () => {
+		// GIVEN / WHEN: Values framed by spaces.
+		const result = TaskSchema.safeParse({ ...validTask, title: '  Buy ', description: ' milk\n' });
+
+		// THEN: The trimmed values are kept.
+		expect(result.success && [result.data.title, result.data.description]).toEqual(['Buy', 'milk']);
+	});
+
+	it('turns a description of spaces into an empty one (boundary)', () => {
+		// GIVEN / WHEN: A description made of spaces.
+		const result = TaskSchema.safeParse({ ...validTask, description: '   ' });
+
+		// THEN: Accepted and empty, as the server stores it.
+		expect(result.success && result.data.description).toBe('');
+	});
+
+	it('refuses a title of spaces (sad path)', () => {
+		expect(keysOf(TaskSchema, { ...validTask, title: ' \t ' }, 'title')).toEqual([
+			'validation_title_required'
+		]);
+	});
+
+	it('refuses a name of spaces (sad path)', () => {
+		expect(keysOf(UserSchema, { name: '    ', email: 'ada@example.com' }, 'name')).toEqual([
+			'validation_name_min'
+		]);
+	});
+
+	it('refuses a missing or null value without throwing (exception)', () => {
+		expect(UserSchema.safeParse({ name: null, email: undefined }).success).toBe(false);
+		expect(TaskSchema.safeParse({ title: 42, description: null, user_id: 1 }).success).toBe(false);
+	});
+});

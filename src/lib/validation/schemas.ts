@@ -7,7 +7,11 @@ const VALIDATION_MESSAGES = {
 	validation_name_min: m.validation_name_min,
 	validation_email_invalid: m.validation_email_invalid,
 	validation_title_required: m.validation_title_required,
-	validation_user_id_positive: m.validation_user_id_positive
+	validation_user_id_positive: m.validation_user_id_positive,
+	validation_name_max: m.validation_name_max,
+	validation_email_max: m.validation_email_max,
+	validation_title_max: m.validation_title_max,
+	validation_description_max: m.validation_description_max
 };
 
 export type ValidationKey = keyof typeof VALIDATION_MESSAGES;
@@ -25,14 +29,21 @@ const EMAIL_INVALID: ValidationKey = 'validation_email_invalid';
 const TITLE_REQUIRED: ValidationKey = 'validation_title_required';
 const USER_ID_POSITIVE: ValidationKey = 'validation_user_id_positive';
 
+// The server measures a text in Unicode code points (Go runes) before trimming it, so a limit
+// counts the raw value that way: `.max()` would count UTF-16 units and refuse an emoji on the
+// limit. When the limit fails, `.pipe` skips the next rules: only the "too long" message shows.
+function boundedText(limit: number, tooLong: ValidationKey) {
+	return z.string().refine((value) => [...value].length <= limit, tooLong);
+}
+
 export const UserSchema = z.object({
-	name: z.string().min(2, NAME_MIN),
-	email: z.string().email(EMAIL_INVALID)
+	name: boundedText(100, 'validation_name_max').pipe(z.string().trim().min(2, NAME_MIN)),
+	email: boundedText(254, 'validation_email_max').pipe(z.string().trim().email(EMAIL_INVALID))
 });
 
 export const TaskSchema = z.object({
-	title: z.string().min(1, TITLE_REQUIRED),
-	description: z.string(),
+	title: boundedText(200, 'validation_title_max').pipe(z.string().trim().min(1, TITLE_REQUIRED)),
+	description: boundedText(2000, 'validation_description_max').pipe(z.string().trim()),
 	user_id: z.number().positive(USER_ID_POSITIVE),
 	completed: z.boolean().optional().default(false)
 });

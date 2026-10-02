@@ -295,4 +295,32 @@ describe('UserForm', () => {
 		expect(graceButton.getAttribute('aria-pressed')).toBe('false');
 		expect(highlight.some((name) => graceButton.classList.contains(name))).toBe(false);
 	});
+
+	it('shows only the length message for an email over 254 characters, without sending (limit)', async () => {
+		// GIVEN: A 255-character value, which is also not an email.
+		const { submit, findByText, queryByText } = renderForm();
+
+		// WHEN: It is submitted.
+		await submit('Ada', 'a'.repeat(255));
+
+		// THEN: Only the length message is shown and nothing is sent.
+		expect(await findByText('Email must be at most 254 characters')).toBeTruthy();
+		expect(queryByText('Invalid email address')).toBeNull();
+		expect(api.createUser).not.toHaveBeenCalled();
+	});
+
+	it('sends the trimmed name and email (happy path)', async () => {
+		// GIVEN: An API that accepts the user.
+		const ada = { id: 1, name: 'Ada', email: 'ada@example.com' };
+		vi.mocked(api.createUser).mockResolvedValue({ success: true, data: ada });
+		const { submit } = renderForm();
+
+		// WHEN: Values framed by spaces are submitted.
+		await submit('  Ada ', ' ada@example.com ');
+
+		// THEN: The server receives them trimmed.
+		await waitFor(() =>
+			expect(api.createUser).toHaveBeenCalledWith({ name: 'Ada', email: 'ada@example.com' })
+		);
+	});
 });

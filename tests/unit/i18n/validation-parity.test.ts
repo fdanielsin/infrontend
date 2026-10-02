@@ -81,7 +81,11 @@ describe('client validation covers every server validation rule', () => {
 				'validation_name_min',
 				'validation_email_invalid',
 				'validation_title_required',
-				'validation_user_id_positive'
+				'validation_user_id_positive',
+				'validation_name_max',
+				'validation_email_max',
+				'validation_title_max',
+				'validation_description_max'
 			].map((key) => [locale, key] as const)
 		)
 	)('shows the %s message for %s (happy path)', (locale, key) => {

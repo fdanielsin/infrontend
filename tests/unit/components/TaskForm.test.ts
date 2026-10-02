@@ -170,9 +170,9 @@ describe('TaskForm', () => {
 		expect(view.queryByText('Title is required')).toBeNull();
 	});
 
-	it('accepts a very long Unicode description (limit)', async () => {
-		// GIVEN: A description of 10 000 characters with accents, emoji and markup.
-		const description = 'é🚀<b>'.repeat(2000);
+	it('accepts a Unicode description of exactly 2000 characters (boundary)', async () => {
+		// GIVEN: A description of 2000 code points (2400 UTF-16 units) with accents, emoji and markup.
+		const description = 'é🚀<b>'.repeat(400);
 		vi.mocked(api.createTask).mockResolvedValue({
 			success: true,
 			data: { ...task, id: 11, title: 'Long', description }
@@ -191,6 +191,19 @@ describe('TaskForm', () => {
 				completed: false
 			})
 		);
+	});
+
+	it('refuses a description over 2000 characters with a message, without sending (limit)', async () => {
+		// GIVEN: A description one character over the limit.
+		const description = 'a'.repeat(2001);
+		const view = renderWithApp(app, TaskForm, { user });
+
+		// WHEN: It is submitted.
+		await addTaskForm(view).submit('Long', description);
+
+		// THEN: The message is shown and nothing is sent.
+		expect(await view.findByText('Description must be at most 2000 characters')).toBeTruthy();
+		expect(api.createTask).not.toHaveBeenCalled();
 	});
 
 	it('clears a description by editing it to empty (happy path)', async () => {

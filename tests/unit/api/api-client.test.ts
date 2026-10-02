@@ -335,3 +335,43 @@ describe('API client', () => {
 		});
 	});
 });
+
+describe('request bodies and the strict contract', () => {
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
+	// The contract refuses unknown properties and null (INVALID_BODY): each call sends exactly
+	// the properties it declares, none of them null.
+	const calls: [string, () => Promise<unknown>, string[]][] = [
+		['createUser', () => api.createUser({ name: 'Ada', email: 'a@b.co' }), ['name', 'email']],
+		[
+			'createTask',
+			() => api.createTask({ title: 'T', description: '', user_id: 1, completed: false }),
+			['title', 'description', 'user_id', 'completed']
+		],
+		['updateTask completed', () => api.updateTask(1, { completed: true }), ['completed']],
+		[
+			'updateTask text',
+			() => api.updateTask(1, { title: 'T', description: '' }),
+			['title', 'description']
+		]
+	];
+
+	it.each(calls)(
+		'%s sends only declared properties, none null (happy path)',
+		async (_name, call, keys) => {
+			// GIVEN: A server that answers anything.
+			const fetchMock = mockFetch(jsonResponse({ success: true }));
+
+			// WHEN: The call is made.
+			await call();
+
+			// THEN: The body has exactly the expected keys and no null.
+			const request = fetchMock.mock.calls[0]![0] as Request;
+			const body = JSON.parse(await request.text()) as Record<string, unknown>;
+			expect(Object.keys(body).sort()).toEqual([...keys].sort());
+			expect(Object.values(body)).not.toContain(null);
+		}
+	);
+});

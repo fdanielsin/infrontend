@@ -6,6 +6,9 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Form fields refuse text longer than the server accepts (name 100, email 254, title 200,
+  description 2000 characters, counted like the server) with a translated message, and
+  trim their value before sending.
 - A call that gets no answer within 10 seconds fails with a translated message instead of
   waiting forever.
 - Interface in English, French, German and Spanish: the browser language decides
