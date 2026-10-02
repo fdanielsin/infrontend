@@ -97,6 +97,12 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - The task checkbox no longer stays visually checked/unchecked after a
   rejected update (Q-01).
 
+### Security
+
+- Dependencies patched against 11 advisories (6 high, 5 moderate) in `devalue`, `js-yaml`
+  and `qs`, pinned by `overrides` until their parents follow
+  (`docs/decisions/0002-overrides-dependances-vulnerables.md`) (#28).
+
 ## [1.0.0] - 2026-09-17
 
 ### Added
