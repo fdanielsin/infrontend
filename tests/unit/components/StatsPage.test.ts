@@ -104,10 +104,10 @@ describe('stats page', () => {
 		const { getByText, findByText, queryByText } = renderWithApp(app, StatsPage);
 
 		// THEN: The loading message is shown, then replaced by the error.
-		expect(getByText('Loading statistics...')).toBeTruthy();
+		expect(getByText('Loading statistics…')).toBeTruthy();
 		fail(new Error('Failed to fetch'));
 		expect(await findByText('Error: Failed to fetch')).toBeTruthy();
-		expect(queryByText('Loading statistics...')).toBeNull();
+		expect(queryByText('Loading statistics…')).toBeNull();
 	});
 
 	it.each([

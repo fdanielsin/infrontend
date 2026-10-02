@@ -132,7 +132,7 @@ describe('UserForm', () => {
 		await submit('Ada', 'ada@example.com');
 
 		// THEN: The button is disabled until the answer arrives.
-		const button = getByRole('button', { name: 'Creating...' }) as HTMLButtonElement;
+		const button = getByRole('button', { name: 'Creating…' }) as HTMLButtonElement;
 		expect(button.disabled).toBe(true);
 		answer({ success: true, data: { id: 1, name: 'Ada', email: 'ada@example.com' } });
 		await waitFor(() =>

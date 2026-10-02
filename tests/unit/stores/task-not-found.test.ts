@@ -73,7 +73,7 @@ describe('a task already deleted on the server (TASK_NOT_FOUND)', () => {
 		[
 			'ROUTE_NOT_FOUND',
 			{ success: false, error: 'Route not found', status: 404, code: 'ROUTE_NOT_FOUND' },
-			'Route not found'
+			'Resource not found'
 		],
 		['a 404 without code', { success: false, error: 'HTTP 404', status: 404 }, 'HTTP 404'],
 		[

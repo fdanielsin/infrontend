@@ -25,6 +25,7 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- Translations proofread as a native speaker would (fr-FR, de-DE, es-ES): no-break space before ":" in French, "…" for ellipses, shorter and clearer error messages ("Invalid request", "Resource not found").
 - A name of one character is accepted, as the contract allows (the form required two).
 - Every API response is checked against the contract: a response that does not match
   is reported as an invalid server response instead of being used.
