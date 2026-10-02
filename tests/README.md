@@ -19,10 +19,12 @@ Les E2E `task-*.test.ts` nécessitent un backend `inbackend` disponible sur
 base PostgreSQL de service.
 
 Les E2E d'accessibilité (`accessibility.test.ts`, axe avec les règles par
-défaut), de clavier (`keyboard-focus.test.ts`) et de langues (`i18n.test.ts`)
-mockent l'API avec `page.route` (`e2e/support/mock-api.ts`) et tournent sans
-backend :
-`PUBLIC_API_URL=http://localhost:8080 bun x playwright test accessibility keyboard-focus i18n --project=chromium`.
+défaut), de clavier (`keyboard-focus.test.ts`), de langues (`i18n.test.ts`), de
+focus et d'erreurs (`focus-and-errors.test.ts`) et de bordures de champs
+(`field-borders.test.ts`) mockent l'API avec `page.route`
+(`e2e/support/mock-api.ts`) et tournent sans backend ; les deux derniers
+mesurent le style calculé avec `e2e/support/contrast.ts` :
+`PUBLIC_API_URL=http://localhost:8080 bun x playwright test accessibility keyboard-focus i18n focus-and-errors field-borders --project=chromium`.
 Les minuteries des toasts y sont pilotées par `page.clock`. Attendre la
 première réponse de l'API avant de remplir un champ : une saisie faite avant
 l'hydratation est effacée.

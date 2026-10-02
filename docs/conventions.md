@@ -150,7 +150,7 @@ un piège sans présenter cette information comme une garantie.
 ## Design system
 
 - Les jetons vivent dans le bloc `@theme` de `src/routes/layout.css` : couleurs
-  sémantiques (`surface`, `line`, `muted`, `primary`, `danger`, `focus`…), rayons
+  sémantiques (`surface`, `line`, `field-border`, `muted`, `primary`, `danger`, `focus`…), rayons
   (`control`, `card`) et ombres (`card`, `card-raised`). Un jeton nomme une valeur
   déjà utilisée (une teinte de palette Tailwind) ; ses ratios de contraste validés
   sont en commentaire. On ajoute un jeton quand une valeur est utilisée deux fois
@@ -170,7 +170,9 @@ un piège sans présenter cette information comme une garantie.
   (`--color-focus`, règle `:focus-visible` de `layout.css`, `--color-focus-inverse`
   sur les fonds colorés) et une seule couleur d'erreur (`--color-danger`). Pas de
   `focus:ring-*`, de `outline-none` ni de rouge en dur dans un composant ; un
-  champ invalide a aussi une bordure `danger`. Les toasts sont en bas ; la hauteur mesurée de
+  champ invalide a aussi une bordure `danger`. La bordure d'un champ (`TextField`,
+  `Select`) est `field-border` (3:1 minimum, WCAG 1.4.11) ; `line` reste pour les
+  cadres de cartes et séparateurs. Les toasts sont en bas ; la hauteur mesurée de
   la pile (`--toast-stack-height`, publiée par `Notification`) est réservée par
   `scroll-padding-bottom` et `padding-bottom` : un contrôle focalisé ne reste jamais dessous.
   Un gestionnaire `focusin` de `Notification` termine le travail : Chromium ne remonte pas un

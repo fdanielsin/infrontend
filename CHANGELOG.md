@@ -75,6 +75,8 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Text fields, text areas and the language selector have a visible border (3:1 or more
+  against their surroundings and their fill, WCAG 1.4.11) (#27).
 - Keyboard and screen reader use: focus moves to the edit field, back to the
   task's Edit button when the edit closes, to the task list heading after a
   deletion and to the first invalid field after a failed validation; Escape

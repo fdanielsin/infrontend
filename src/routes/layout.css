@@ -10,6 +10,9 @@
 	--color-surface: var(--color-white);
 	--color-surface-muted: var(--color-gray-100);
 	--color-line: var(--color-gray-300);
+	--color-field-border: var(
+		--color-gray-500
+	); /* WCAG 1.4.11: 4.84:1 on white, 4.39:1 on gray-100, 4.16:1 on the page gradient */
 	--color-disabled: var(--color-gray-400);
 
 	/* Text on a white surface */

@@ -36,7 +36,8 @@
 	}: Props = $props();
 
 	// Whole class names, so Tailwind finds them.
-	const CONTROL_CLASSES = 'w-full rounded-control border border-line aria-invalid:border-danger';
+	const CONTROL_CLASSES =
+		'w-full rounded-control border border-field-border aria-invalid:border-danger';
 	const SIZE_CLASSES = { default: 'mt-1 px-3 py-2', compact: 'px-2 py-1' };
 	const ERROR_CLASSES = { default: 'mt-1 text-sm text-danger', compact: 'text-sm text-danger' };
 	const size = $derived(compact ? 'compact' : 'default');

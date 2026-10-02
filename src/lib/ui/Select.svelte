@@ -24,7 +24,7 @@
 		{id}
 		{value}
 		onchange={(event) => onchange(event.currentTarget.value)}
-		class="rounded-control border border-line bg-surface px-2 py-1"
+		class="rounded-control border border-field-border bg-surface px-2 py-1"
 	>
 		{#each options as option (option.value)}
 			<option value={option.value} lang={option.lang}>{option.label}</option>
