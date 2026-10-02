@@ -15,12 +15,13 @@
 		"format": "prettier --write .",
 		"format:check": "prettier --check .",
 		"test:coverage": "bun run test -- --coverage",
-		"api:generate": "openapi-typescript \"${OPENAPI_PATH:-../inbackend/docs/specs/api/openapi.yaml}\" -o src/lib/api/schema.d.ts && openapi-ts",
-		"api:check": "openapi-typescript \"${OPENAPI_PATH:-../inbackend/docs/specs/api/openapi.yaml}\" -o node_modules/.cache/schema.check.d.ts && diff -u src/lib/api/schema.d.ts node_modules/.cache/schema.check.d.ts && openapi-ts -o node_modules/.cache/zod && diff -u src/lib/api/zod/zod.gen.ts node_modules/.cache/zod/zod.gen.ts",
+		"api:generate": "openapi-typescript \"${OPENAPI_URL:-http://localhost:8080/openapi.yaml}\" -o src/lib/api/schema.d.ts && openapi-ts",
+		"api:check": "openapi-typescript \"${OPENAPI_URL:-http://localhost:8080/openapi.yaml}\" -o node_modules/.cache/schema.check.d.ts && diff -u src/lib/api/schema.d.ts node_modules/.cache/schema.check.d.ts && openapi-ts -o node_modules/.cache/zod && diff -u src/lib/api/zod/zod.gen.ts node_modules/.cache/zod/zod.gen.ts",
 		"mutate": "stryker run",
 		"test:unit": "vitest",
 		"test": "bun run test:unit -- --run",
 		"test:e2e": "playwright test",
+		"test:e2e:mocked": "E2E_MOCKED_ONLY=1 playwright test",
 		"verify": "svelte-kit sync && bun run i18n:compile && bun run lint && bun run check && bun run test:coverage && bun run build"
 	},
 	"devDependencies": {

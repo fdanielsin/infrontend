@@ -3,7 +3,7 @@ import { defineConfig } from '@hey-api/openapi-ts';
 // Generates the zod schemas of the API responses from the backend contract. The TypeScript types
 // come from openapi-typescript (`bun run api:generate` runs both).
 export default defineConfig({
-	input: process.env.OPENAPI_PATH ?? '../inbackend/docs/specs/api/openapi.yaml',
+	input: process.env.OPENAPI_URL ?? 'http://localhost:8080/openapi.yaml',
 	output: { path: 'src/lib/api/zod', clean: true },
 	plugins: [
 		{

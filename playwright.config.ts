@@ -3,6 +3,8 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
 	testDir: './tests/e2e',
 	testMatch: /.*\.test\.ts/,
+	// The tests of tests/e2e/backend need a running backend; the CI leaves them out.
+	testIgnore: process.env.E2E_MOCKED_ONLY ? 'backend/**' : undefined,
 	fullyParallel: true,
 	forbidOnly: !!process.env.CI,
 	retries: 0,

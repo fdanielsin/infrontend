@@ -25,6 +25,11 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- The API contract is read over HTTP (`OPENAPI_URL`, default `http://localhost:8080/openapi.yaml`) by
+  `api:generate` and `api:check`. The CI no longer contacts the backend: its E2E job runs only the
+  tests that mock the API (`bun run test:e2e:mocked`); the contract check and the E2E that need a
+  backend (`tests/e2e/backend/`) run locally before each merge. Workflow actions moved to their
+  latest major version (#29).
 - One visible focus outline (2 px, 3:1 or more) on every control, and one error color (4.5:1 or more), through design tokens; an invalid field also gets a red border. Toasts sit at the bottom and the page reserves their room, so that they never cover the focused control (WCAG 2.4.7, 2.4.11, 1.4.3, 1.4.11). The statistics error uses the same banner as the forms.
 - Translations proofread as a native speaker would (fr-FR, de-DE, es-ES): no-break space before ":" in French, "…" for ellipses, shorter and clearer error messages ("Invalid request", "Resource not found").
 - A name of one character is accepted, as the contract allows (the form required two).
@@ -66,6 +71,7 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Removed
 
+- `OPENAPI_PATH` (replaced by `OPENAPI_URL`), the CI backend clone and its SSH deploy key, and the CI contract job.
 - The duplicated CI component-tests and coverage jobs, now covered by `bun run verify`.
 - The runtime `PUBLIC_API_URL` variable of the Docker image, which had no effect.
 - Dead code and non-functional tooling: unused `fetchUserTasks`, an empty

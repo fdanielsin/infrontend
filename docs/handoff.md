@@ -59,7 +59,7 @@ bun run test
 bun run build
 ```
 
-Le test end-to-end Playwright de persistance (`tests/e2e/task-persistence.test.ts`,
+Le test end-to-end Playwright de persistance (`tests/e2e/backend/task-persistence.test.ts`,
 écrit par `qa`) passe contre le backend corrigé, mais n'a pas été exécuté par
 l'agent frontend (backend non lancé localement de ce côté).
 
@@ -86,7 +86,7 @@ regroupe les dépendances) et tourne sous l'utilisateur `bun`.
 - Le client HTTP partagé reste dans `src/lib/api/`.
 - Les routes composent les écrans sans déplacer la logique backend.
 - Le workflow frontend unique est
-  `.github/workflows/ci.yml`. Les jobs `contract` et `e2e` font le checkout d'`inbackend` (dépôt privé) avec une clé de déploiement SSH en lecture seule (secret de dépôt `INBACKEND_DEPLOY_KEY`, `persist-credentials: false`) ; sans elle, ces deux jobs échouent au checkout.
+  `.github/workflows/ci.yml`. Aucun job ne contacte le backend : le job `e2e` ne lance que les E2E à API mockée (`test:e2e:mocked`). Le contrat (`api:check`) et les E2E réels (`tests/e2e/backend/`) sont vérifiés en local avant chaque merge, contre un backend qui tourne sur `http://localhost:8080` ; une URL de backend déployé les remplacera en CI plus tard.
 - `tests/unit/components/` existe désormais (premier fichier :
   `TaskForm.test.ts`), en plus de `tests/unit/api/` et `tests/unit/stores/`.
   Le rendu de composants Svelte sous Vitest exige
@@ -124,13 +124,12 @@ premier rendu serveur) n'est pas observable sous jsdom : à couvrir par un E2E.
 ## Lot « contrat et outillage » (branche `chore/frontend-contract-tooling`)
 
 - `src/lib/api/schema.d.ts` est généré avec openapi-typescript 7.13.0 à partir
-  du contrat de la branche backend `feat/lot5-migrations` (worktree
-  `inbackend/.worktrees/lot5-migrations`, base `d970bc5`, fichier modifié et non
+  du contrat de la branche backend `feat/lot5-migrations` (base `d970bc5`, fichier modifié et non
   commité au moment de la génération ; SHA-256 de `openapi.yaml` :
   `572bc4f61ee8488b695fd86038a3c1324f3ea73897e3483b90710196b964a2d7`). Ce
   contrat contient `error_code`, le 409 `EMAIL_TAKEN`, le 404 `TASK_NOT_FOUND`
   sur DELETE et le 404 `USER_NOT_FOUND` sur POST /tasks. À régénérer
-  (`OPENAPI_PATH=... bun run api:generate`) au merge du backend.
+  (`bun run api:generate`) au merge du backend.
 - `client.ts` passe par openapi-fetch (`parseAs: 'text'`, le corps est parsé
   par le client pour garder `status` sur un JSON mal formé) ; la façade
   `ApiClient` et `ApiResult` restent. Le client lit `error_code` et l'expose

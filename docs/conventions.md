@@ -23,7 +23,7 @@ nouvelles instructions ni utilisées comme référence de validation.
 - Un client réutilisable reçoit sa configuration ; il ne connaît pas une route
   SvelteKit concrète.
 - Les types de requête et de réponse viennent de `schema.d.ts` (généré depuis
-  `inbackend/docs/specs/api/openapi.yaml`) ; ne pas les recopier à la main.
+  le contrat servi par le backend) ; ne pas les recopier à la main.
   Les mocks de tests sont typés par ces mêmes types.
 - Un échec attendu (par exemple `TASK_NOT_FOUND`) se traite par le code
   d'erreur stable du contrat, jamais par le message ni par le seul statut, et
@@ -119,11 +119,13 @@ même commande.
 ### Contrat d'API
 
 Les types de `src/lib/api/schema.d.ts` sont générés depuis le contrat du backend
-(`inbackend/docs/specs/api/openapi.yaml`) et committés : `bun run api:generate`
-les régénère, `bun run api:check` échoue s'ils ne sont plus à jour. Par défaut le
-contrat est lu dans `../inbackend/` ; ailleurs (worktree), fournir
-`OPENAPI_PATH=/chemin/vers/openapi.yaml`. En CI, le job `contract` exécute
-`api:check` sur le backend (branche au choix via `workflow_dispatch`).
+(servi par le backend sur `GET /openapi.yaml`) et committés : `bun run api:generate`
+les régénère, `bun run api:check` échoue s'ils ne sont plus à jour. Le contrat est lu par HTTP, par défaut
+sur `http://localhost:8080/openapi.yaml` (backend lancé avec
+`API_DOCS_ENABLED=true`) ; ailleurs, fournir `OPENAPI_URL`. Le frontend ne lit
+aucun fichier du backend. La CI ne contacte pas le backend : `api:check` se lance en local avant
+chaque merge, contre un backend qui tourne ; une URL de backend déployé le
+remplacera en CI plus tard.
 
 Les schémas zod des réponses (`src/lib/api/zod/zod.gen.ts`) sont générés par
 `@hey-api/openapi-ts` (version exacte : l'outil est pré-1.0) depuis le même

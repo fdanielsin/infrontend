@@ -12,11 +12,12 @@ Tous les tests du frontend vivent sous `tests/`.
     hook serveur, règles de validation du serveur couvertes par le client ;
   - `tests/unit/support/` pour les aides partagées (hôte de contexte).
 - `tests/e2e/` contient les scénarios Playwright de bout en bout contre
-  l'application et l'API `inbackend`.
+  l'application et l'API `inbackend` (jamais ses fichiers).
 
-Les E2E `task-*.test.ts` nécessitent un backend `inbackend` disponible sur
-`http://localhost:8080`. La CI démarre automatiquement `inbackend` avec une
-base PostgreSQL de service.
+Les E2E de `tests/e2e/backend/` nécessitent un backend `inbackend` disponible sur
+`http://localhost:8080`. La CI ne les lance pas
+(`bun run test:e2e:mocked`) et ils se vérifient en local avant chaque merge, comme
+`bun run api:check`. Une URL de backend déployé les remplacera en CI plus tard.
 
 Les E2E d'accessibilité (`accessibility.test.ts`, axe avec les règles par
 défaut), de clavier (`keyboard-focus.test.ts`), de langues (`i18n.test.ts`), de
