@@ -72,27 +72,29 @@ describe('UserForm', () => {
 		expect(api.createUser).not.toHaveBeenCalled();
 	});
 
-	it('current rule: a 1-character name is refused, 2 characters are accepted (boundary)', async () => {
+	it('refuses a name of spaces and accepts a 1-character name, as the contract does (boundary)', async () => {
 		// GIVEN: A rendered form and an API that accepts any user.
 		vi.mocked(api.createUser).mockResolvedValue({
 			success: true,
-			data: { id: 1, name: 'Al', email: 'al@example.com' }
+			data: { id: 1, name: 'A', email: 'al@example.com' }
 		});
 		const { submit, findByText, queryByText } = renderForm();
+
+		// WHEN: A name made of spaces is submitted.
+		await submit('   ', 'al@example.com');
+
+		// THEN: It is refused.
+		expect(await findByText('Name is required')).toBeTruthy();
+		expect(api.createUser).not.toHaveBeenCalled();
 
 		// WHEN: A 1-character name is submitted.
 		await submit('A', 'al@example.com');
 
-		// THEN: It is refused.
-		expect(await findByText('Name must be at least 2 characters')).toBeTruthy();
-		expect(api.createUser).not.toHaveBeenCalled();
-
-		// WHEN: A 2-character name is submitted.
-		await submit('Al', 'al@example.com');
-
 		// THEN: It is sent and the message disappears.
-		await waitFor(() => expect(api.createUser).toHaveBeenCalledTimes(1));
-		expect(queryByText('Name must be at least 2 characters')).toBeNull();
+		await waitFor(() =>
+			expect(api.createUser).toHaveBeenCalledWith({ name: 'A', email: 'al@example.com' })
+		);
+		expect(queryByText('Name is required')).toBeNull();
 	});
 
 	it('shows "No users yet" for an empty list (limit)', () => {
@@ -202,15 +204,13 @@ describe('UserForm', () => {
 			// GIVEN: A rendered form.
 			const view = renderForm();
 
-			// WHEN: A 1-character name is submitted from the button.
-			await submitFromButton(view, 'A', 'ada@example.com');
+			// WHEN: A name of spaces is submitted from the button.
+			await submitFromButton(view, '   ', 'ada@example.com');
 
 			// THEN: The name is focused and described by its error.
 			expect(document.activeElement).toBe(view.nameInput);
 			expect(view.nameInput.getAttribute('aria-describedby')).toBe('name-error');
-			expect(document.getElementById('name-error')?.textContent?.trim()).toBe(
-				'Name must be at least 2 characters'
-			);
+			expect(document.getElementById('name-error')?.textContent?.trim()).toBe('Name is required');
 			expect(view.emailInput.getAttribute('aria-invalid')).toBe('false');
 		});
 
@@ -232,7 +232,7 @@ describe('UserForm', () => {
 			const view = renderForm();
 
 			// WHEN: An invalid name and an invalid email are submitted.
-			await submitFromButton(view, 'A', 'not-an-email');
+			await submitFromButton(view, '   ', 'not-an-email');
 
 			// THEN: The name, first in the form, is focused; both are marked invalid.
 			expect(document.activeElement).toBe(view.nameInput);

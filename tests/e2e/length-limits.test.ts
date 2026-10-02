@@ -81,6 +81,26 @@ test.describe('Length limits, client and server together', () => {
 		expect(stored?.name).toBe(`Trim ${suffix}`);
 	});
 
+	test('creates a user named with one character, as the contract allows (boundary)', async ({
+		page,
+		request
+	}) => {
+		// GIVEN: A one-character name, the contract minimum.
+		const email = `one-${uniqueSuffix()}@example.com`;
+		await openHome(page);
+
+		// WHEN: The user is created from the form.
+		await submitUser(page, 'A', email);
+
+		// THEN: No validation message is shown and the user is listed.
+		await expect(page.getByText(email)).toBeVisible();
+		await expect(page.getByText('Name is required')).toHaveCount(0);
+
+		// AND: The server stored the name as typed.
+		const stored = (await users(request)).find((user) => user.email === email);
+		expect(stored?.name).toBe('A');
+	});
+
 	test('accepts the exact limits, emoji included (boundary)', async ({ page, request }) => {
 		// GIVEN: A name of 100 code points ending with an emoji, an email of 254 characters.
 		const suffix = uniqueSuffix();

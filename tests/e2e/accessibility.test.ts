@@ -69,13 +69,13 @@ test.describe('Accessibility (axe, mocked API)', () => {
 		await openHomeWithUser(page);
 
 		// WHEN: The user form and an edit are submitted with invalid values.
-		await page.getByLabel('Name', { exact: true }).fill('A');
+		await page.getByLabel('Name', { exact: true }).fill('   ');
 		await page.getByLabel('Email', { exact: true }).fill('a@example.com');
 		await page.getByRole('button', { name: 'Create User' }).click();
 		await page.getByRole('button', { name: 'Edit Review', exact: true }).click();
 		await page.getByLabel('Task Title').nth(1).fill('');
 		await page.getByRole('button', { name: 'Save' }).click();
-		await expect(page.getByText('Name must be at least 2 characters')).toBeVisible();
+		await expect(page.getByText('Name is required')).toBeVisible();
 		await expect(page.getByText('Title is required')).toBeVisible();
 
 		// THEN: No violation.

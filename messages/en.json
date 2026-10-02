@@ -39,7 +39,7 @@
 	"stats_total_tasks": "Total tasks created:",
 	"stats_average": "Average tasks per user:",
 	"stats_back_home": "← Back to home",
-	"validation_name_min": "Name must be at least 2 characters",
+	"validation_name_required": "Name is required",
 	"validation_email_invalid": "Invalid email address",
 	"validation_title_required": "Title is required",
 	"validation_user_id_positive": "User ID must be positive",

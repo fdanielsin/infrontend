@@ -56,21 +56,24 @@ describe('zodIssuesToFieldErrors', () => {
 
 	it('maps each invalid field to its message (happy path)', () => {
 		// GIVEN / WHEN: A name and an email that are both invalid.
-		const errors = zodIssuesToFieldErrors(invalid({ name: 'A', email: 'nope' }), ['name', 'email']);
+		const errors = zodIssuesToFieldErrors(invalid({ name: '   ', email: 'nope' }), [
+			'name',
+			'email'
+		]);
 
 		// THEN: One message per field.
 		expect(shown(errors)).toEqual({
-			name: 'Name must be at least 2 characters',
+			name: 'Name is required',
 			email: 'Invalid email address'
 		});
 	});
 
 	it('ignores the issues of fields the form does not show (sad path)', () => {
 		// GIVEN / WHEN: Only the name is a field of the form.
-		const errors = zodIssuesToFieldErrors(invalid({ name: 'A', email: 'nope' }), ['name']);
+		const errors = zodIssuesToFieldErrors(invalid({ name: '   ', email: 'nope' }), ['name']);
 
 		// THEN: The email issue is left out.
-		expect(shown(errors)).toEqual({ name: 'Name must be at least 2 characters' });
+		expect(shown(errors)).toEqual({ name: 'Name is required' });
 	});
 
 	it('keeps the last message when a field has several issues (limit)', () => {
@@ -197,9 +200,32 @@ describe('trimmed values', () => {
 		]);
 	});
 
+	it.each([
+		['one character', 'A', true],
+		['one character framed by spaces', '  A  ', true],
+		['two characters', 'Al', true],
+		['an empty name', '', false],
+		['a tab and a new line', '\t\n', false]
+	])('applies the contract minimum of 1 to %s (boundary)', (_case, name, accepted) => {
+		// GIVEN / WHEN: A name at the lower boundary.
+		const result = UserSchema.safeParse({ name, email: 'ada@example.com' });
+
+		// THEN: Accepted from 1 character once trimmed; refused with the "required" key otherwise.
+		expect(result.success).toBe(accepted);
+		if (!accepted)
+			expect(keysOf(UserSchema, { name, email: 'ada@example.com' }, 'name')).toEqual([
+				'validation_name_required'
+			]);
+	});
+
+	it('sends the trimmed one-character name (happy path)', () => {
+		const result = UserSchema.safeParse({ name: '  A ', email: 'ada@example.com' });
+		expect(result.success && result.data.name).toBe('A');
+	});
+
 	it('refuses a name of spaces (sad path)', () => {
 		expect(keysOf(UserSchema, { name: '    ', email: 'ada@example.com' }, 'name')).toEqual([
-			'validation_name_min'
+			'validation_name_required'
 		]);
 	});
 

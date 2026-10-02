@@ -49,14 +49,14 @@ describe('field errors after a change of language', () => {
 	it.each(['fr', 'de', 'es'] as const)(
 		'shows the user name error again in %s, still linked to its field, with the draft kept (happy path)',
 		async (locale) => {
-			// GIVEN: A refused 1-character name, in English.
+			// GIVEN: A refused name of spaces, in English.
 			const view = renderWithApp(app, UserForm);
 			const name = view.getByLabelText('Name') as HTMLInputElement;
-			await fireEvent.input(name, { target: { value: 'A' } });
+			await fireEvent.input(name, { target: { value: '   ' } });
 			await fireEvent.input(view.getByLabelText('Email'), { target: { value: 'a@b.co' } });
 			await fireEvent.submit(name.closest('form') as HTMLFormElement);
 			await tick();
-			expect(view.getByText(translation('en', 'validation_name_min'))).toBeTruthy();
+			expect(view.getByText(translation('en', 'validation_name_required'))).toBeTruthy();
 
 			// WHEN: The language changes.
 			app.changeLocale(locale);
@@ -64,11 +64,11 @@ describe('field errors after a change of language', () => {
 
 			// THEN: The same error is shown in the new language, on the same field.
 			const error = document.getElementById('name-error');
-			expect(error?.textContent?.trim()).toBe(translation(locale, 'validation_name_min'));
-			expect(view.queryByText(translation('en', 'validation_name_min'))).toBeNull();
+			expect(error?.textContent?.trim()).toBe(translation(locale, 'validation_name_required'));
+			expect(view.queryByText(translation('en', 'validation_name_required'))).toBeNull();
 			expect(name.getAttribute('aria-invalid')).toBe('true');
 			expect(name.getAttribute('aria-describedby')).toBe('name-error');
-			expect(name.value).toBe('A');
+			expect(name.value).toBe('   ');
 		}
 	);
 

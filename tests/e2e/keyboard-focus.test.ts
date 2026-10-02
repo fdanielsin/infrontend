@@ -150,7 +150,7 @@ test.describe('Keyboard and focus (mocked API)', () => {
 		);
 		await page.goto('/');
 		await usersLoaded;
-		await page.getByLabel('Name', { exact: true }).fill('A');
+		await page.getByLabel('Name', { exact: true }).fill('   ');
 		await page.getByLabel('Email', { exact: true }).fill('a@example.com');
 
 		// WHEN: The form is submitted from its button.
@@ -159,7 +159,7 @@ test.describe('Keyboard and focus (mocked API)', () => {
 		// THEN: The name field is focused and described by its error.
 		await expect(page.getByLabel('Name', { exact: true })).toBeFocused();
 		await expect(page.getByLabel('Name', { exact: true })).toHaveAccessibleDescription(
-			'Name must be at least 2 characters'
+			'Name is required'
 		);
 	});
 

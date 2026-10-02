@@ -224,17 +224,17 @@ test.describe('Language switcher', () => {
 		);
 		await page.goto('/');
 		await usersLoaded;
-		await page.getByLabel(t('en', 'users_name_label'), { exact: true }).fill('A');
+		await page.getByLabel(t('en', 'users_name_label'), { exact: true }).fill('   ');
 		await page.getByLabel(t('en', 'users_email_label'), { exact: true }).fill('a@example.com');
 		await page.getByRole('button', { name: t('en', 'users_create_button') }).click();
-		await expect(page.getByText(t('en', 'validation_name_min'))).toBeVisible();
+		await expect(page.getByText(t('en', 'validation_name_required'))).toBeVisible();
 
 		// WHEN: Spanish is chosen.
 		await page.getByRole('combobox', { name: t('en', 'language_label') }).selectOption('es');
 
 		// THEN: The same error is shown in Spanish, still describing the field.
 		const name = page.getByLabel(t('es', 'users_name_label'), { exact: true });
-		await expect(name).toHaveAccessibleDescription(t('es', 'validation_name_min'));
+		await expect(name).toHaveAccessibleDescription(t('es', 'validation_name_required'));
 		await expect(name).toHaveAttribute('aria-invalid', 'true');
 	});
 
@@ -455,7 +455,7 @@ test.describe('Accessibility in every language (axe)', () => {
 			await expectNoViolations(page);
 
 			// WHEN / THEN: A refused form, an error toast and an information toast.
-			await page.getByLabel(t(locale, 'users_name_label'), { exact: true }).fill('A');
+			await page.getByLabel(t(locale, 'users_name_label'), { exact: true }).fill('   ');
 			await page.getByLabel(t(locale, 'users_email_label'), { exact: true }).fill('a@example.com');
 			await page.getByRole('button', { name: t(locale, 'users_create_button') }).click();
 			api.failNext('PUT /tasks/{id}', { status: 500, error: 'x', code: 'DATABASE_UNAVAILABLE' });

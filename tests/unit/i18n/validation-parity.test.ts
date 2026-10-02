@@ -51,7 +51,9 @@ describe('client validation covers every server validation rule', () => {
 
 	it('refuses an empty name, as the server does (sad path)', () => {
 		// GIVEN / WHEN / THEN: The server refuses an empty name; the client too.
-		expect(issueKey(UserSchema, { ...validUser, name: '' }, 'name')).toBe('validation_name_min');
+		expect(issueKey(UserSchema, { ...validUser, name: '' }, 'name')).toBe(
+			'validation_name_required'
+		);
 	});
 
 	it('refuses an empty title at creation and at edit, as the server does (sad path)', () => {
@@ -70,15 +72,16 @@ describe('client validation covers every server validation rule', () => {
 	});
 
 	it('accepts the minimal valid values the server accepts (boundary)', () => {
-		// GIVEN / WHEN / THEN: A 1-character title and a two-label email.
+		// GIVEN / WHEN / THEN: A 1-character name and title, and a two-label email.
 		expect(TaskSchema.safeParse({ ...validTask, title: 'R' }).success).toBe(true);
+		expect(UserSchema.safeParse({ ...validUser, name: 'A' }).success).toBe(true);
 		expect(UserSchema.safeParse({ ...validUser, email: 'a@b.co' }).success).toBe(true);
 	});
 
 	it.each(
 		LOCALES.flatMap((locale) =>
 			[
-				'validation_name_min',
+				'validation_name_required',
 				'validation_email_invalid',
 				'validation_title_required',
 				'validation_user_id_positive',

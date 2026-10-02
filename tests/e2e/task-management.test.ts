@@ -64,12 +64,12 @@ test.describe('Task management', () => {
 		const initialUsersHeading = await usersHeading.textContent();
 
 		// WHEN: Submit a name that violates the frontend validation rule.
-		await page.getByLabel('Name').fill('A');
+		await page.getByLabel('Name').fill('   ');
 		await page.getByLabel('Email').fill('invalid@example.com');
 		await page.getByRole('button', { name: 'Create User' }).click();
 
 		// THEN: The validation error is shown and no user is created.
-		await expect(page.getByText('Name must be at least 2 characters')).toBeVisible();
+		await expect(page.getByText('Name is required')).toBeVisible();
 		await expect(usersHeading).toHaveText(initialUsersHeading ?? '');
 	});
 });

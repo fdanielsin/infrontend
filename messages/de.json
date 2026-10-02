@@ -39,7 +39,7 @@
 	"stats_total_tasks": "Insgesamt angelegte Aufgaben:",
 	"stats_average": "Durchschnittliche Aufgaben pro Benutzer:",
 	"stats_back_home": "← Zurück zur Startseite",
-	"validation_name_min": "Der Name muss mindestens 2 Zeichen lang sein",
+	"validation_name_required": "Der Name ist erforderlich",
 	"validation_email_invalid": "Ungültige E-Mail-Adresse",
 	"validation_title_required": "Der Titel ist erforderlich",
 	"validation_user_id_positive": "Die Benutzer-ID muss positiv sein",
