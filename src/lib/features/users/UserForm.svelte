@@ -88,8 +88,8 @@
 						<button
 							type="button"
 							class={[
-								'w-full rounded-control p-1 text-left focus:ring-2 focus:ring-focus focus:outline-none',
-								selected && 'bg-blue-100 ring-2 ring-blue-600'
+								'w-full rounded-control p-1 text-left',
+								selected && 'bg-blue-100 ring-2 ring-primary ring-inset'
 							]}
 							aria-pressed={selected}
 							onclick={() => users.select(user.id)}

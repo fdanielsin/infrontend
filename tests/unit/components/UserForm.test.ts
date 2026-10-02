@@ -271,7 +271,7 @@ describe('UserForm', () => {
 		const view = renderForm();
 		const adaButton = view.getByRole('button', { name: /Ada/ });
 		const graceButton = view.getByRole('button', { name: /Grace/ });
-		const highlight = ['bg-blue-100', 'ring-2', 'ring-blue-600'];
+		const highlight = ['bg-blue-100', 'ring-2', 'ring-primary', 'ring-inset'];
 		const isHighlighted = (button: HTMLElement) =>
 			highlight.every((name) => button.classList.contains(name));
 		expect(adaButton.getAttribute('aria-pressed')).toBe('false');

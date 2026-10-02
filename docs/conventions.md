@@ -166,9 +166,15 @@ un piège sans présenter cette information comme une garantie.
   posés sur un composant passent par `...rest` jusqu'à l'élément.
 - Un test qui vérifie des noms de classes (ex. la sélection d'un utilisateur)
   fige ces classes : ne pas les remplacer par un jeton sans le dire à qa.
-- Limite connue : le focus des champs de formulaire n'a pas de style propre
-  (contour du navigateur) et les erreurs de champ sont en `field-error` (red-600)
-  sur blanc et en `danger` (red-700) sur gris ; les unifier changerait le rendu.
+- Focus et erreurs passent par les jetons : un seul contour de focus global
+  (`--color-focus`, règle `:focus-visible` de `layout.css`, `--color-focus-inverse`
+  sur les fonds colorés) et une seule couleur d'erreur (`--color-danger`). Pas de
+  `focus:ring-*`, de `outline-none` ni de rouge en dur dans un composant ; un
+  champ invalide a aussi une bordure `danger`. Les toasts sont en bas ; la hauteur mesurée de
+  la pile (`--toast-stack-height`, publiée par `Notification`) est réservée par
+  `scroll-padding-bottom` et `padding-bottom` : un contrôle focalisé ne reste jamais dessous.
+  Un gestionnaire `focusin` de `Notification` termine le travail : Chromium ne remonte pas un
+  contrôle déjà partiellement visible, donc il le défile (instantanément) au-dessus de la pile.
 
 ## Accessibilité (WCAG 2.2 AA)
 

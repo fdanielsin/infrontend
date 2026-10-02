@@ -21,13 +21,66 @@ function itemAt<T>(items: T[], index: number): T {
 describe('Notification component', () => {
 	let app: AppState;
 
+	// jsdom has no layout: the stack measures 120 px, and a ResizeObserver that reports at once.
+	const STACK_HEIGHT = 120;
+
 	beforeEach(() => {
 		app = new AppState();
+		vi.stubGlobal(
+			'ResizeObserver',
+			class {
+				constructor(private readonly report: (entries: { target: Element }[]) => void) {}
+				observe(target: Element) {
+					this.report([{ target }]);
+				}
+				unobserve() {}
+				disconnect() {}
+			}
+		);
+		vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(STACK_HEIGHT);
 	});
 
 	afterEach(() => {
 		cleanup();
 		vi.useRealTimers();
+		vi.restoreAllMocks();
+		vi.unstubAllGlobals();
+	});
+
+	const reservedHeight = () =>
+		document.documentElement.style.getPropertyValue('--toast-stack-height');
+
+	it('reserves the height of the stack while a notification is shown, and releases it (happy path)', async () => {
+		// GIVEN: An empty notification area.
+		renderWithApp(app, Notification);
+
+		// THEN: Nothing is reserved.
+		await waitFor(() => expect(reservedHeight()).toBe('0px'));
+
+		// WHEN: A notification is published.
+		app.notifications.items = [{ id: 'n1', message: 'Saved', type: 'success' }];
+
+		// THEN: The page reserves the room of the stack (WCAG 2.4.11).
+		await waitFor(() => expect(reservedHeight()).toBe(`${STACK_HEIGHT}px`));
+
+		// WHEN: The last notification goes.
+		app.notifications.items = [];
+
+		// THEN: The room is given back.
+		await waitFor(() => expect(reservedHeight()).toBe('0px'));
+	});
+
+	it('removes the reservation when the area is destroyed (exception)', async () => {
+		// GIVEN: A notification on the screen, and the room reserved for it.
+		renderWithApp(app, Notification);
+		app.notifications.items = [{ id: 'n1', message: 'Saved', type: 'success' }];
+		await waitFor(() => expect(reservedHeight()).toBe(`${STACK_HEIGHT}px`));
+
+		// WHEN: The area is removed from the page.
+		cleanup();
+
+		// THEN: No reservation is left on the page.
+		expect(reservedHeight()).toBe('');
 	});
 
 	it('shows the notifications of the store (happy path)', async () => {

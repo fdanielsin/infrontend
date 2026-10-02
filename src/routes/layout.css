@@ -16,7 +16,6 @@
 	--color-label: var(--color-gray-700);
 	--color-muted: var(--color-gray-600); /* 7.56:1 */
 	--color-subtle: var(--color-gray-500); /* 4.83:1 */
-	--color-field-error: var(--color-red-600); /* 4.83:1, on white only */
 
 	/* Actions: white text on these backgrounds reaches 4.5:1 or more */
 	--color-primary: var(--color-blue-600);
@@ -25,13 +24,16 @@
 	--color-action-strong-hover: var(--color-blue-900);
 	--color-success: var(--color-green-700);
 	--color-success-hover: var(--color-green-800);
-	--color-danger: var(--color-red-700); /* 5.91:1 on red-50, 5.9:1 on gray-100 */
+	--color-danger: var(
+		--color-red-700
+	); /* the one error color: 5.21:1 or more on white, gray-100, red-100 and the gradient */
 	--color-danger-hover: var(--color-red-900);
 	--color-danger-soft: var(--color-red-100);
 	--color-warning: var(--color-amber-700);
 
-	/* Focus */
-	--color-focus: var(--color-blue-500);
+	/* Focus: the one outline of the interface (3:1 or more on white, gray-100, blue-100 and the page gradient) */
+	--color-focus: var(--color-blue-700); /* 5.55:1 on indigo-100, 6.83:1 on white */
+	--color-focus-inverse: var(--color-white); /* on the colored toasts: 5.02:1 or more */
 
 	/* Radii and shadows */
 	--radius-control: 0.25rem;
@@ -39,4 +41,25 @@
 	--shadow-card: var(--shadow-sm);
 	--shadow-card-raised: var(--shadow-lg);
 	--shadow-card-raised-hover: var(--shadow-xl);
+}
+
+@layer base {
+	/* The one focus indicator. An outline, not a shadow: it stays visible in forced-colors mode. */
+	:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+		outline: 2px solid var(--color-focus);
+		outline-offset: 2px;
+	}
+
+	/*
+	 * The toasts are fixed at the bottom. Their measured height (Notification.svelte) is reserved
+	 * twice: the page can always scroll by that much, and a focused control is scrolled above the
+	 * stack, never left under it (WCAG 2.4.11).
+	 */
+	html {
+		scroll-padding-bottom: calc(var(--toast-stack-height, 0px) + 1rem);
+	}
+
+	body {
+		padding-bottom: var(--toast-stack-height, 0px);
+	}
 }

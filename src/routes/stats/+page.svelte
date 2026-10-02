@@ -5,6 +5,7 @@
 	import { formatNumber } from '$lib/i18n/format';
 	import LanguageSwitcher from '$lib/ui/LanguageSwitcher.svelte';
 	import { m } from '$lib/paraglide/messages';
+	import Alert from '$lib/ui/Alert.svelte';
 	import Card from '$lib/ui/Card.svelte';
 	import { getAppState } from '$lib/state/app-state.svelte';
 	import { RequestStatus } from '$lib/state/request-status.svelte';
@@ -42,12 +43,10 @@
 				<p class="text-muted">{m.stats_loading()}</p>
 			</Card>
 		{:else if status.error}
-			<div class="rounded-lg border border-red-200 bg-red-50 p-8 shadow-lg">
-				<p class="font-semibold text-red-700">
-					<span aria-hidden="true">❌</span>
-					{m.stats_error({ message: status.error })}
-				</p>
-			</div>
+			<Alert class="font-semibold">
+				<span aria-hidden="true">❌</span>
+				{m.stats_error({ message: status.error })}
+			</Alert>
 		{:else if stats}
 			<div class="grid grid-cols-2 gap-6">
 				<Card variant="raised">

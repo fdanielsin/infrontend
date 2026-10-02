@@ -5,6 +5,31 @@
 
 	const { notifications } = getAppState();
 
+	// The page reserves the room of the stack (see layout.css): a focused control can always be
+	// scrolled above it, even on a page that did not scroll (WCAG 2.4.11).
+	let stackHeight = $state(0);
+	const reservedHeight = $derived(notifications.items.length > 0 ? stackHeight : 0);
+	$effect(() => {
+		const root = document.documentElement;
+		root.style.setProperty('--toast-stack-height', `${reservedHeight}px`);
+		return () => root.style.removeProperty('--toast-stack-height');
+	});
+
+	// The browser leaves a control that is only partly under the stack where it is; this brings
+	// it fully above the stack, without ever pushing its top out of the window.
+	let stack: HTMLElement | undefined = $state();
+	function keepClearOfStack(event: FocusEvent) {
+		const target = event.target;
+		if (!stack || reservedHeight === 0 || !(target instanceof HTMLElement)) return;
+		if (target.closest('[data-toast]')) return;
+		const control = target.getBoundingClientRect();
+		const toasts = stack.getBoundingClientRect();
+		const sideBySide = control.right <= toasts.left || control.left >= toasts.right;
+		if (sideBySide || control.bottom <= toasts.top) return;
+		const clearance = control.bottom - toasts.top + 8;
+		window.scrollBy({ top: Math.max(0, Math.min(clearance, control.top - 8)) });
+	}
+
 	// Where focus was before it entered the toasts: a dismissal gives it back there.
 	let focusOrigin: HTMLElement | null = null;
 	let refocusing = false;
@@ -43,8 +68,15 @@
 	}
 </script>
 
+<svelte:window onfocusin={keepClearOfStack} />
+
 <!-- The handler only records where focus came from; it adds no interaction. -->
-<div class="fixed top-0 right-0 z-50 flex flex-col gap-2 p-4" onfocusin={rememberFocusOrigin}>
+<div
+	bind:this={stack}
+	bind:clientHeight={stackHeight}
+	class="fixed right-0 bottom-0 z-50 flex max-h-[40vh] flex-col gap-2 overflow-x-hidden overflow-y-auto p-4"
+	onfocusin={rememberFocusOrigin}
+>
 	<div role="status" aria-atomic="false" class="space-y-2">
 		{#each notifications.statuses as toast (toast.id)}
 			<ToastItem
