@@ -138,7 +138,8 @@ champs requis) se corrige dans le contrat, pas ici.
 `bun run mutate` lance Stryker sur les modules TypeScript de `src/lib`
 (`.svelte.ts` compris, hors composants `.svelte`), à la demande et sans bloquer
 la CI ; rapport dans `reports/mutation/`. Pour un fichier :
-`bunx stryker run --mutate src/lib/state/request-status.svelte.ts`.
+`bunx stryker run --mutate src/lib/state/request-status.svelte.ts --concurrency 1`
+(avec plusieurs processus, une course sur le cache de vite fait échouer le lancement).
 
 ## Documentation et invariants
 
