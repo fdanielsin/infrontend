@@ -81,6 +81,8 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- The mocked E2E run against a production build and no longer fail when the dev server reloads the
+  page (#30).
 - Text fields, text areas and the language selector have a visible border (3:1 or more
   against their surroundings and their fill, WCAG 1.4.11) (#27).
 - Keyboard and screen reader use: focus moves to the edit field, back to the

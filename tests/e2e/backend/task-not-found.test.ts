@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext } from '@playwright/test';
 
-// The backend the browser talks to (PUBLIC_API_URL of the dev server).
+// The backend the browser talks to (PUBLIC_API_URL baked into the build under test).
 const API = process.env.PUBLIC_API_URL ?? 'http://localhost:8080';
 
 async function createUserWithTask(request: APIRequestContext, title: string) {

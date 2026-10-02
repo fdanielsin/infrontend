@@ -25,10 +25,10 @@ The message module `src/lib/paraglide/` is generated and git-ignored: `dev` and
 
 ## Environment variables
 
-| Variable         | Used by                                | Required                          | Notes                                                                                                                       |
-| ---------------- | -------------------------------------- | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `PUBLIC_API_URL` | `dev`, `build`, `verify`, Docker build | yes (not set in a fresh worktree) | Backend URL, read at build time and baked into the bundle: a running container cannot change it. Example in `.env.example`. |
-| `OPENAPI_URL`    | `api:generate`, `api:check`            | no                                | URL of the backend contract. Default: `http://localhost:8080/openapi.yaml`.                                                 |
+| Variable         | Used by                                            | Required                          | Notes                                                                                                                                                                              |
+| ---------------- | -------------------------------------------------- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PUBLIC_API_URL` | `dev`, `build`, `verify`, `test:e2e`, Docker build | yes (not set in a fresh worktree) | Backend URL, read at build time and baked into the bundle: a running container cannot change it. `test:e2e` builds the app too, so it needs it as well. Example in `.env.example`. |
+| `OPENAPI_URL`    | `api:generate`, `api:check`                        | no                                | URL of the backend contract. Default: `http://localhost:8080/openapi.yaml`.                                                                                                        |
 
 ## Commands
 

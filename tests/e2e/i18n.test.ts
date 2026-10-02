@@ -34,7 +34,7 @@ function t(locale: Locale, key: string, parameters: Record<string, string> = {})
 
 async function chooseLocaleCookie(context: BrowserContext, locale: string) {
 	await context.addCookies([
-		{ name: 'PARAGLIDE_LOCALE', value: locale, url: 'http://localhost:5173' }
+		{ name: 'PARAGLIDE_LOCALE', value: locale, url: 'http://localhost:4173' }
 	]);
 }
 

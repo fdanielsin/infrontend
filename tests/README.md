@@ -21,11 +21,28 @@ Les E2E de `tests/e2e/backend/` nécessitent un backend `inbackend` disponible s
 
 Les E2E d'accessibilité (`accessibility.test.ts`, axe avec les règles par
 défaut), de clavier (`keyboard-focus.test.ts`), de langues (`i18n.test.ts`), de
-focus et d'erreurs (`focus-and-errors.test.ts`) et de bordures de champs
-(`field-borders.test.ts`) mockent l'API avec `page.route`
-(`e2e/support/mock-api.ts`) et tournent sans backend ; les deux derniers
-mesurent le style calculé avec `e2e/support/contrast.ts` :
-`PUBLIC_API_URL=http://localhost:8080 bun x playwright test accessibility keyboard-focus i18n focus-and-errors field-borders --project=chromium`.
+focus et d'erreurs (`focus-and-errors.test.ts`), de bordures de champs
+(`field-borders.test.ts`) et de stabilité de page (`page-stability.test.ts`)
+mockent l'API avec `page.route` (`e2e/support/mock-api.ts`) et tournent sans
+backend ; `focus-and-errors.test.ts` et `field-borders.test.ts` mesurent le
+style calculé avec `e2e/support/contrast.ts` :
+`PUBLIC_API_URL=http://localhost:8080 bun x playwright test accessibility keyboard-focus i18n focus-and-errors field-borders page-stability --project=chromium`.
+Ces E2E tournent contre un build de production (`vite build` puis `vite preview`,
+port 4173, jamais réutilisé : un serveur déjà présent sur ce port fait échouer
+le lancement), pas contre `vite dev` : le client de développement recharge la page
+quand sa websocket HMR est perdue (par exemple quand la machine se fige), ce qui
+efface l'état d'un test en cours (`page-stability.test.ts` le vérifie). Le
+`webServer` de `playwright.config.ts` construit donc l'application avant les
+tests (`PUBLIC_API_URL` doit être défini, la valeur n'a pas d'effet avec l'API
+mockée).
+
+Machine saturée. Ne l'accuser que si deux signes se cumulent : un swap plein
+(`sysctl vm.swapusage`) et des échecs simultanés sur tous les workers (lancement
+de navigateur de plus de 180 s, test figé, action qui répond avec 10 s de
+retard). Sinon c'est un défaut à analyser. Dans le premier cas, fermer des
+applications et lancer avec `--workers=1` (0 échec sur 300 en `CI=1`) ; ne pas
+augmenter les timeouts ni relancer jusqu'à ce que ça passe.
+
 Les minuteries des toasts y sont pilotées par `page.clock`. Attendre la
 première réponse de l'API avant de remplir un champ : une saisie faite avant
 l'hydratation est effacée.
