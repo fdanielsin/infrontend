@@ -2,7 +2,7 @@ name: Frontend CI
 
 on:
   push:
-    branches: [main, develop, 'feature/**', 'bugfix/**', 'refactor/**']
+    branches: [main, develop, 'feature/**', 'bugfix/**', 'hotfix/**', 'release/**', 'chore/**']
   pull_request:
     branches: [main, develop]
   workflow_dispatch:
