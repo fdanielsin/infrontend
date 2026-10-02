@@ -182,3 +182,13 @@ export const zUpdateTaskResponse = zSuccessResponse.and(z.object({
 export const zGetStatsResponse = zSuccessResponse.and(z.object({
     data: zStats
 }));
+
+/**
+ * Document OpenAPI 3.1 (ce fichier).
+ */
+export const zGetOpenApiContractResponse = z.record(z.string(), z.unknown());
+
+/**
+ * Page Swagger UI
+ */
+export const zGetSwaggerUiResponse = z.string();

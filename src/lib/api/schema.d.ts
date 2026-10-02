@@ -32,7 +32,11 @@ export interface paths {
         post?: never;
         delete?: never;
         options?: never;
-        head?: never;
+        /**
+         * Vérifier que le service est vivant, sans corps
+         * @description Répond comme `GET /health`, sans corps (RFC 9110, section 9.3.2).
+         */
+        head: operations["healthCheckHead"];
         patch?: never;
         trace?: never;
     };
@@ -64,7 +68,11 @@ export interface paths {
         post?: never;
         delete?: never;
         options?: never;
-        head?: never;
+        /**
+         * Vérifier que le service est prêt, sans corps
+         * @description Répond comme `GET /ready`, sans corps (RFC 9110, section 9.3.2).
+         */
+        head: operations["readinessCheckHead"];
         patch?: never;
         trace?: never;
     };
@@ -91,7 +99,11 @@ export interface paths {
         post: operations["createUser"];
         delete?: never;
         options?: never;
-        head?: never;
+        /**
+         * Lister les utilisateurs, sans corps
+         * @description Répond comme `GET /api/v1/users`, sans corps (RFC 9110, section 9.3.2).
+         */
+        head: operations["listUsersHead"];
         patch?: never;
         trace?: never;
     };
@@ -120,7 +132,11 @@ export interface paths {
         post?: never;
         delete?: never;
         options?: never;
-        head?: never;
+        /**
+         * Récupérer un utilisateur, sans corps
+         * @description Répond comme `GET /api/v1/users/{id}`, sans corps (RFC 9110, section 9.3.2).
+         */
+        head: operations["getUserHead"];
         patch?: never;
         trace?: never;
     };
@@ -153,7 +169,11 @@ export interface paths {
         post?: never;
         delete?: never;
         options?: never;
-        head?: never;
+        /**
+         * Lister les tâches d'un utilisateur, sans corps
+         * @description Répond comme `GET /api/v1/users/{id}/tasks`, sans corps (RFC 9110, section 9.3.2).
+         */
+        head: operations["listUserTasksHead"];
         patch?: never;
         trace?: never;
     };
@@ -252,7 +272,84 @@ export interface paths {
         post?: never;
         delete?: never;
         options?: never;
-        head?: never;
+        /**
+         * Récupérer les statistiques, sans corps
+         * @description Répond comme `GET /api/v1/stats`, sans corps (RFC 9110, section 9.3.2).
+         */
+        head: operations["getStatsHead"];
+        patch?: never;
+        trace?: never;
+    };
+    "/openapi.yaml": {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Langue des messages : le français pour `fr` et ses variantes, l'anglais
+                 *     sinon. Chaque élément doit respecter la RFC 9110 (plage de langue avec
+                 *     tirets, `q` de 0 à 1) : un élément invalide, un en-tête absent ou de plus
+                 *     de 1024 octets donnent l'anglais, jamais une erreur. Voir la description
+                 *     de l'API.
+                 */
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Télécharger le contrat OpenAPI
+         * @description Renvoie ce fichier tel qu'il est embarqué dans le binaire. Il est en français
+         *     (`Content-Language: fr`), quelle que soit la valeur de `Accept-Language`.
+         *     Disponible seulement si `API_DOCS_ENABLED` est actif.
+         */
+        get: operations["getOpenApiContract"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        /**
+         * Télécharger le contrat OpenAPI, sans corps
+         * @description Répond comme `GET /openapi.yaml`, sans corps (RFC 9110, section 9.3.2).
+         */
+        head: operations["getOpenApiContractHead"];
+        patch?: never;
+        trace?: never;
+    };
+    "/docs": {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Langue des messages : le français pour `fr` et ses variantes, l'anglais
+                 *     sinon. Chaque élément doit respecter la RFC 9110 (plage de langue avec
+                 *     tirets, `q` de 0 à 1) : un élément invalide, un en-tête absent ou de plus
+                 *     de 1024 octets donnent l'anglais, jamais une erreur. Voir la description
+                 *     de l'API.
+                 */
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Afficher l'interface Swagger UI
+         * @description Page HTML qui charge Swagger UI depuis un CDN (version épinglée,
+         *     intégrité vérifiée) et affiche `/openapi.yaml`. La page est en anglais
+         *     (`Content-Language: en`), quelle que soit la valeur de `Accept-Language`.
+         *     Disponible seulement si
+         *     `API_DOCS_ENABLED` est actif. Une politique `Content-Security-Policy`
+         *     limite la page à ce CDN et à cette origine.
+         */
+        get: operations["getSwaggerUi"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        /**
+         * Afficher l'interface Swagger UI, sans corps
+         * @description Répond comme `GET /docs`, sans corps (RFC 9110, section 9.3.2).
+         */
+        head: operations["getSwaggerUiHead"];
         patch?: never;
         trace?: never;
     };
@@ -465,6 +562,43 @@ export interface components {
                 "application/json": components["schemas"]["ErrorResponse"];
             };
         };
+        /** @description Base de données indisponible (`DATABASE_UNAVAILABLE`), sans corps */
+        HeadDatabaseUnavailable: {
+            headers: {
+                "Content-Language": components["headers"]["ContentLanguage"];
+                Vary: components["headers"]["Vary"];
+                "Cache-Control": components["headers"]["CacheControlNoStore"];
+                [name: string]: unknown;
+            };
+            content?: never;
+        };
+        /** @description Identifiant utilisateur invalide (`INVALID_ID`), sans corps */
+        HeadInvalidUserId: {
+            headers: {
+                "Content-Language": components["headers"]["ContentLanguage"];
+                Vary: components["headers"]["Vary"];
+                [name: string]: unknown;
+            };
+            content?: never;
+        };
+        /** @description Utilisateur introuvable (`USER_NOT_FOUND`), sans corps */
+        HeadUserNotFound: {
+            headers: {
+                "Content-Language": components["headers"]["ContentLanguage"];
+                Vary: components["headers"]["Vary"];
+                [name: string]: unknown;
+            };
+            content?: never;
+        };
+        /** @description Erreur interne (`INTERNAL_ERROR`), sans corps */
+        HeadInternalServerError: {
+            headers: {
+                "Content-Language": components["headers"]["ContentLanguage"];
+                Vary: components["headers"]["Vary"];
+                [name: string]: unknown;
+            };
+            content?: never;
+        };
     };
     parameters: {
         /**
@@ -484,6 +618,8 @@ export interface components {
         ContentLanguage: "en" | "fr";
         /** @description La réponse dépend de la langue demandée. */
         Vary: "Accept-Language";
+        /** @description Interdit au navigateur de deviner le type du contenu. */
+        ContentTypeOptionsNoSniff: "nosniff";
         /** @description Interdit toute mise en cache de la réponse (sondes). */
         CacheControlNoStore: "no-store";
     };
@@ -523,6 +659,36 @@ export interface operations {
             };
         };
     };
+    healthCheckHead: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Langue des messages : le français pour `fr` et ses variantes, l'anglais
+                 *     sinon. Chaque élément doit respecter la RFC 9110 (plage de langue avec
+                 *     tirets, `q` de 0 à 1) : un élément invalide, un en-tête absent ou de plus
+                 *     de 1024 octets donnent l'anglais, jamais une erreur. Voir la description
+                 *     de l'API.
+                 */
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Service disponible */
+            200: {
+                headers: {
+                    "Content-Language": components["headers"]["ContentLanguage"];
+                    Vary: components["headers"]["Vary"];
+                    "Cache-Control": components["headers"]["CacheControlNoStore"];
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     readinessCheck: {
         parameters: {
             query?: never;
@@ -554,6 +720,37 @@ export interface operations {
                 };
             };
             503: components["responses"]["DatabaseUnavailable"];
+        };
+    };
+    readinessCheckHead: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Langue des messages : le français pour `fr` et ses variantes, l'anglais
+                 *     sinon. Chaque élément doit respecter la RFC 9110 (plage de langue avec
+                 *     tirets, `q` de 0 à 1) : un élément invalide, un en-tête absent ou de plus
+                 *     de 1024 octets donnent l'anglais, jamais une erreur. Voir la description
+                 *     de l'API.
+                 */
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Service prêt */
+            200: {
+                headers: {
+                    "Content-Language": components["headers"]["ContentLanguage"];
+                    Vary: components["headers"]["Vary"];
+                    "Cache-Control": components["headers"]["CacheControlNoStore"];
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            503: components["responses"]["HeadDatabaseUnavailable"];
         };
     };
     listUsers: {
@@ -631,6 +828,36 @@ export interface operations {
             500: components["responses"]["InternalServerError"];
         };
     };
+    listUsersHead: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Langue des messages : le français pour `fr` et ses variantes, l'anglais
+                 *     sinon. Chaque élément doit respecter la RFC 9110 (plage de langue avec
+                 *     tirets, `q` de 0 à 1) : un élément invalide, un en-tête absent ou de plus
+                 *     de 1024 octets donnent l'anglais, jamais une erreur. Voir la description
+                 *     de l'API.
+                 */
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Liste des utilisateurs */
+            200: {
+                headers: {
+                    "Content-Language": components["headers"]["ContentLanguage"];
+                    Vary: components["headers"]["Vary"];
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            500: components["responses"]["HeadInternalServerError"];
+        };
+    };
     getUser: {
         parameters: {
             query?: never;
@@ -670,6 +897,41 @@ export interface operations {
             500: components["responses"]["InternalServerError"];
         };
     };
+    getUserHead: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Langue des messages : le français pour `fr` et ses variantes, l'anglais
+                 *     sinon. Chaque élément doit respecter la RFC 9110 (plage de langue avec
+                 *     tirets, `q` de 0 à 1) : un élément invalide, un en-tête absent ou de plus
+                 *     de 1024 octets donnent l'anglais, jamais une erreur. Voir la description
+                 *     de l'API.
+                 */
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
+            path: {
+                /** @description Identifiant numérique non négatif */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Utilisateur trouvé */
+            200: {
+                headers: {
+                    "Content-Language": components["headers"]["ContentLanguage"];
+                    Vary: components["headers"]["Vary"];
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["HeadInvalidUserId"];
+            404: components["responses"]["HeadUserNotFound"];
+            500: components["responses"]["HeadInternalServerError"];
+        };
+    };
     listUserTasks: {
         parameters: {
             query?: never;
@@ -706,6 +968,40 @@ export interface operations {
             };
             400: components["responses"]["InvalidUserId"];
             500: components["responses"]["InternalServerError"];
+        };
+    };
+    listUserTasksHead: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Langue des messages : le français pour `fr` et ses variantes, l'anglais
+                 *     sinon. Chaque élément doit respecter la RFC 9110 (plage de langue avec
+                 *     tirets, `q` de 0 à 1) : un élément invalide, un en-tête absent ou de plus
+                 *     de 1024 octets donnent l'anglais, jamais une erreur. Voir la description
+                 *     de l'API.
+                 */
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
+            path: {
+                /** @description Identifiant numérique non négatif */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Liste des tâches */
+            200: {
+                headers: {
+                    "Content-Language": components["headers"]["ContentLanguage"];
+                    Vary: components["headers"]["Vary"];
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["HeadInvalidUserId"];
+            500: components["responses"]["HeadInternalServerError"];
         };
     };
     createTask: {
@@ -864,6 +1160,168 @@ export interface operations {
                 };
             };
             500: components["responses"]["InternalServerError"];
+        };
+    };
+    getStatsHead: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Langue des messages : le français pour `fr` et ses variantes, l'anglais
+                 *     sinon. Chaque élément doit respecter la RFC 9110 (plage de langue avec
+                 *     tirets, `q` de 0 à 1) : un élément invalide, un en-tête absent ou de plus
+                 *     de 1024 octets donnent l'anglais, jamais une erreur. Voir la description
+                 *     de l'API.
+                 */
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Statistiques agrégées */
+            200: {
+                headers: {
+                    "Content-Language": components["headers"]["ContentLanguage"];
+                    Vary: components["headers"]["Vary"];
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            500: components["responses"]["HeadInternalServerError"];
+        };
+    };
+    getOpenApiContract: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Langue des messages : le français pour `fr` et ses variantes, l'anglais
+                 *     sinon. Chaque élément doit respecter la RFC 9110 (plage de langue avec
+                 *     tirets, `q` de 0 à 1) : un élément invalide, un en-tête absent ou de plus
+                 *     de 1024 octets donnent l'anglais, jamais une erreur. Voir la description
+                 *     de l'API.
+                 */
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Contrat OpenAPI au format YAML */
+            200: {
+                headers: {
+                    /** @description Langue du contenu (descriptions du contrat), indépendante de `Accept-Language`. */
+                    "Content-Language"?: "fr";
+                    Vary: components["headers"]["Vary"];
+                    "X-Content-Type-Options": components["headers"]["ContentTypeOptionsNoSniff"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/yaml": Record<string, never>;
+                };
+            };
+        };
+    };
+    getOpenApiContractHead: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Langue des messages : le français pour `fr` et ses variantes, l'anglais
+                 *     sinon. Chaque élément doit respecter la RFC 9110 (plage de langue avec
+                 *     tirets, `q` de 0 à 1) : un élément invalide, un en-tête absent ou de plus
+                 *     de 1024 octets donnent l'anglais, jamais une erreur. Voir la description
+                 *     de l'API.
+                 */
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Contrat OpenAPI (sans corps) */
+            200: {
+                headers: {
+                    /** @description Langue du contenu (descriptions du contrat), indépendante de `Accept-Language`. */
+                    "Content-Language"?: "fr";
+                    Vary: components["headers"]["Vary"];
+                    "X-Content-Type-Options": components["headers"]["ContentTypeOptionsNoSniff"];
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getSwaggerUi: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Langue des messages : le français pour `fr` et ses variantes, l'anglais
+                 *     sinon. Chaque élément doit respecter la RFC 9110 (plage de langue avec
+                 *     tirets, `q` de 0 à 1) : un élément invalide, un en-tête absent ou de plus
+                 *     de 1024 octets donnent l'anglais, jamais une erreur. Voir la description
+                 *     de l'API.
+                 */
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Page Swagger UI */
+            200: {
+                headers: {
+                    /** @description Langue de la page (interface Swagger UI), indépendante de `Accept-Language`. */
+                    "Content-Language"?: "en";
+                    Vary: components["headers"]["Vary"];
+                    "X-Content-Type-Options": components["headers"]["ContentTypeOptionsNoSniff"];
+                    /** @description Politique limitant la page à son origine et au CDN de Swagger UI. */
+                    "Content-Security-Policy"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+        };
+    };
+    getSwaggerUiHead: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Langue des messages : le français pour `fr` et ses variantes, l'anglais
+                 *     sinon. Chaque élément doit respecter la RFC 9110 (plage de langue avec
+                 *     tirets, `q` de 0 à 1) : un élément invalide, un en-tête absent ou de plus
+                 *     de 1024 octets donnent l'anglais, jamais une erreur. Voir la description
+                 *     de l'API.
+                 */
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Page Swagger UI (sans corps) */
+            200: {
+                headers: {
+                    /** @description Langue de la page (interface Swagger UI), indépendante de `Accept-Language`. */
+                    "Content-Language"?: "en";
+                    Vary: components["headers"]["Vary"];
+                    "X-Content-Type-Options": components["headers"]["ContentTypeOptionsNoSniff"];
+                    /** @description Politique limitant la page à son origine et au CDN de Swagger UI. */
+                    "Content-Security-Policy"?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
 }
