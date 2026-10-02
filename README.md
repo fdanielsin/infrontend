@@ -23,6 +23,24 @@ bun run dev                  # http://localhost:5173
 The message module `src/lib/paraglide/` is generated and git-ignored: `dev` and
 `build` produce it, `bun run i18n:compile` does it on demand.
 
+## Git hooks
+
+The repository versions one hook, `.githooks/pre-push`: it refuses any push to `main` unless
+`RELEASE_TAG` names a tag on the pushed commit. `bun install` enables it (its `prepare` script runs
+`git config core.hooksPath .githooks`, and does nothing where `git` or the repository is absent,
+such as in the Docker build); to enable it by hand, run that command. `git push --no-verify` skips
+it: the hook is a local guard, not a protection of `main`.
+
+Release: open a pull request `develop` to `main` (a merge on GitHub does not go through the hook);
+once the CI is green and QA accepts, tag the head commit of that pull request locally, push that
+commit to `main` with its full refname, then push the tag.
+
+```bash
+git tag v1.1.0 <sha>
+RELEASE_TAG=v1.1.0 git push origin <sha>:refs/heads/main
+git push origin v1.1.0
+```
+
 ## Environment variables
 
 | Variable         | Used by                                            | Required                          | Notes                                                                                                                                                                              |

@@ -44,8 +44,9 @@ chaque étape) :
   pointait vers `.githooks/`, qui n'existe pas ; `.husky/_/husky.sh` était
   absent ; `package.json`'s `prepare` ne lançait jamais husky ; la CI ne les
   utilise pas). `core.hooksPath` a été désinscrit (`git config --unset`,
-  configuration locale non suivie). **Il n'y a donc aucun hook Git local
-  actif aujourd'hui : la CI est le seul filet.** Le bloc `test.projects` de
+  configuration locale non suivie). (Depuis la v1.1.0, un hook
+  `.githooks/pre-push` versionné est activé par `bun install` : voir le
+  [README](../README.md).) Le bloc `test.projects` de
   `vite.config.ts` (jamais exécuté, masqué par `vitest.config.ts`) et les
   dépendances `@vitest/browser-playwright`/`vitest-browser-svelte` ont aussi
   été retirés.

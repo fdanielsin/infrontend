@@ -25,6 +25,9 @@ Thumbs.db
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
+# Throwaway Git repositories of the hook tests
+/tests/hooks/.tmp
+
 # Stryker
 /reports
 /.stryker-tmp

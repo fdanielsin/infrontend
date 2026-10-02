@@ -64,7 +64,8 @@ et un « GO » explicite.
       mieux rangé), `Notification.svelte` déplacé vers `lib/ui/`. Code et
       config morts retirés : `fetchUserTasks` (jamais appelée), `lib/index.ts`
       (placeholder vide), Husky/lint-staged (hooks inertes, `core.hooksPath`
-      pointait vers un dossier inexistant), bloc `test` mort de
+      pointait vers un dossier inexistant ; remplacés en v1.1.0 par le hook
+      versionné `.githooks/pre-push`), bloc `test` mort de
       `vite.config.ts` (jamais exécuté, masqué par `vitest.config.ts`). Ce lot
       remplace l'ancien "Lot 7".
 - [ ] Lot 2 — F-01 (le client HTTP perd le message d'erreur du backend sur

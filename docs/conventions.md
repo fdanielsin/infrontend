@@ -100,8 +100,10 @@ Les erreurs de validation doivent :
 Tous les tests frontend vivent sous `tests/` à la racine du projet :
 
 `tests/unit/` pour les tests unitaires et de composants, `tests/e2e/` pour les
-scénarios Playwright ; l'organisation détaillée et les règles d'écriture sont
-dans [`tests/README.md`](../tests/README.md).
+scénarios Playwright, `tests/hooks/` pour le hook Git versionné
+(`.githooks/pre-push`, voir le [README](../README.md)) ; l'organisation
+détaillée et les règles d'écriture sont dans
+[`tests/README.md`](../tests/README.md).
 
 Les dossiers `__tests__` et les fichiers de test ne doivent pas être placés
 dans `src/`.

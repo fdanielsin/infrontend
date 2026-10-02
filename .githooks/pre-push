@@ -1,0 +1,30 @@
+#!/bin/sh
+# Refuses any push to main unless RELEASE_TAG names a tag on the commit being pushed.
+# Local guard only: main is not protected on GitHub, and `git push --no-verify` skips it.
+
+zero=0000000000000000000000000000000000000000
+
+while read -r _local_ref local_sha remote_ref _remote_sha; do
+	[ "$remote_ref" = "refs/heads/main" ] || continue
+
+	if [ "$local_sha" = "$zero" ]; then
+		echo "pre-push: deleting main is refused." >&2
+		exit 1
+	fi
+	if [ -z "${RELEASE_TAG:-}" ]; then
+		echo "pre-push: pushing to main needs RELEASE_TAG=<tag> on the pushed commit." >&2
+		exit 1
+	fi
+	tagged_sha=$(git rev-parse -q --verify "refs/tags/${RELEASE_TAG}^{commit}") || {
+		echo "pre-push: tag '${RELEASE_TAG}' does not exist." >&2
+		exit 1
+	}
+	pushed_sha=$(git rev-parse -q --verify "${local_sha}^{commit}") || {
+		echo "pre-push: cannot resolve the pushed commit ${local_sha}." >&2
+		exit 1
+	}
+	if [ "$tagged_sha" != "$pushed_sha" ]; then
+		echo "pre-push: tag '${RELEASE_TAG}' points to ${tagged_sha}, not to the pushed commit ${pushed_sha}." >&2
+		exit 1
+	fi
+done

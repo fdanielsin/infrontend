@@ -11,6 +11,10 @@ Tous les tests du frontend vivent sous `tests/`.
     traduction des `ErrorCode` du contrat, nombres, langue d'une requête et
     hook serveur, règles de validation du serveur couvertes par le client ;
   - `tests/unit/support/` pour les aides partagées (hôte de contexte).
+- `tests/hooks/` contient le test du hook Git `.githooks/pre-push` : des
+  dépôts Git jetables `tests/hooks/.tmp/case-*` (dossier ignoré, chaque `case-*`
+  supprimé après son test ; `tests/hooks/.tmp` reste, vide et ignoré), des
+  `git push` réels vers un dépôt bare, sans variable `GIT_*` héritée.
 - `tests/e2e/` contient les scénarios Playwright de bout en bout contre
   l'application et l'API `inbackend` (jamais ses fichiers).
 
