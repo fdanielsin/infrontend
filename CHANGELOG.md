@@ -4,8 +4,12 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-03
+
 ### Added
 
+- A versioned pre-push hook refuses any push to `main` unless `RELEASE_TAG` names a tag on the
+  pushed commit; `bun install` enables it.
 - Form fields refuse text longer than the server accepts (name 100, email 254, title 200,
   description 2000 characters, counted like the server) with a translated message, and
   trim their value before sending.
@@ -117,5 +121,6 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Stats page.
 
-[Unreleased]: https://github.com/fdanielsin/infrontend/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/fdanielsin/infrontend/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/fdanielsin/infrontend/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/fdanielsin/infrontend/releases/tag/v1.0.0
