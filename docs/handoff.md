@@ -86,8 +86,9 @@ regroupe les dépendances) et tourne sous l'utilisateur `bun`.
   (`Notification.svelte`) sont dans `src/lib/ui/`.
 - Le client HTTP partagé reste dans `src/lib/api/`.
 - Les routes composent les écrans sans déplacer la logique backend.
-- Le workflow frontend unique est
-  `.github/workflows/ci.yml`. Aucun job ne contacte le backend : le job `e2e` ne lance que les E2E à API mockée (`test:e2e:mocked`). Le contrat (`api:check`) et les E2E réels (`tests/e2e/backend/`) sont vérifiés en local avant chaque merge, contre un backend qui tourne sur `http://localhost:8080` ; une URL de backend déployé les remplacera en CI plus tard.
+- Deux workflows frontend : `.github/workflows/ci.yml` (agrégat « All checks
+  passed ») et `.github/workflows/mutation.yml` (mutation, hors agrégat, voir
+  `conventions.md`). Aucun job ne contacte le backend : le job `e2e` ne lance que les E2E à API mockée (`test:e2e:mocked`), sur Chromium, Firefox et WebKit (une jambe de matrice chacune ; différences de navigateur dans `conventions.md`, « Tests et portes »). Le contrat (`api:check`) et les E2E réels (`tests/e2e/backend/`) sont vérifiés en local avant chaque merge, contre un backend qui tourne sur `http://localhost:8080` ; une URL de backend déployé les remplacera en CI plus tard.
 - `tests/unit/components/` existe désormais (premier fichier :
   `TaskForm.test.ts`), en plus de `tests/unit/api/` et `tests/unit/stores/`.
   Le rendu de composants Svelte sous Vitest exige

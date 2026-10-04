@@ -1,14 +1,15 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { measure, worstContrast } from './support/contrast';
+import { nextFocusKey } from './support/keyboard';
 import { ada, adaTasks, mockApi, openHomeWithUser } from './support/mock-api';
 
 // One focus indicator and one error color for the whole interface, measured on the computed style
 // in a real browser (never on class names). The API is mocked: no backend needed.
 
 // Keyboard only: `:focus-visible` is what the user sees, so each control is reached with Tab.
-async function tabTo(page: Page, target: Locator) {
+async function tabTo(page: Page, target: Locator, browserName: string) {
 	for (let step = 0; step < 90; step++) {
-		await page.keyboard.press('Tab');
+		await page.keyboard.press(nextFocusKey(browserName));
 		if (await target.evaluate((element) => element === document.activeElement)) {
 			// The outline color can still be moving (`transition` covers it on the links); measure
 			// the style the user ends up seeing.
@@ -39,7 +40,8 @@ test.describe('Focus and errors (computed style, mocked API)', () => {
 
 	for (const width of [1280, 320]) {
 		test(`every control has the same focus outline, at 4.5:1 or more, at ${width} px (happy path)`, async ({
-			page
+			page,
+			browserName
 		}) => {
 			// GIVEN: The home page with a selected user, its tasks and one task being edited.
 			await page.setViewportSize({ width, height: 900 });
@@ -71,7 +73,7 @@ test.describe('Focus and errors (computed style, mocked API)', () => {
 			// 2 px, in the same color, with 4.5:1 or more against what is behind it.
 			const seen = new Set<string>();
 			for (const [name, control] of controls) {
-				await tabTo(page, control);
+				await tabTo(page, control, browserName);
 				const outline = await outlineOf(control);
 				expect(outline, `${name}: outline`).toEqual({
 					style: 'solid',
@@ -89,7 +91,8 @@ test.describe('Focus and errors (computed style, mocked API)', () => {
 	}
 
 	test('the focus outline of the toast close button is white and at 4.5:1 or more (limit)', async ({
-		page
+		page,
+		browserName
 	}) => {
 		// GIVEN: An error toast, on its red background.
 		const api = await mockApi(page, { users: [ada], tasks: adaTasks });
@@ -100,7 +103,7 @@ test.describe('Focus and errors (computed style, mocked API)', () => {
 		await expect(close).toBeVisible();
 
 		// WHEN: Its close button is reached with Tab.
-		await tabTo(page, close);
+		await tabTo(page, close, browserName);
 
 		// THEN: The outline is the inverse one, white, readable on the toast.
 		expect(await outlineOf(close)).toEqual({ style: 'solid', width: '2px', offset: '2px' });
@@ -200,7 +203,8 @@ test.describe('Focus and errors (computed style, mocked API)', () => {
 	for (const { width, height, count } of CASES) {
 		{
 			test(`Tab never leaves a control under ${count} toast(s), at ${width}x${height} px (limit)`, async ({
-				page
+				page,
+				browserName
 			}) => {
 				// GIVEN: A short page and `count` error toasts on the screen. The clock is frozen, so that
 				// the toasts stay while the whole page is gone through.
@@ -222,44 +226,111 @@ test.describe('Focus and errors (computed style, mocked API)', () => {
 				const problems: string[] = [];
 				let stops = 0;
 				let closeButtons = 0;
+				// A trap that cancels Tab is seen whatever the browser does at the end of the page.
+				await page.evaluate(() => {
+					const tabs = window as unknown as { lastTab: KeyboardEvent | null };
+					tabs.lastTab = null;
+					window.addEventListener(
+						'keydown',
+						(event) => {
+							if (event.key === 'Tab') tabs.lastTab = event;
+						},
+						true
+					);
+				});
 				for (let step = 0; step < 90; step++) {
-					await page.keyboard.press('Tab');
-					const stop = await page.evaluate(() => {
-						const element = document.activeElement as HTMLElement | null;
-						if (!element || element === document.body) return null;
-						const first = element.dataset.probe === '0';
-						element.dataset.probe ??= String(document.querySelectorAll('[data-probe]').length);
-						const box = element.getBoundingClientRect();
-						const stack = element.closest('[data-toast]')?.closest('.fixed');
-						const name = [
-							element.tagName.toLowerCase(),
-							element.id && `#${element.id}`,
-							element.getAttribute('aria-label') || element.textContent?.trim()
-						]
-							.filter(Boolean)
-							.join(' ');
-						if (stack) {
-							const area = stack.getBoundingClientRect();
-							const inside = box.top >= area.top - 1 && box.bottom <= area.bottom + 1;
-							return { first, name, inToast: true, ok: inside };
-						}
-						const points = [
-							[box.left + 1, box.top + 1],
-							[box.right - 1, box.top + 1],
-							[box.left + 1, box.bottom - 1],
-							[box.right - 1, box.bottom - 1],
-							[box.left + box.width / 2, box.top + box.height / 2]
-						];
-						const covered = points.filter(([x, y]) =>
-							document.elementFromPoint(x!, y!)?.closest('[data-toast]')
-						).length;
-						const visible = box.top >= 0 && box.bottom <= window.innerHeight;
-						return { first, name, inToast: false, ok: covered === 0 && visible };
+					await page.keyboard.press(nextFocusKey(browserName));
+					const { prevented, stop } = await page.evaluate(() => {
+						const tabs = window as unknown as { lastTab: KeyboardEvent | null };
+						const prevented = tabs.lastTab?.defaultPrevented ?? false;
+						tabs.lastTab = null;
+						const stop = (() => {
+							const element = document.activeElement as HTMLElement | null;
+							if (!element || element === document.body) return null;
+							const previous = (window as { previousStop?: Element }).previousStop;
+							(window as { previousStop?: Element }).previousStop = element;
+							// Where the page really ends: the last control in document order. A browser
+							// without its own chrome (headless Firefox) keeps the focus there, a keyboard
+							// trap keeps it anywhere else.
+							const tabbable = [
+								...document.querySelectorAll<HTMLElement>(
+									'a[href], button, input, select, textarea'
+								)
+							].filter(
+								(control) =>
+									!(control as HTMLInputElement).disabled &&
+									control.tabIndex >= 0 &&
+									control.getClientRects().length > 0
+							);
+							const repeated = previous === element;
+							const lastInDocument = tabbable.at(-1) === element;
+							const first = element.dataset.probe === '0';
+							element.dataset.probe ??= String(document.querySelectorAll('[data-probe]').length);
+							const box = element.getBoundingClientRect();
+							const stack = element.closest('[data-toast]')?.closest('.fixed');
+							const name = [
+								element.tagName.toLowerCase(),
+								element.id && `#${element.id}`,
+								element.getAttribute('aria-label') || element.textContent?.trim().slice(0, 40)
+							]
+								.filter(Boolean)
+								.join(' ');
+							// Firefox makes a scrolling area a tab stop of its own: the stack itself, no other element.
+							const isStack = element === document.querySelector('[data-toast]')?.closest('.fixed');
+							if (isStack)
+								return { first, name, repeated, lastInDocument, kind: 'stack', ok: true };
+							// Any other stop must be a real control: no stray tab stop on a container.
+							if (!stack && !tabbable.includes(element)) {
+								return { first, name, repeated, lastInDocument, kind: 'page', ok: false };
+							}
+							if (stack) {
+								const area = stack.getBoundingClientRect();
+								const inside = box.top >= area.top - 1 && box.bottom <= area.bottom + 1;
+								const detail = `top+${(box.top - area.top).toFixed(1)} bottom-${(area.bottom - box.bottom).toFixed(1)} scrollTop=${stack.scrollTop}`;
+								return {
+									first,
+									name: `${name} (${detail})`,
+									repeated,
+									lastInDocument,
+									kind: 'toast',
+									ok: inside
+								};
+							}
+							const points = [
+								[box.left + 1, box.top + 1],
+								[box.right - 1, box.top + 1],
+								[box.left + 1, box.bottom - 1],
+								[box.right - 1, box.bottom - 1],
+								[box.left + box.width / 2, box.top + box.height / 2]
+							];
+							const covered = points.filter(([x, y]) =>
+								document.elementFromPoint(x!, y!)?.closest('[data-toast]')
+							).length;
+							const visible = box.top >= 0 && box.bottom <= window.innerHeight;
+							return {
+								first,
+								name,
+								repeated,
+								lastInDocument,
+								kind: 'page',
+								ok: covered === 0 && visible
+							};
+						})();
+						return { prevented, stop };
 					});
+					if (prevented) problems.push(`Tab cancelled on ${stop?.name ?? 'the page'}`);
 					if (!stop) continue;
+					if (stop.repeated) {
+						// Only headless Firefox, which has no browser toolbar to leave the page for, keeps the
+						// focus on the last control; anywhere else a repeated stop is a trap.
+						if (browserName !== 'firefox' || !stop.lastInDocument) {
+							problems.push(`focus stuck on ${stop.name}`);
+						}
+						break;
+					}
 					if (stop.first && stops > 0) break;
 					stops++;
-					if (stop.inToast) closeButtons++;
+					if (stop.kind === 'toast') closeButtons++;
 					if (!stop.ok) problems.push(stop.name);
 				}
 

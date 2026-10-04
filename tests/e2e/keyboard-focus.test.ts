@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { nextFocusKey } from './support/keyboard';
 import { ada, adaTasks, mockApi, openHomeWithUser } from './support/mock-api';
 
 // Keyboard and focus behavior in a real browser, with a mocked API. Actions use
@@ -203,7 +204,8 @@ test.describe('Keyboard and focus (mocked API)', () => {
 		});
 
 		test('a toast reached with Tab stays paused, and dismissing it returns the focus (happy path)', async ({
-			page
+			page,
+			browserName
 		}) => {
 			// GIVEN: A fake clock, an error toast, the focus on the last control of the page.
 			await page.clock.install();
@@ -216,7 +218,7 @@ test.describe('Keyboard and focus (mocked API)', () => {
 			await lastControl.focus();
 
 			// WHEN: Tab moves the focus into the toast, and time passes.
-			await page.keyboard.press('Tab');
+			await page.keyboard.press(nextFocusKey(browserName));
 			const dismiss = page.getByRole('alert').getByRole('button', { name: 'Dismiss notification' });
 			await expect(dismiss).toBeFocused();
 			await page.clock.runFor(20_000);

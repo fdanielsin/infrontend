@@ -4,10 +4,17 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- The CI runs the mocked E2E on Chromium, Firefox and WebKit.
+
 ### Fixed
 
 - Mutation testing runs again; a separate CI workflow runs it on changes to tested code and fails
   below an 85 % score.
+- Keyboard E2E pass on Firefox and on WebKit for macOS (Option+Tab, end of page, scrolling stack).
+- A close button focused with Tab is scrolled fully into the notification stack (Firefox on Linux clipped it);
+  the stack is a named region (`Notifications`, translated in the four languages).
 
 ## [1.1.0] - 2026-10-04
 

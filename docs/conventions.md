@@ -118,6 +118,32 @@ doivent pas masquer les erreurs des contrôles obligatoires.
 La porte est `bun run verify` (voir le [README](../README.md)) ; la CI lance la
 même commande.
 
+Les E2E à API mockée tournent sur Chromium, Firefox et WebKit : une jambe de
+matrice par navigateur dans le job `e2e` de la CI (`fail-fast: false`). Trois
+différences de navigateur sont attendues et gérées dans les tests, jamais par un
+`test.skip` :
+
+- Safari sur macOS ne s'arrête pas sur les liens, boutons et cases à cocher
+  avec Tab tant que « Navigation au clavier » n'est pas activée dans les réglages
+  système ; Option+Tab les atteint tous
+  (<https://support.apple.com/en-mk/guide/safari/cpsh003>,
+  <https://www.a11yproject.com/posts/macos-browser-keyboard-navigation/>).
+  Le WebKit de Playwright suit l'hôte : Option+Tab sur macOS, Tab sur Linux
+  (mesuré en CI : 75 tests verts). `nextFocusKey` (`tests/e2e/support/keyboard.ts`)
+  choisit la touche ; tout test qui parcourt la page au clavier l'utilise.
+- Firefox headless n'a pas de barre d'outils : après le dernier contrôle, Tab
+  laisse le focus dessus au lieu de revenir au début. Le test de parcours des
+  toasts n'accepte cette répétition que dans Firefox, et seulement sur le dernier
+  contrôle de l'ordre du DOM calculé par le test ; dans Chromium et WebKit, toute
+  répétition est un piège. Partout, un `keydown` Tab annulé (`preventDefault`) est
+  un piège et fait échouer le test. Limite : en Firefox headless, un piège qui
+  ramène le focus sur le dernier contrôle sans annuler Tab est indiscernable de
+  la fin de page.
+- Firefox rend une zone défilante (ici la pile de toasts, au-delà de 40 % de la
+  fenêtre) arrêt de Tab à elle seule ; WebKit non
+  (<http://adrianroselli.com/2022/06/keyboard-only-scrolling-areas.html>). Le
+  test accepte cet arrêt pour l'élément pile lui-même, et pour aucun autre.
+
 ### Contrat d'API
 
 Les types de `src/lib/api/schema.d.ts` sont générés depuis le contrat du backend
@@ -226,6 +252,9 @@ un piège sans présenter cette information comme une garantie.
   (info, succès, avertissement) et `role="alert"` (erreur). Un toast se met en
   pause au survol et au focus et peut être fermé. Les bannières d'erreur en
   ligne n'ont pas de rôle : une seule annonce, par le toast.
+  La pile est une région nommée (`notifications_region`) ; un bouton de fermeture
+  focalisé est ramené entièrement dans la pile par `scrollIntoView({ block: 'nearest' })`
+  (Firefox sous Linux le laissait rogné de 4 px, hors du contour de focus).
 - Contraste texte 4,5:1 minimum : teintes 700 sur fond coloré. Le texte posé
   sur le dégradé de la page n'est pas mesurable par axe (« incomplet ») ; il a
   été calculé à la main (> 6:1).
