@@ -4,7 +4,7 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-## [1.1.0] - 2026-10-03
+## [1.1.0] - 2026-10-04
 
 ### Added
 
