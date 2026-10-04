@@ -150,7 +150,7 @@ premier rendu serveur) n'est pas observable sous jsdom : à couvrir par un E2E.
   attendu, à rappeler dans la description de la PR.
 - `zodIssuesToFieldErrors` (`lib/validation/field-errors.ts`) remplace trois
   boucles identiques de TaskForm et UserForm.
-- Stryker : `bun run mutate`, config `stryker.config.json`, non bloquant.
+- Stryker : `bun run mutate`, config `stryker.config.json` ; voir `conventions.md` (Tests de mutation).
 
 ## Lot « tâche introuvable » (branche `fix/frontend-task-not-found`)
 

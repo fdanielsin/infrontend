@@ -139,11 +139,35 @@ champs requis) se corrige dans le contrat, pas ici.
 
 ### Tests de mutation
 
-`bun run mutate` lance Stryker sur les modules TypeScript de `src/lib`
-(`.svelte.ts` compris, hors composants `.svelte`), à la demande et sans bloquer
-la CI ; rapport dans `reports/mutation/`. Pour un fichier :
-`bunx stryker run --mutate src/lib/state/request-status.svelte.ts --concurrency 1`
-(avec plusieurs processus, une course sur le cache de vite fait échouer le lancement).
+`bun run mutate` lance Stryker sur les modules TypeScript de `src/lib` ; rapport
+dans `reports/mutation/`. Le seuil `break` de `stryker.config.json` (85) fait
+échouer la commande en dessous. Pour un fichier :
+`bunx stryker run --mutate src/lib/api/client.ts --concurrency 2`.
+
+Hors mutation, volontairement :
+
+- les `*.svelte.ts` (les six stores en runes) : l'instrumenteur enveloppe le
+  corps des constructeurs dans un `if`, et Svelte refuse alors
+  `this.x = $state(...)` (`state_invalid_placement`,
+  <https://svelte.dev/e/state_invalid_placement>). Le lancement plante à
+  l'« initial test run » avec `Error: [object Object]`, le runner vitest
+  masquant l'erreur. **Un nouveau `*.svelte.ts` n'est pas muté** ; seule la
+  couverture v8 le surveille ;
+- `src/lib/api/zod/**` : code généré par openapi-ts.
+
+Ne pas lier les `node_modules` d'un autre worktree : le cache vite partagé
+casse le test initial (« m.users_name_label is not a function »).
+
+Pour voir l'erreur réelle d'un plantage, relancer vitest dans le sandbox
+conservé `.stryker-tmp/sandbox-*` avec un script appelant `createVitest` de
+`vitest/node` puis `ctx.start()`.
+
+CI : `.github/workflows/mutation.yml`, hors de l'agrégat « All checks
+passed ». Il tourne sur les PR qui touchent `src/**`, `tests/unit/**`,
+`tests/hooks/**`, `messages/**`, `project.inlang/**`, `svelte.config.js`,
+`vitest.config.ts`, `stryker.config.json`, `package.json`, `bun.lock` ou le
+workflow lui-même, sur push vers `develop` et à la demande ; 30 minutes au plus, rapport HTML en artefact (7 jours). Score
+mesuré le 2026-10-04 (concurrency 2, environ 3 min) : 91,85 % sur deux lancements consécutifs.
 
 ## Documentation et invariants
 
