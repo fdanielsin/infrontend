@@ -63,9 +63,13 @@ jobs:
   # Only the E2E that mock the API (tests/e2e). The ones that need a real backend
   # (tests/e2e/backend) and the contract check run locally before each merge.
   e2e:
-    name: E2E (mocked API)
+    name: 'E2E (mocked API, ${{ matrix.browser }})'
     runs-on: ubuntu-24.04
     needs: [verify]
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
     steps:
       - uses: actions/checkout@v7
 
@@ -77,11 +81,11 @@ jobs:
       - name: 'Install dependencies'
         run: bun install --frozen-lockfile
 
-      - name: 'Install Chromium'
-        run: bun x playwright install --with-deps chromium
+      - name: 'Install ${{ matrix.browser }}'
+        run: bun x playwright install --with-deps ${{ matrix.browser }}
 
       - name: 'Run E2E tests'
-        run: bun run test:e2e:mocked -- --project=chromium
+        run: bun run test:e2e:mocked -- --project=${{ matrix.browser }}
 
   summary:
     name: All checks passed
