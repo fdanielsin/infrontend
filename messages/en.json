@@ -27,6 +27,7 @@
 	"tasks_edit_named": "Edit {title}",
 	"tasks_delete_named": "Delete {title}",
 	"notifications_dismiss": "Dismiss notification",
+	"notifications_region": "Notifications",
 	"notifications_task_gone": "Task already deleted",
 	"stats_page_title": "Statistics - inBackend",
 	"stats_heading": "Statistics",

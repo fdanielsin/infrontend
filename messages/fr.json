@@ -27,6 +27,7 @@
 	"tasks_edit_named": "Modifier {title}",
 	"tasks_delete_named": "Supprimer {title}",
 	"notifications_dismiss": "Fermer la notification",
+	"notifications_region": "Notifications",
 	"notifications_task_gone": "Tâche déjà supprimée",
 	"stats_page_title": "Statistiques - inBackend",
 	"stats_heading": "Statistiques",

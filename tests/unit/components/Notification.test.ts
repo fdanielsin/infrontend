@@ -38,6 +38,8 @@ describe('Notification component', () => {
 			}
 		);
 		vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(STACK_HEIGHT);
+		// jsdom has no scrollIntoView.
+		HTMLElement.prototype.scrollIntoView = vi.fn();
 	});
 
 	afterEach(() => {
@@ -178,6 +180,26 @@ describe('Notification component', () => {
 		vi.advanceTimersByTime(1);
 		await tick();
 		expect(view.queryByText('Saved')).toBeNull();
+	});
+
+	it('scrolls a close button reached by keyboard fully into the stack (happy path)', () => {
+		// GIVEN: An error toast in the stack.
+		app.notifications.add('Database unavailable', 'error', 0);
+		const view = renderWithApp(app, Notification);
+
+		// WHEN: Its close button gets the focus.
+		view.getByRole('button', { name: 'Dismiss notification' }).focus();
+
+		// THEN: The stack scrolls by the missing distance, none when the button already shows.
+		expect(HTMLElement.prototype.scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' });
+	});
+
+	it('names the notification region (happy path)', () => {
+		// WHEN: The notification area is rendered.
+		const view = renderWithApp(app, Notification);
+
+		// THEN: The region that scrolls and takes the focus has a name.
+		expect(view.getByRole('region', { name: 'Notifications' })).toBeTruthy();
 	});
 
 	it('pauses a notification while the keyboard focus is inside it (happy path)', async () => {

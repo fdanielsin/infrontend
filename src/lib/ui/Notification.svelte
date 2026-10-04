@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import ToastItem from '$lib/ui/ToastItem.svelte';
+	import { m } from '$lib/paraglide/messages';
 	import { getAppState } from '$lib/state/app-state.svelte';
 
 	const { notifications } = getAppState();
@@ -15,13 +16,19 @@
 		return () => root.style.removeProperty('--toast-stack-height');
 	});
 
+	// A close button reached by Tab must be wholly inside the stack, which scrolls when it is tall.
+	// Firefox on Linux leaves a button clipped by a few pixels where it is (its outline with it);
+	// "nearest" scrolls the stack by the missing distance, and by nothing when it already shows.
 	// The browser leaves a control that is only partly under the stack where it is; this brings
 	// it fully above the stack, without ever pushing its top out of the window.
 	let stack: HTMLElement | undefined = $state();
 	function keepClearOfStack(event: FocusEvent) {
 		const target = event.target;
 		if (!stack || reservedHeight === 0 || !(target instanceof HTMLElement)) return;
-		if (target.closest('[data-toast]')) return;
+		if (target.closest('[data-toast]')) {
+			target.scrollIntoView({ block: 'nearest' });
+			return;
+		}
 		const control = target.getBoundingClientRect();
 		const toasts = stack.getBoundingClientRect();
 		const sideBySide = control.right <= toasts.left || control.left >= toasts.right;
@@ -74,6 +81,8 @@
 <div
 	bind:this={stack}
 	bind:clientHeight={stackHeight}
+	role="region"
+	aria-label={m.notifications_region()}
 	class="fixed right-0 bottom-0 z-50 flex max-h-[40vh] flex-col gap-2 overflow-x-hidden overflow-y-auto p-4"
 	onfocusin={rememberFocusOrigin}
 >
