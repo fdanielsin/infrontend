@@ -415,7 +415,7 @@ export interface components {
             data: {
                 /** @constant */
                 status: "ok";
-                /** @example 1.0.0 */
+                /** @example 1.1.0 */
                 version: string;
                 /** Format: uuid */
                 id: string;
