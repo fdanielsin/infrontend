@@ -14,6 +14,9 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- The notification stack is a landmark only while it shows a notification, and the keyboard E2E catch a
+  focus trap that returns the focus after Tab (Chromium, WebKit).
+- A refused cookie read falls back to the browser language (now covered by a test).
 - Mutation testing runs again; a separate CI workflow runs it on changes to tested code and fails
   below an 85 % score.
 - Keyboard E2E pass on Firefox and on WebKit for macOS (Option+Tab, end of page, scrolling stack).
