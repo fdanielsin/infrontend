@@ -14,6 +14,7 @@ describe('first language detection', () => {
 	});
 
 	afterEach(() => {
+		vi.restoreAllMocks();
 		Reflect.deleteProperty(document, 'cookie');
 		document.cookie = 'PARAGLIDE_LOCALE=; path=/; max-age=0';
 	});
@@ -38,6 +39,38 @@ describe('first language detection', () => {
 		});
 
 		// WHEN / THEN: The application state, built during hydration, does not fail.
+		const app = await freshAppState();
+		expect(app.locale.current).toBe('en');
+	});
+	// Reading document.cookie throws in a sandboxed iframe or with third-party storage blocked.
+	function refuseCookieReads() {
+		Object.defineProperty(document, 'cookie', {
+			configurable: true,
+			get: () => {
+				throw new DOMException('Cookies are disabled', 'SecurityError');
+			},
+			set: () => {}
+		});
+	}
+
+	it('falls back to the browser language when the cookie cannot be read (exception)', async () => {
+		// GIVEN: A browser in French that refuses to let the page read its cookies.
+		vi.spyOn(navigator, 'languages', 'get').mockReturnValue(['fr-FR']);
+		refuseCookieReads();
+
+		// WHEN: The application state is built during hydration.
+		const app = await freshAppState();
+
+		// THEN: The interface follows the browser language, without failing.
+		expect(app.locale.current).toBe('fr');
+	});
+
+	it('falls back to English when the cookie cannot be read and the browser language is not offered (boundary)', async () => {
+		// GIVEN: A browser in Japanese that refuses cookie reads.
+		vi.spyOn(navigator, 'languages', 'get').mockReturnValue(['ja-JP']);
+		refuseCookieReads();
+
+		// WHEN / THEN: The base language is used.
 		const app = await freshAppState();
 		expect(app.locale.current).toBe('en');
 	});
