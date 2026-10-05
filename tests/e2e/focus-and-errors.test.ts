@@ -313,6 +313,7 @@ test.describe('Focus and errors (computed style, mocked API)', () => {
 								repeated,
 								lastInDocument,
 								kind: 'page',
+								detail: `top=${box.top.toFixed(1)} bottom=${box.bottom.toFixed(1)} innerHeight=${innerHeight} scrollY=${scrollY.toFixed(1)} coveredPoints=${covered}`,
 								ok: covered === 0 && visible
 							};
 						})();
@@ -331,7 +332,33 @@ test.describe('Focus and errors (computed style, mocked API)', () => {
 					if (stop.first && stops > 0) break;
 					stops++;
 					if (stop.kind === 'toast') closeButtons++;
-					if (!stop.ok) problems.push(stop.name);
+					if (!stop.ok) problems.push(`${stop.name}${'detail' in stop ? ` (${stop.detail})` : ''}`);
+				}
+
+				// WHEN: Tab leaves the last control of the page, and time passes. A trap may let Tab through and
+				// give the focus back a moment later. Chromium and WebKit hand the focus to the browser
+				// window (nothing is focused in the page); headless Firefox fires no event at all there, so
+				// a trap that reacts to the focus leaving is never triggered and cannot be told apart.
+				if (browserName !== 'firefox') {
+					await page.evaluate(() => {
+						const controls = [
+							...document.querySelectorAll<HTMLElement>('a[href], button, input, select, textarea')
+						].filter(
+							(control) =>
+								!(control as HTMLInputElement).disabled &&
+								control.tabIndex >= 0 &&
+								control.getClientRects().length > 0
+						);
+						controls.at(-1)?.focus();
+					});
+					await page.keyboard.press(nextFocusKey(browserName));
+					await page.clock.runFor(500);
+					const pulledBack = await page.evaluate(() => {
+						const element = document.activeElement as HTMLElement | null;
+						if (!element || element === document.body) return null;
+						return element.getAttribute('aria-label') || element.tagName.toLowerCase();
+					});
+					if (pulledBack) problems.push(`focus pulled back to ${pulledBack}`);
 				}
 
 				// THEN: Every stop is visible: none under the stack, and each close button is in view
