@@ -9,7 +9,10 @@
 	// The page reserves the room of the stack (see layout.css): a focused control can always be
 	// scrolled above it, even on a page that did not scroll (WCAG 2.4.11).
 	let stackHeight = $state(0);
-	const reservedHeight = $derived(notifications.items.length > 0 ? stackHeight : 0);
+	// The stack is a landmark only while it holds something to reach; the live regions inside it
+	// stay rendered, empty, so that a later message is announced.
+	const hasToasts = $derived(notifications.items.length > 0);
+	const reservedHeight = $derived(hasToasts ? stackHeight : 0);
 	$effect(() => {
 		const root = document.documentElement;
 		root.style.setProperty('--toast-stack-height', `${reservedHeight}px`);
@@ -81,8 +84,8 @@
 <div
 	bind:this={stack}
 	bind:clientHeight={stackHeight}
-	role="region"
-	aria-label={m.notifications_region()}
+	role={hasToasts ? 'region' : undefined}
+	aria-label={hasToasts ? m.notifications_region() : undefined}
 	class="fixed right-0 bottom-0 z-50 flex max-h-[40vh] flex-col gap-2 overflow-x-hidden overflow-y-auto p-4"
 	onfocusin={rememberFocusOrigin}
 >

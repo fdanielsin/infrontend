@@ -194,12 +194,42 @@ describe('Notification component', () => {
 		expect(HTMLElement.prototype.scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' });
 	});
 
-	it('names the notification region (happy path)', () => {
+	it('has no landmark while no notification is shown, but keeps the live regions (limit)', () => {
+		// WHEN: The area is rendered without any notification.
+		const view = renderWithApp(app, Notification);
+
+		// THEN: There is no empty landmark, and the status and alert regions are still there.
+		expect(view.queryByRole('region')).toBeNull();
+		expect(view.getAllByRole('status')).toHaveLength(1);
+		expect(view.getAllByRole('alert')).toHaveLength(1);
+	});
+
+	it('names the notification region while a notification is shown (happy path)', () => {
+		// GIVEN: A notification.
+		app.notifications.items = [{ id: 'n1', message: 'Saved', type: 'success' }];
+
 		// WHEN: The notification area is rendered.
 		const view = renderWithApp(app, Notification);
 
 		// THEN: The region that scrolls and takes the focus has a name.
 		expect(view.getByRole('region', { name: 'Notifications' })).toBeTruthy();
+	});
+
+	it('drops the landmark with the last notification and keeps the same live regions (boundary)', async () => {
+		// GIVEN: A notification, and the live regions as first rendered.
+		app.notifications.items = [{ id: 'n1', message: 'Saved', type: 'success' }];
+		const view = renderWithApp(app, Notification);
+		const status = view.getByRole('status');
+		const alert = view.getByRole('alert');
+
+		// WHEN: The last notification goes.
+		app.notifications.items = [];
+
+		// THEN: The landmark is gone; the very same live regions remain in the page.
+		await waitFor(() => expect(view.queryByRole('region')).toBeNull());
+		expect(view.getByRole('status')).toBe(status);
+		expect(view.getByRole('alert')).toBe(alert);
+		expect(status.isConnected && alert.isConnected).toBe(true);
 	});
 
 	it('pauses a notification while the keyboard focus is inside it (happy path)', async () => {
