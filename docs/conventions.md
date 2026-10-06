@@ -145,6 +145,17 @@ différences de navigateur sont attendues et gérées dans les tests, jamais par
   `focusout` ni `blur`) quand Tab quitte le dernier contrôle, donc un piège qui
   réagit à la sortie du focus n'y est jamais exécuté et n'y est pas détectable ;
   ce cas n'est vérifié que dans les deux autres navigateurs.
+- Firefox headless fait défiler la page tout seul, de façon asynchrone, juste
+  après un `focusin` correct, vers le dernier champ texte quitté 1 à 3 Tab plus
+  tôt (aucun appel de script, aucun toast, `page.clock` inutile : diagnostic
+  instrumenté de qa sur 140 exécutions, environ 6 % d'échecs du cas à 6 toasts
+  en 320x360 px, déjà sur `develop`). Ce défilement arrive après le Tab suivant
+  de Playwright (environ 5 ms plus tard) et fausse la mesure de visibilité ;
+  avec 50 ms d'attente après chaque Tab : 0 échec sur 19. Le test attend donc,
+  sous Firefox seulement, que `scrollY` soit lu 5 fois de suite à l'identique
+  (`waitForStableScroll`, lecture répétée plutôt que `requestAnimationFrame`
+  que `page.clock` simule) avant de mesurer. Un contrôle réellement caché le
+  reste une fois le défilement stable : l'attente ne masque rien.
 - Firefox rend une zone défilante (ici la pile de toasts, au-delà de 40 % de la
   fenêtre) arrêt de Tab à elle seule ; WebKit non
   (<http://adrianroselli.com/2022/06/keyboard-only-scrolling-areas.html>). Le

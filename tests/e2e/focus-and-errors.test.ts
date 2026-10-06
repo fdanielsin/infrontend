@@ -22,6 +22,28 @@ async function tabTo(page: Page, target: Locator, browserName: string) {
 	throw new Error('the control was never reached with Tab');
 }
 
+// Headless Firefox scrolls the page by itself, a few milliseconds after a correct `focusin`, back to
+// the text field left 1 to 3 Tab earlier (no script call, no toast: measured on develop, about 6 % of
+// the runs of the 6-toast case). Playwright presses Tab every 5 ms, a person never does, so the next
+// Tab and the measure wait until `scrollY` has been read equal 5 times in a row (about 50 ms). A
+// polled read, not `requestAnimationFrame`: `page.clock` fakes it. A control that is really hidden
+// stays hidden once the scroll is stable: the wait hides nothing.
+async function waitForStableScroll(page: Page) {
+	let previous = Number.NaN;
+	let equalReads = 0;
+	await expect
+		.poll(
+			async () => {
+				const scrollY = await page.evaluate(() => window.scrollY);
+				equalReads = scrollY === previous ? equalReads + 1 : 0;
+				previous = scrollY;
+				return equalReads;
+			},
+			{ intervals: [10], timeout: 5000, message: 'the scroll never became stable' }
+		)
+		.toBeGreaterThanOrEqual(5);
+}
+
 async function outlineOf(target: Locator) {
 	return target.evaluate((element) => {
 		const style = getComputedStyle(element);
@@ -240,6 +262,7 @@ test.describe('Focus and errors (computed style, mocked API)', () => {
 				});
 				for (let step = 0; step < 90; step++) {
 					await page.keyboard.press(nextFocusKey(browserName));
+					if (browserName === 'firefox') await waitForStableScroll(page);
 					const { prevented, stop } = await page.evaluate(() => {
 						const tabs = window as unknown as { lastTab: KeyboardEvent | null };
 						const prevented = tabs.lastTab?.defaultPrevented ?? false;
