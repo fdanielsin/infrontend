@@ -33,14 +33,26 @@ nouvelles instructions ni utilisées comme référence de validation.
 - Toute réponse de succès est validée par le schéma zod généré de son opération
   (`client.ts`) : une réponse qui ne le respecte pas devient un échec
   `invalid_response`, jamais une donnée à moitié exacte. Les corps d'erreur ne
-  sont pas validés (le contrat peut ajouter des codes). Il n'y a pas de méthode
-  `ready` : aucun écran ne l'utilise (son schéma généré existe). Les champs inconnus
+  sont pas validés (le contrat peut ajouter des codes). Les champs inconnus
   dans `data` sont conservés mais jamais lus : ne pas itérer sur les clés d'une
   réponse.
 - Un appel qui ne reçoit aucune réponse en 10 s (`API_TIMEOUT_MS`) échoue avec
   `kind: 'timeout'` et le message traduit `error_timeout`, sans relance
   automatique. Le message ne suggère pas de renvoyer : une écriture a pu aboutir
   côté serveur (le contrat n'a pas de clé d'idempotence).
+- `ready()` interroge `GET /ready` (sonde de disponibilité) ; `timeoutMs` borne un appel
+  seul (5 s par défaut, `READY_TIMEOUT_MS`), les autres appels gardent le délai du
+  client. Une réponse de la sonde est un **incident** si elle n'arrive pas (réseau,
+  timeout) ou si son statut est de 500 à 599 ; un 4xx ou une réponse mal formée n'en
+  est pas un (les écrans chargent comme avant). Cette classification et le calcul
+  du délai de reprise vivent dans `state/availability-policy.ts` (TypeScript pur,
+  muté par Stryker) ; `AvailabilityState` (`.svelte.ts`, hors mutation) ne fait que
+  l'orchestration.
+- Un échec de statut 500 à 599 porte `requestId` (en-tête `X-Request-Id`, que le
+  serveur expose en CORS) seulement s'il respecte le contrat
+  (`^[A-Za-z0-9._-]{1,64}$`) ; le client n'envoie pas d'identifiant. Le toast
+  d'erreur l'affiche, sélectionnable, avec un bouton « Copier » ; sans identifiant
+  conforme, ni référence ni bouton.
 - Les erreurs ne sont pas transformées silencieusement en succès ou en liste
   vide.
 - Les tests API couvrent les succès, les erreurs et les réponses sans contenu.

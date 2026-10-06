@@ -4,6 +4,15 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- A banner tells the user when the service is unavailable, retries by itself (5 s up to 60 s)
+  and has a "Retry" button; lists load only once the service is ready and reload when it is
+  back (infrontend#40).
+- The page footer shows the API version (infrontend#40).
+- An error toast shows the server reference (`X-Request-Id`) of a 5xx answer with a "Copy"
+  button (infrontend#40).
+
 ## [1.2.0] - 2026-10-06
 
 ### Changed

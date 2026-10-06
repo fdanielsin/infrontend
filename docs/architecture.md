@@ -89,7 +89,7 @@ type LoadState<T> =
 L'état partagé est une responsabilité explicite de l'architecture :
 
 - il est porté par des classes `.svelte.ts` dans `lib/state/` (`UserState`,
-  `TaskState`, `NotificationState`, `RequestStatus`), sans singleton de module ;
+  `TaskState`, `NotificationState`, `AvailabilityState`, `RequestStatus`), sans singleton de module ;
   leurs dépendances arrivent par le constructeur ;
 - `AppState` les assemble ; `+layout.svelte` en crée une instance et la
   fournit avec `setAppState` ; les composants la lisent avec `getAppState`
@@ -103,6 +103,27 @@ L'état partagé est une responsabilité explicite de l'architecture :
 
 L'état global n'est justifié que s'il est partagé entre plusieurs routes ou
 fonctionnalités. Sinon, il reste local à la fonctionnalité ou à la route.
+
+## Disponibilité du service
+
+`AvailabilityState` (`lib/state/`, état `unknown`, `available`, `unavailable`) interroge
+`GET /ready` (délai 5 s). `ensure()` donne la première réponse, `check()` vérifie
+tout de suite ; les appels simultanés partagent une seule requête. Tant que le service
+est en incident, il revérifie après 5, 10, 20, 40 puis 60 s (jitter 0,8 à 1,2, plafond
+strict de 60 s appliqué après le jitter), se met en pause quand l'onglet est caché et
+vérifie aussitôt à son retour. Au rétablissement, les abonnés `onRecovered` sont appelés
+une fois et un toast `success` l'annonce. Les écrans (`/`, `/stats`) chargent leurs
+données avec `runWhenAvailable` : rien n'est demandé tant que le service est en incident,
+donc aucune cascade d'erreurs de liste ; sur un 4xx ou une réponse mal formée de
+`/ready`, ils chargent comme avant. Une panne qui survient après le chargement reste
+signalée par les toasts habituels (pas de bandeau).
+
+`features/availability/AvailabilityBanner.svelte` (dans `+layout.svelte`, dans le flux
+de la page) garde son conteneur toujours rendu ; le texte est un `role="alert"` inséré à
+l'incident (et réinséré après un « Réessayer » qui échoue), le bouton « Réessayer » est
+hors de l'alerte et rend le focus à `main` quand il rétablit le service.
+`ApiVersion.svelte` affiche en pied de page « API x.y.z » (`GET /health`), sans bruit
+en cas d'échec et sans décaler la page (hauteur fixe).
 
 ## Évolution future
 
