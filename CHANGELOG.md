@@ -4,6 +4,10 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Security
+
+- `source-map-js` is pinned to 1.2.2, which fixes GHSA-68fv-2mgg-jv7q (denial of service, high); the dependency audit is green again.
+
 ### Changed
 
 - The CI runs the mocked E2E on Chromium, Firefox and WebKit.
