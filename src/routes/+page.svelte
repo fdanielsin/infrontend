@@ -7,11 +7,9 @@
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
 
-	const { users } = getAppState();
+	const { users, availability } = getAppState();
 
-	onMount(() => {
-		void users.fetch();
-	});
+	onMount(() => availability.runWhenAvailable(() => users.fetch()));
 </script>
 
 <svelte:head>

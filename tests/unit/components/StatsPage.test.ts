@@ -7,7 +7,7 @@ import StatsPage from '../../../src/routes/stats/+page.svelte';
 import { renderWithApp } from '../support/render-with-app';
 
 vi.mock('$lib/api/client', () => ({
-	api: { getStats: vi.fn() }
+	api: { getStats: vi.fn(), ready: vi.fn() }
 }));
 
 function averageText(container: HTMLElement): string | undefined {
@@ -22,6 +22,8 @@ describe('stats page', () => {
 
 	beforeEach(() => {
 		vi.resetAllMocks();
+		// The page waits for the readiness check before asking for the counters.
+		vi.mocked(api.ready).mockResolvedValue({ success: true, data: { status: 'ready' } });
 		app = new AppState();
 	});
 

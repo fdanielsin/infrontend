@@ -21,7 +21,12 @@ export interface MockFailure {
 	status: number;
 	error: string;
 	code?: string;
+	// The `X-Request-Id` header of the answer.
+	requestId?: string;
 }
+
+// What `GET /ready` answers: ready, a status code, or a connection that fails.
+export type MockReadiness = 'ready' | 'unreachable' | number;
 
 export interface MockApi {
 	users: MockUser[];
@@ -29,22 +34,30 @@ export interface MockApi {
 	// Next answer of an operation, consumed once: `PUT /tasks`, `DELETE /tasks`, `GET /stats`...
 	failNext: (operation: string, failure: MockFailure) => void;
 	stats: { users: number; tasks: number } | null;
+	readiness: MockReadiness;
+	// The `X-Request-Id` header of a failing `GET /ready`.
+	readinessRequestId: string | null;
+	// Version reported by `GET /health`; null makes that call fail.
+	version: string | null;
+	// Every call to the API (`/api/v1/**`), in order: "GET /users".
+	calls: string[];
 }
 
 const corsHeaders = {
 	'Access-Control-Allow-Origin': '*',
 	'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-	'Access-Control-Allow-Headers': 'Content-Type'
+	'Access-Control-Allow-Headers': 'Content-Type',
+	'Access-Control-Expose-Headers': 'X-Request-Id'
 };
 
 function textOf(value: unknown): string {
 	return typeof value === 'string' ? value : '';
 }
 
-function json(route: Route, status: number, body: unknown) {
+function json(route: Route, status: number, body: unknown, headers: Record<string, string> = {}) {
 	return route.fulfill({
 		status,
-		headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+		headers: { ...corsHeaders, 'Content-Type': 'application/json', ...headers },
 		body: JSON.stringify(body)
 	});
 }
@@ -58,9 +71,47 @@ export async function mockApi(
 		users: structuredClone(initial.users ?? []),
 		tasks: structuredClone(initial.tasks ?? []),
 		stats: initial.stats ?? null,
+		readiness: 'ready',
+		readinessRequestId: null,
+		version: '1.2.0',
+		calls: [],
 		failNext: (operation, failure) => failures.set(operation, failure)
 	};
 	let nextId = 1000;
+
+	await page.route(/\/ready$/, async (route) => {
+		if (route.request().method() === 'OPTIONS') {
+			return route.fulfill({ status: 204, headers: corsHeaders });
+		}
+		if (state.readiness === 'unreachable') return route.abort('connectionrefused');
+		if (state.readiness === 'ready') {
+			return json(route, 200, {
+				success: true,
+				message: 'Service is ready',
+				data: { status: 'ready' }
+			});
+		}
+		return json(
+			route,
+			state.readiness,
+			{ success: false, error: 'Database unavailable', error_code: 'DATABASE_UNAVAILABLE' },
+			state.readinessRequestId ? { 'X-Request-Id': state.readinessRequestId } : {}
+		);
+	});
+
+	await page.route(/\/health$/, async (route) => {
+		if (route.request().method() === 'OPTIONS') {
+			return route.fulfill({ status: 204, headers: corsHeaders });
+		}
+		if (state.version === null) {
+			return json(route, 500, { success: false, error: 'boom', error_code: 'INTERNAL_ERROR' });
+		}
+		return json(route, 200, {
+			success: true,
+			message: 'Service is healthy',
+			data: { id: 'b868c6a6-2f9d-42fd-a9c5-8c7e342f78dd', status: 'ok', version: state.version }
+		});
+	});
 
 	await page.route('**/api/v1/**', async (route) => {
 		const request = route.request();
@@ -70,14 +121,20 @@ export async function mockApi(
 		const path = new URL(request.url()).pathname.replace('/api/v1', '');
 		const resource = path.replace(/\/\d+/g, '/{id}');
 		const operation = `${method} ${resource}`;
+		state.calls.push(operation);
 		const failure = failures.get(operation);
 		if (failure) {
 			failures.delete(operation);
-			return json(route, failure.status, {
-				success: false,
-				error: failure.error,
-				...(failure.code && { error_code: failure.code })
-			});
+			return json(
+				route,
+				failure.status,
+				{
+					success: false,
+					error: failure.error,
+					...(failure.code && { error_code: failure.code })
+				},
+				failure.requestId ? { 'X-Request-Id': failure.requestId } : {}
+			);
 		}
 
 		const id = Number(path.match(/\/(\d+)/)?.[1]);

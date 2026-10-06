@@ -10,15 +10,18 @@
 	import { getAppState } from '$lib/state/app-state.svelte';
 	import { RequestStatus } from '$lib/state/request-status.svelte';
 
-	const status = new RequestStatus(getAppState().notifications, true);
+	const { availability, notifications } = getAppState();
+	const status = new RequestStatus(notifications, true);
 	let stats = $state.raw<Stats | null>(null);
 
-	onMount(async () => {
+	async function load() {
 		const result = await status.run(() => api.getStats(), {
 			fallbackMessage: m.error_fetch_stats
 		});
 		if (result.success) stats = result.data;
-	});
+	}
+
+	onMount(() => availability.runWhenAvailable(load));
 </script>
 
 <svelte:head>

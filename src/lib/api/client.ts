@@ -11,6 +11,7 @@ import {
 	zGetUserResponse,
 	zHealthCheckResponse,
 	zListUsersResponse,
+	zReadinessCheckResponse,
 	zListUserTasksResponse,
 	zUpdateTaskResponse
 } from './zod/zod.gen';
@@ -48,6 +49,9 @@ export interface ApiFailure {
 	// Failures born in the client, which the interface words itself (the server sent no message).
 	kind?: 'invalid_response' | 'timeout' | 'unknown';
 	status?: number;
+	// Server-side reference (`X-Request-Id`) of a 5xx answer, for a support request. The client
+	// sends no id of its own, so only the server's own is read, and only if it fits the contract.
+	requestId?: string;
 	// Stable codes are listed by `ErrorCode`, but the contract lets the server add new ones.
 	code?: string;
 }
@@ -60,6 +64,12 @@ const INVALID_RESPONSE = 'Invalid server response';
 // Longest wait for an answer. The backend cuts its own readiness probe at 2 s, so this leaves room
 // for a slow database without leaving the screen waiting indefinitely.
 export const API_TIMEOUT_MS = 10_000;
+
+// The readiness probe is cut at 2 s by the backend: waiting longer would only delay the banner.
+export const READY_TIMEOUT_MS = 5_000;
+
+// What the contract allows as a request id: 1 to 64 characters among these.
+const REQUEST_ID_PATTERN = /^[A-Za-z0-9._-]{1,64}$/;
 
 // The body is read as text and parsed here: a malformed JSON body must become an
 // ApiFailure carrying the HTTP status, not an exception.
@@ -98,7 +108,15 @@ function invalidResponse(status: number): ApiFailure {
 	return { success: false, error: INVALID_RESPONSE, status, kind: 'invalid_response' };
 }
 
-function toFailure(error: unknown, status: number): ApiFailure {
+function readRequestId(response: Response): string | undefined {
+	if (response.status < 500) return undefined;
+	const id = response.headers.get('X-Request-Id');
+	return id !== null && REQUEST_ID_PATTERN.test(id) ? id : undefined;
+}
+
+function toFailure(error: unknown, response: Response): ApiFailure {
+	const status = response.status;
+	const requestId = readRequestId(response);
 	const body = (typeof error === 'string' ? parseJson(error) : error) as
 		{ error?: unknown; error_code?: unknown } | null | undefined;
 	const message = typeof body?.error === 'string' ? body.error : '';
@@ -106,6 +124,7 @@ function toFailure(error: unknown, status: number): ApiFailure {
 		success: false,
 		error: message || `HTTP ${status}`,
 		status,
+		...(requestId && { requestId }),
 		...(typeof body?.error_code === 'string' && { code: body.error_code })
 	};
 }
@@ -119,7 +138,7 @@ async function toResult<T>(
 ): Promise<ApiResult<T>> {
 	try {
 		const { data, error, response } = await send();
-		if (!response.ok) return toFailure(error, response.status);
+		if (!response.ok) return toFailure(error, response);
 		if (response.status === 204) {
 			return hasData ? invalidResponse(204) : ({ success: true } as ApiSuccess<T>);
 		}
@@ -231,6 +250,15 @@ export class ApiClient {
 	}
 
 	// Health
+	// `timeoutMs` bounds this call alone; the other calls keep the client's timeout.
+	async ready({ timeoutMs = READY_TIMEOUT_MS }: { timeoutMs?: number } = {}): Promise<
+		ApiResult<SuccessData<paths['/ready']['get']>>
+	> {
+		return toResult(() => createHttp(timeoutMs).GET('/ready', { parseAs: 'text' }), {
+			schema: zReadinessCheckResponse
+		});
+	}
+
 	async health(): Promise<ApiResult<SuccessData<paths['/health']['get']>>> {
 		return toResult(() => this.#http.GET('/health', { parseAs: 'text' }), {
 			schema: zHealthCheckResponse

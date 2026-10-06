@@ -69,5 +69,16 @@
 	"error_method_not_allowed": "Método no permitido",
 	"error_payload_too_large": "Solicitud demasiado grande",
 	"error_database_unavailable": "Base de datos no disponible",
-	"error_timeout": "El servidor tarda demasiado en responder"
+	"error_timeout": "El servidor tarda demasiado en responder",
+	"availability_unavailable": "El servicio no está disponible en este momento. Seguimos intentándolo y recargaremos tus datos en cuanto vuelva.",
+	"availability_region": "Estado del servicio",
+	"availability_retry": "Reintentar",
+	"availability_checking": "Comprobando…",
+	"availability_recovered": "Servicio restablecido",
+	"api_version": "API {version}",
+	"reference_label": "Referencia: {reference}",
+	"reference_copy": "Copiar",
+	"reference_copy_named": "Copiar la referencia {reference}",
+	"reference_copied": "Referencia copiada",
+	"reference_copy_failed": "No se pudo copiar la referencia"
 }

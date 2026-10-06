@@ -49,7 +49,7 @@ export class RequestStatus {
 			if (!result.success && !isHandled(result)) {
 				const message = failureMessage(result, fallbackMessage);
 				this.error = message;
-				this.#notifications.notifyError(message);
+				this.#notifications.notifyError(message, result.requestId);
 			}
 			if (tracksLoading) this.loading = false;
 		}

@@ -69,5 +69,16 @@
 	"error_method_not_allowed": "Method not allowed",
 	"error_payload_too_large": "Request too large",
 	"error_database_unavailable": "Database unavailable",
-	"error_timeout": "The server took too long to respond"
+	"error_timeout": "The server took too long to respond",
+	"availability_unavailable": "The service is currently unavailable. We keep trying and will reload your data as soon as it is back.",
+	"availability_region": "Service status",
+	"availability_retry": "Retry",
+	"availability_checking": "Checking…",
+	"availability_recovered": "Service restored",
+	"api_version": "API {version}",
+	"reference_label": "Reference: {reference}",
+	"reference_copy": "Copy",
+	"reference_copy_named": "Copy reference {reference}",
+	"reference_copied": "Reference copied",
+	"reference_copy_failed": "Could not copy the reference"
 }

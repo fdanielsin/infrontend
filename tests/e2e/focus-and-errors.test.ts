@@ -236,7 +236,12 @@ test.describe('Focus and errors (computed style, mocked API)', () => {
 				const api = await mockApi(page, { users: [ada], tasks: adaTasks });
 				await openHomeWithUser(page);
 				for (let toast = 1; toast <= count; toast++) {
-					api.failNext('PUT /tasks/{id}', { status: 500, error: `Database unavailable ${toast}` });
+					// The real backend gives every 5xx a reference: each toast has two stops, Copy then Dismiss.
+					api.failNext('PUT /tasks/{id}', {
+						status: 500,
+						error: `Database unavailable ${toast}`,
+						requestId: `req-${toast}`
+					});
 					await page.getByRole('checkbox', { name: 'Review', exact: true }).click();
 					await expect(page.locator('[data-toast]')).toHaveCount(toast);
 				}
@@ -387,8 +392,8 @@ test.describe('Focus and errors (computed style, mocked API)', () => {
 				// THEN: Every stop is visible: none under the stack, and each close button is in view
 				// of the stack; the page really was gone through, toasts included.
 				expect(problems, 'controls hidden by the toasts').toEqual([]);
-				expect(closeButtons, 'close buttons reached').toBe(count);
-				expect(stops, 'stops of the page').toBeGreaterThanOrEqual(15 + count);
+				expect(closeButtons, 'toast stops reached (Copy and Dismiss of each)').toBe(2 * count);
+				expect(stops, 'stops of the page').toBeGreaterThanOrEqual(15 + 2 * count);
 			});
 		}
 	}

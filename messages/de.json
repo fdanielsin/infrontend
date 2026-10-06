@@ -69,5 +69,16 @@
 	"error_method_not_allowed": "Methode nicht erlaubt",
 	"error_payload_too_large": "Anfrage zu groß",
 	"error_database_unavailable": "Datenbank nicht verfügbar",
-	"error_timeout": "Der Server antwortet zu langsam"
+	"error_timeout": "Der Server antwortet zu langsam",
+	"availability_unavailable": "Der Dienst ist derzeit nicht verfügbar. Wir versuchen es weiter und laden Ihre Daten neu, sobald er wieder erreichbar ist.",
+	"availability_region": "Dienststatus",
+	"availability_retry": "Erneut versuchen",
+	"availability_checking": "Prüfung läuft…",
+	"availability_recovered": "Dienst wiederhergestellt",
+	"api_version": "API {version}",
+	"reference_label": "Referenz: {reference}",
+	"reference_copy": "Kopieren",
+	"reference_copy_named": "Referenz {reference} kopieren",
+	"reference_copied": "Referenz kopiert",
+	"reference_copy_failed": "Die Referenz konnte nicht kopiert werden"
 }

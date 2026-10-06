@@ -1,3 +1,5 @@
+import { m } from '$lib/paraglide/messages';
+
 export type NotificationType = 'success' | 'error' | 'info' | 'warning';
 
 export interface Notification {
@@ -5,6 +7,8 @@ export interface Notification {
 	message: string;
 	type: NotificationType;
 	duration?: number;
+	// A server-side reference the user can copy for a support request.
+	reference?: string;
 }
 
 export const ERROR_NOTIFICATION_DURATION = 6000;
@@ -25,15 +29,26 @@ export class NotificationState {
 	#timers = new Map<string, DismissTimer>();
 	#lastId = 0;
 
-	add(message: string, type: NotificationType = 'info', duration = 3000) {
+	add(message: string, type: NotificationType = 'info', duration = 3000, reference?: string) {
 		const id = `notif-${++this.#lastId}`;
-		this.items = [...this.items, { id, message, type, duration }];
+		this.items = [...this.items, { id, message, type, duration, ...(reference && { reference }) }];
 		if (duration) this.#startTimer(id, duration);
 		return id;
 	}
 
-	notifyError(message: string) {
-		return this.add(message, 'error', ERROR_NOTIFICATION_DURATION);
+	notifyError(message: string, reference?: string) {
+		return this.add(message, 'error', ERROR_NOTIFICATION_DURATION, reference);
+	}
+
+	// The confirmation is a status toast, announced politely; the reference stays selectable
+	// where the clipboard is refused.
+	async copyReference(reference: string) {
+		try {
+			await navigator.clipboard.writeText(reference);
+			this.add(m.reference_copied(), 'success');
+		} catch {
+			this.add(m.reference_copy_failed(), 'warning');
+		}
 	}
 
 	// Pausing keeps the time left, so a toast read with the mouse or the keyboard

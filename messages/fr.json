@@ -69,5 +69,16 @@
 	"error_method_not_allowed": "Méthode non autorisée",
 	"error_payload_too_large": "Requête trop volumineuse",
 	"error_database_unavailable": "Base de données indisponible",
-	"error_timeout": "Le serveur met trop de temps à répondre"
+	"error_timeout": "Le serveur met trop de temps à répondre",
+	"availability_unavailable": "Le service est actuellement indisponible. Nous réessayons et rechargerons vos données dès son retour.",
+	"availability_region": "État du service",
+	"availability_retry": "Réessayer",
+	"availability_checking": "Vérification…",
+	"availability_recovered": "Service rétabli",
+	"api_version": "API {version}",
+	"reference_label": "Référence : {reference}",
+	"reference_copy": "Copier",
+	"reference_copy_named": "Copier la référence {reference}",
+	"reference_copied": "Référence copiée",
+	"reference_copy_failed": "Impossible de copier la référence"
 }

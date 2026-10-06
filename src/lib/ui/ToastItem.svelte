@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import type { Notification } from '$lib/state/notification.svelte';
+	import ReferenceLine from '$lib/ui/ReferenceLine.svelte';
 	import IconButton from '$lib/ui/IconButton.svelte';
 
 	interface Props {
@@ -9,9 +10,10 @@
 		onpause: () => void;
 		onresume: () => void;
 		ondismiss: (closeButton: HTMLElement) => void;
+		oncopyreference: (reference: string) => void;
 	}
 
-	let { toast, onpause, onresume, ondismiss }: Props = $props();
+	let { toast, onpause, onresume, ondismiss, oncopyreference }: Props = $props();
 
 	// Whole class names, so Tailwind finds them.
 	const TYPE_CLASSES = {
@@ -27,7 +29,7 @@
 <div
 	data-toast
 	class={[
-		'animate-slide-in flex items-start gap-3 rounded-card px-4 py-3 text-white shadow-card-raised',
+		'animate-slide-in grid grid-cols-[1fr_auto] items-start gap-x-3 rounded-card px-4 py-3 text-white shadow-card-raised',
 		TYPE_CLASSES[toast.type]
 	]}
 	onmouseenter={onpause}
@@ -39,9 +41,15 @@
 		if (!event.currentTarget.matches(':hover')) onresume();
 	}}
 >
-	<p class="flex-1">{toast.message}</p>
+	<p>{toast.message}</p>
+	{#if toast.reference}
+		<!-- Under the message, before the close button in the reading order. -->
+		<ReferenceLine reference={toast.reference} oncopy={oncopyreference} class="col-start-1 mt-1" />
+	{/if}
 	<IconButton
 		tone="inverse"
+		class="col-start-2 row-span-2 row-start-1"
+		data-toast-dismiss
 		label={m.notifications_dismiss()}
 		onclick={(event: MouseEvent & { currentTarget: HTMLButtonElement }) =>
 			ondismiss(event.currentTarget)}

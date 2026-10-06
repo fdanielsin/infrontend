@@ -59,7 +59,7 @@
 		const toastElement = closeButton.closest('[data-toast]');
 		const hadFocus = toastElement?.contains(document.activeElement) ?? false;
 		const neighbour = toastElement?.nextElementSibling ?? toastElement?.previousElementSibling;
-		const neighbourButton = neighbour?.querySelector<HTMLElement>('button') ?? null;
+		const neighbourButton = neighbour?.querySelector<HTMLElement>('[data-toast-dismiss]') ?? null;
 		notifications.remove(toastId);
 		if (!hadFocus) return;
 		await tick();
@@ -96,6 +96,7 @@
 				onpause={() => notifications.pause(toast.id)}
 				onresume={() => notifications.resume(toast.id)}
 				ondismiss={(closeButton: HTMLElement) => void dismiss(toast.id, closeButton)}
+				oncopyreference={(reference: string) => void notifications.copyReference(reference)}
 			/>
 		{/each}
 	</div>
@@ -106,6 +107,7 @@
 				onpause={() => notifications.pause(toast.id)}
 				onresume={() => notifications.resume(toast.id)}
 				ondismiss={(closeButton: HTMLElement) => void dismiss(toast.id, closeButton)}
+				oncopyreference={(reference: string) => void notifications.copyReference(reference)}
 			/>
 		{/each}
 	</div>
