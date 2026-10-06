@@ -4,25 +4,29 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-10-06
+
 ### Changed
 
-- The CI runs the mocked E2E on Chromium, Firefox and WebKit.
+- The CI runs the mocked E2E on Chromium, Firefox and WebKit (infrontend#34).
+- Mutation testing runs again; a separate CI workflow runs it on changes to tested code and fails
+  below an 85 % score (infrontend#33).
+- Keyboard E2E pass on Firefox and on WebKit for macOS (Option+Tab, end of page, scrolling stack)
+  (infrontend#34).
+- The keyboard E2E catch a focus trap that returns the focus after Tab (Chromium, WebKit), and no
+  longer fail at random on Firefox because of its late native scroll (infrontend#35).
 
 ### Fixed
 
-- The notification stack is a landmark only while it shows a notification.
-- The keyboard E2E catch a focus trap that returns the focus after Tab (Chromium, WebKit), and no
-  longer fail at random on Firefox because of its late native scroll.
-- Mutation testing runs again; a separate CI workflow runs it on changes to tested code and fails
-  below an 85 % score.
-- Keyboard E2E pass on Firefox and on WebKit for macOS (Option+Tab, end of page, scrolling stack).
+- The notification stack is a landmark only while it shows a notification (infrontend#35).
 - A close button focused with Tab is scrolled fully into the notification stack (Firefox on Linux
-  clipped it); the stack is a named region (`Notifications`, translated in the four languages).
+  clipped it); the stack is a named region (`Notifications`, translated in the four languages)
+  (infrontend#34).
 
 ### Security
 
 - `source-map-js` is pinned to 1.2.2, which fixes GHSA-68fv-2mgg-jv7q (denial of service, high);
-  the dependency audit is green again.
+  the dependency audit is green again (infrontend#36).
 
 ## [1.1.0] - 2026-10-04
 
@@ -141,6 +145,7 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Stats page.
 
-[Unreleased]: https://github.com/fdanielsin/infrontend/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/fdanielsin/infrontend/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/fdanielsin/infrontend/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/fdanielsin/infrontend/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/fdanielsin/infrontend/releases/tag/v1.0.0
