@@ -12,6 +12,14 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - The page footer shows the API version (infrontend#40).
 - An error toast shows the server reference (`X-Request-Id`) of a 5xx answer with a "Copy"
   button (infrontend#40).
+- The task list can be sorted by creation order, title (A to Z, numbers and accents handled
+  in the language of the page) or status; the choice is remembered in the browser and
+  announced to screen readers (infrontend#41).
+
+### Fixed
+
+- A long title without spaces no longer makes the task list wider than a narrow screen
+  (infrontend#41).
 
 ## [1.2.0] - 2026-10-06
 

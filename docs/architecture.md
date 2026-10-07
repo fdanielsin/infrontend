@@ -125,6 +125,23 @@ hors de l'alerte et rend le focus à `main` quand il rétablit le service.
 `ApiVersion.svelte` affiche en pied de page « API x.y.z » (`GET /health`), sans bruit
 en cas d'échec et sans décaler la page (hauteur fixe).
 
+## Tri des tâches
+
+`features/tasks/sort-tasks.ts` (pur, muté par Stryker) trie sans modifier son entrée : ordre
+de création (id croissant, celui de l'API), titre (`Intl.Collator(langue de l'interface,
+{ numeric: true, sensitivity: 'base' })` : « Tâche 2 » avant « Tâche 10 », casse et accents
+ignorés, `ñ` après `n` en espagnol) ou état (à faire puis terminées). Toute égalité est
+départagée par l'id, donc l'ordre est stable. `TaskOrderState` (`lib/state/`) garde le choix
+dans `localStorage` sous la clé `indrive.task-order` : lu à la construction (jamais sur le
+serveur), valeur inconnue ou stockage absent, refusé ou qui lève = ordre de création, sans
+message ; écrit à chaque changement. `TaskForm` dérive la liste affichée
+(`$derived(sortTasks(...))`) : `tasks.tasks` n'est jamais réordonné, donc création,
+modification, suppression, changement d'utilisateur et de langue sont triés sans code en plus.
+Le sélecteur (`Select` natif, à partir de 2 tâches) annonce « Tâches triées par … » en
+`status` une fois par changement de choix, jamais au chargement. Quand une modification
+(case à cocher, enregistrement d'une édition) déplace la ligne, le focus reste sur le même
+contrôle (restauré après `tick()`) et « titre : position N sur M » est annoncé en `status`.
+
 ## Évolution future
 
 Un découpage en packages ou plusieurs applications ne sera envisagé que

@@ -201,13 +201,13 @@ dans `reports/mutation/`. Le seuil `break` de `stryker.config.json` (85) fait
 
 Hors mutation, volontairement :
 
-- les `*.svelte.ts` (les six stores en runes) : l'instrumenteur enveloppe le
+- les `*.svelte.ts` (les stores en runes) : l'instrumenteur enveloppe le
   corps des constructeurs dans un `if`, et Svelte refuse alors
   `this.x = $state(...)` (`state_invalid_placement`,
   <https://svelte.dev/e/state_invalid_placement>). Le lancement plante à
   l'« initial test run » avec `Error: [object Object]`, le runner vitest
   masquant l'erreur. **Un nouveau `*.svelte.ts` n'est pas muté** ; seule la
-  couverture v8 le surveille ;
+  couverture v8 le surveille (la logique pure va dans un `.ts` : `sort-tasks.ts`, `availability-policy.ts`) ;
 - `src/lib/api/zod/**` : code généré par openapi-ts.
 
 Ne pas lier les `node_modules` d'un autre worktree : le cache vite partagé
