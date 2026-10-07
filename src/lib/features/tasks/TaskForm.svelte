@@ -6,19 +6,30 @@
 	import Button from '$lib/ui/Button.svelte';
 	import Card from '$lib/ui/Card.svelte';
 	import IconButton from '$lib/ui/IconButton.svelte';
+	import Select from '$lib/ui/Select.svelte';
 	import TextField from '$lib/ui/TextField.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { getAppState } from '$lib/state/app-state.svelte';
 	import type { User } from '$lib/api/client';
 	import { TaskSchema, validationMessage } from '$lib/validation/schemas';
 	import { zodIssuesToFieldErrors } from '$lib/validation/field-errors';
+	import { isTaskOrder, sortTasks, type TaskOrder } from './sort-tasks';
 
 	type FieldErrors = { title?: string; description?: string };
 
-	const { tasks } = getAppState();
+	const { tasks, taskOrder, locale, notifications } = getAppState();
 	const status = tasks.status;
 	const TASK_FIELDS = ['title', 'description'] as const;
 	let { user = null }: { user: User | null } = $props();
+
+	// Derived: the list of the server is never reordered in place.
+	const sortedTasks = $derived(sortTasks(tasks.tasks, taskOrder.current, locale.current));
+	const orderOptions = $derived([
+		{ value: 'created', label: m.tasks_order_created() },
+		{ value: 'title', label: m.tasks_order_title() },
+		{ value: 'status', label: m.tasks_order_status() }
+	]);
+	const positionOf = (taskId: number) => sortedTasks.findIndex((task) => task.id === taskId) + 1;
 
 	let taskTitle = $state('');
 	let taskDescription = $state('');
@@ -66,6 +77,27 @@
 		(editButtons[taskId] ?? refs.tasksHeading)?.focus();
 	}
 
+	function chooseOrder(value: string) {
+		if (!isTaskOrder(value) || value === taskOrder.current) return;
+		taskOrder.set(value);
+		const announcements: Record<TaskOrder, () => string> = {
+			created: m.tasks_sorted_created,
+			title: m.tasks_sorted_title,
+			status: m.tasks_sorted_status
+		};
+		notifications.add(announcements[value](), 'info');
+	}
+
+	// A change that moves the row: the new position is announced (the row is gone from where the
+	// user was, and moving a focused row in the DOM may drop its focus, restored by the caller).
+	function announceMove(taskId: number, positionBefore: number) {
+		const position = positionOf(taskId);
+		if (position === 0 || position === positionBefore) return false;
+		const title = tasks.tasks.find((task) => task.id === taskId)?.title ?? '';
+		notifications.add(m.tasks_moved({ title, position, count: tasks.tasks.length }), 'info');
+		return true;
+	}
+
 	function startEditing(task: { id: number; title: string; description: string }) {
 		editingTaskId = task.id;
 		editingTitle = task.title;
@@ -105,9 +137,11 @@
 		}
 
 		const editedId = editingTaskId;
+		const positionBefore = positionOf(editedId);
 		const updated = await tasks.edit(editedId, result.data.title, result.data.description);
 		const stillListed = tasks.tasks.some((task) => task.id === editedId);
 		if (updated || !stillListed) closeEditing(editedId);
+		if (updated) announceMove(editedId, positionBefore);
 	}
 
 	async function handleAddTask() {
@@ -154,8 +188,15 @@
 
 	async function handleToggleTask(checkbox: HTMLInputElement, taskId: number) {
 		const nextCompleted = checkbox.checked;
+		const positionBefore = positionOf(taskId);
 		const ok = await tasks.toggle(taskId, nextCompleted);
-		if (ok) return;
+		if (ok) {
+			if (announceMove(taskId, positionBefore)) {
+				await tick();
+				document.getElementById(`task-${taskId}`)?.focus();
+			}
+			return;
+		}
 		// Revert the native click if the update failed (see toggleTask).
 		checkbox.checked = !nextCompleted;
 		await focusHeadingIfRowRemoved(taskId);
@@ -219,8 +260,19 @@
 				{#if tasks.tasks.length === 0}
 					<p class="text-subtle">{m.tasks_empty()}</p>
 				{:else}
+					{#if tasks.tasks.length > 1}
+						<div class="mb-3">
+							<Select
+								id="task-order"
+								label={m.tasks_order_label()}
+								value={taskOrder.current}
+								options={orderOptions}
+								onchange={chooseOrder}
+							/>
+						</div>
+					{/if}
 					<ul class="space-y-2">
-						{#each tasks.tasks as task (task.id)}
+						{#each sortedTasks as task (task.id)}
 							<li class="flex items-start rounded-control bg-surface-muted p-3">
 								<input
 									id={`task-${task.id}`}
@@ -274,7 +326,7 @@
 										</div>
 									</form>
 								{:else}
-									<div class="flex-1">
+									<div class="min-w-0 flex-1 wrap-anywhere">
 										<label
 											for={`task-${task.id}`}
 											class={['block', task.completed ? 'text-muted line-through' : 'font-medium']}

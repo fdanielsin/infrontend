@@ -18,13 +18,13 @@
 	let { id, label, value, options, onchange }: Props = $props();
 </script>
 
-<div class="flex items-center gap-2 text-sm text-gray-800">
+<div class="flex flex-wrap items-center gap-2 text-sm text-gray-800">
 	<label for={id}>{label}</label>
 	<select
 		{id}
 		{value}
 		onchange={(event) => onchange(event.currentTarget.value)}
-		class="rounded-control border border-field-border bg-surface px-2 py-1"
+		class="max-w-full min-w-0 rounded-control border border-field-border bg-surface px-2 py-1"
 	>
 		{#each options as option (option.value)}
 			<option value={option.value} lang={option.lang}>{option.label}</option>
