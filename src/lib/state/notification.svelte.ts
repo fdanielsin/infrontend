@@ -2,6 +2,15 @@ import { m } from '$lib/paraglide/messages';
 
 export type NotificationType = 'success' | 'error' | 'info' | 'warning';
 
+// Why a toast left: its button was pressed, the user closed it, or its time ran out.
+export type CloseReason = 'action' | 'dismissed' | 'expired';
+
+// A button in the toast. The label arrives translated, like every text shown.
+export interface ToastAction {
+	label: string;
+	run: () => void;
+}
+
 export interface Notification {
 	id: string;
 	message: string;
@@ -9,7 +18,19 @@ export interface Notification {
 	duration?: number;
 	// A server-side reference the user can copy for a support request.
 	reference?: string;
+	action?: ToastAction;
 }
+
+export interface ToastOptions {
+	// Milliseconds before the toast leaves by itself; 0 keeps it until it is closed.
+	duration?: number;
+	reference?: string | undefined;
+	action?: ToastAction;
+	// Called once, after the toast has left, whatever the reason.
+	onclose?: (reason: CloseReason) => void;
+}
+
+const DEFAULT_DURATION = 3000;
 
 export const ERROR_NOTIFICATION_DURATION = 6000;
 // Long enough for a screen reader to read it; short enough not to leave a stale sentence for a
@@ -40,15 +61,35 @@ export class NotificationState {
 	// Timers are never rendered: a plain Map is enough, reactivity would only add cost.
 	// eslint-disable-next-line svelte/prefer-svelte-reactivity
 	#timers = new Map<string, DismissTimer>();
+	// Callbacks are not part of the item: the state only needs to read what is shown.
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity
+	#closeCallbacks = new Map<string, (reason: CloseReason) => void>();
 	#lastId = 0;
 	#lastAnnouncementId = 0;
 	#announcementTimeout: ReturnType<typeof setTimeout> | undefined;
 
-	add(message: string, type: NotificationType = 'info', duration = 3000, reference?: string) {
+	add(message: string, type: NotificationType = 'info', options: ToastOptions = {}) {
+		const { duration = DEFAULT_DURATION, reference, action, onclose } = options;
 		const id = `notif-${++this.#lastId}`;
-		this.items = [...this.items, { id, message, type, duration, ...(reference && { reference }) }];
+		this.items = [
+			...this.items,
+			{ id, message, type, duration, ...(reference && { reference }), ...(action && { action }) }
+		];
+		if (onclose) this.#closeCallbacks.set(id, onclose);
 		if (duration) this.#startTimer(id, duration);
 		return id;
+	}
+
+	// The action runs once, then the toast leaves; if it throws, the toast leaves all the same
+	// and the error goes on to the caller.
+	runAction(id: string) {
+		const action = this.items.find((notification) => notification.id === id)?.action;
+		if (!action) return;
+		try {
+			action.run();
+		} finally {
+			this.remove(id, 'action');
+		}
 	}
 
 	announce(message: string) {
@@ -58,7 +99,7 @@ export class NotificationState {
 	}
 
 	notifyError(message: string, reference?: string) {
-		return this.add(message, 'error', ERROR_NOTIFICATION_DURATION, reference);
+		return this.add(message, 'error', { duration: ERROR_NOTIFICATION_DURATION, reference });
 	}
 
 	// The confirmation is a status toast, announced politely; the reference stays selectable
@@ -91,15 +132,19 @@ export class NotificationState {
 		this.#startTimer(id, timer.remaining);
 	}
 
-	remove(id: string) {
+	// The toast has left when its callback runs, so that the callback can notify in turn.
+	remove(id: string, reason: CloseReason = 'dismissed') {
 		const timer = this.#timers.get(id);
 		if (timer?.timeout) clearTimeout(timer.timeout);
 		this.#timers.delete(id);
 		this.items = this.items.filter((notification) => notification.id !== id);
+		const onclose = this.#closeCallbacks.get(id);
+		this.#closeCallbacks.delete(id);
+		onclose?.(reason);
 	}
 
 	#startTimer(id: string, remaining: number) {
-		const timeout = setTimeout(() => this.remove(id), remaining);
+		const timeout = setTimeout(() => this.remove(id, 'expired'), remaining);
 		this.#timers.set(id, { timeout, remaining, startedAt: Date.now() });
 	}
 }

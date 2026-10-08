@@ -54,15 +54,25 @@
 	// Closing the toast that holds focus must not drop it on the body (WCAG 2.4.3):
 	// next toast in the region, else the previous one, else where focus came from,
 	// else the page's main landmark. A toast closed without focus (mouse click in
-	// Safari) leaves the focus where it is.
-	async function dismiss(toastId: string, closeButton: HTMLElement) {
-		const toastElement = closeButton.closest('[data-toast]');
+	// Safari) leaves the focus where it is, and so does one whose action has put the focus
+	// somewhere else, on a control that is still there.
+	function leave(control: HTMLElement, close: () => void) {
+		const toastElement = control.closest('[data-toast]');
 		const hadFocus = toastElement?.contains(document.activeElement) ?? false;
 		const neighbour = toastElement?.nextElementSibling ?? toastElement?.previousElementSibling;
 		const neighbourButton = neighbour?.querySelector<HTMLElement>('[data-toast-dismiss]') ?? null;
-		notifications.remove(toastId);
-		if (!hadFocus) return;
+		try {
+			close();
+		} finally {
+			// The toast is gone even if its action failed: the focus must not be lost with it.
+			if (hadFocus) void refocus(neighbourButton);
+		}
+	}
+
+	async function refocus(neighbourButton: HTMLElement | null) {
 		await tick();
+		const focused = document.activeElement;
+		if (focused instanceof HTMLElement && focused !== document.body && focused.isConnected) return;
 		const candidates = [neighbourButton, focusOrigin, document.querySelector<HTMLElement>('main')];
 		// The removed button leaves no relatedTarget: this move must not reset the origin.
 		refocusing = true;
@@ -103,7 +113,10 @@ sentence anew. -->
 				{toast}
 				onpause={() => notifications.pause(toast.id)}
 				onresume={() => notifications.resume(toast.id)}
-				ondismiss={(closeButton: HTMLElement) => void dismiss(toast.id, closeButton)}
+				ondismiss={(closeButton: HTMLElement) =>
+					leave(closeButton, () => notifications.remove(toast.id))}
+				onaction={(actionButton: HTMLElement) =>
+					leave(actionButton, () => notifications.runAction(toast.id))}
 				oncopyreference={(reference: string) => void notifications.copyReference(reference)}
 			/>
 		{/each}
@@ -114,7 +127,10 @@ sentence anew. -->
 				{toast}
 				onpause={() => notifications.pause(toast.id)}
 				onresume={() => notifications.resume(toast.id)}
-				ondismiss={(closeButton: HTMLElement) => void dismiss(toast.id, closeButton)}
+				ondismiss={(closeButton: HTMLElement) =>
+					leave(closeButton, () => notifications.remove(toast.id))}
+				onaction={(actionButton: HTMLElement) =>
+					leave(actionButton, () => notifications.runAction(toast.id))}
 				oncopyreference={(reference: string) => void notifications.copyReference(reference)}
 			/>
 		{/each}

@@ -10,10 +10,11 @@
 		onpause: () => void;
 		onresume: () => void;
 		ondismiss: (closeButton: HTMLElement) => void;
+		onaction: (actionButton: HTMLElement) => void;
 		oncopyreference: (reference: string) => void;
 	}
 
-	let { toast, onpause, onresume, ondismiss, oncopyreference }: Props = $props();
+	let { toast, onpause, onresume, ondismiss, onaction, oncopyreference }: Props = $props();
 
 	// Whole class names, so Tailwind finds them.
 	const TYPE_CLASSES = {
@@ -46,9 +47,19 @@
 		<!-- Under the message, before the close button in the reading order. -->
 		<ReferenceLine reference={toast.reference} oncopy={oncopyreference} class="col-start-1 mt-1" />
 	{/if}
+	{#if toast.action}
+		<button
+			type="button"
+			class="col-start-1 mt-2 min-h-6 max-w-full justify-self-start rounded-control border border-white px-2 text-left text-sm wrap-anywhere hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-inverse"
+			data-toast-action
+			onclick={(event) => onaction(event.currentTarget)}
+		>
+			{toast.action.label}
+		</button>
+	{/if}
 	<IconButton
 		tone="inverse"
-		class="col-start-2 row-span-2 row-start-1"
+		class="col-start-2 row-span-3 row-start-1"
 		data-toast-dismiss
 		label={m.notifications_dismiss()}
 		onclick={(event: MouseEvent & { currentTarget: HTMLButtonElement }) =>

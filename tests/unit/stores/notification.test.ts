@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
 	ANNOUNCEMENT_LIFETIME,
+	type CloseReason,
 	ERROR_NOTIFICATION_DURATION,
 	NotificationState
 } from '$lib/state/notification.svelte';
@@ -16,7 +17,7 @@ describe('notification store', () => {
 	it('adds a notification and removes it after its duration (happy path)', () => {
 		// GIVEN: The notification store is empty.
 		// WHEN: A timed success notification is added.
-		const id = notifications.add('Saved', 'success', 1000);
+		const id = notifications.add('Saved', 'success', { duration: 1000 });
 
 		// THEN: The notification is available until its duration expires.
 		expect(notifications.items).toEqual([
@@ -28,8 +29,8 @@ describe('notification store', () => {
 
 	it('removes only the requested notification (happy path)', () => {
 		// GIVEN: Two notifications are present.
-		const firstId = notifications.add('First', 'info', 0);
-		const secondId = notifications.add('Second', 'warning', 0);
+		const firstId = notifications.add('First', 'info', { duration: 0 });
+		const secondId = notifications.add('Second', 'warning', { duration: 0 });
 
 		// WHEN: The first notification is removed.
 		notifications.remove(firstId);
@@ -42,7 +43,7 @@ describe('notification store', () => {
 
 	it('ignores the removal of an unknown id (sad path)', () => {
 		// GIVEN: One notification.
-		const id = notifications.add('Kept', 'info', 0);
+		const id = notifications.add('Kept', 'info', { duration: 0 });
 
 		// WHEN: An unknown id is removed.
 		notifications.remove('notif-unknown');
@@ -53,7 +54,7 @@ describe('notification store', () => {
 
 	it('gives each notification a distinct id (limit)', () => {
 		// GIVEN / WHEN: Several notifications with the same message are added.
-		const ids = [1, 2, 3].map(() => notifications.add('Same', 'info', 0));
+		const ids = [1, 2, 3].map(() => notifications.add('Same', 'info', { duration: 0 }));
 
 		// THEN: Every id is unique and every notification is kept.
 		expect(new Set(ids).size).toBe(3);
@@ -62,7 +63,7 @@ describe('notification store', () => {
 
 	it('keeps a notification until exactly its duration (boundary)', () => {
 		// GIVEN: A notification lasting 1000 ms.
-		notifications.add('Saved', 'success', 1000);
+		notifications.add('Saved', 'success', { duration: 1000 });
 
 		// WHEN / THEN: Still shown 1 ms before the deadline, gone at the deadline.
 		vi.advanceTimersByTime(999);
@@ -73,7 +74,7 @@ describe('notification store', () => {
 
 	it('never removes a notification with duration 0 by itself (boundary)', () => {
 		// GIVEN: A notification without duration.
-		notifications.add('Sticky', 'warning', 0);
+		notifications.add('Sticky', 'warning', { duration: 0 });
 
 		// WHEN: A long time passes.
 		vi.advanceTimersByTime(24 * 60 * 60 * 1000);
@@ -112,7 +113,7 @@ describe('notification store', () => {
 
 		it('keeps a paused notification, then removes it after the time left once resumed (happy path)', () => {
 			// GIVEN: A 1 s notification paused after 400 ms.
-			const id = notifications.add('Saved', 'success', 1000);
+			const id = notifications.add('Saved', 'success', { duration: 1000 });
 			vi.advanceTimersByTime(400);
 			notifications.pause(id);
 
@@ -130,7 +131,7 @@ describe('notification store', () => {
 
 		it('removes a notification paused 1 ms before its end exactly 1 ms after the resume (boundary)', () => {
 			// GIVEN: A 1 s notification paused at 999 ms.
-			const id = notifications.add('Saved', 'success', 1000);
+			const id = notifications.add('Saved', 'success', { duration: 1000 });
 			vi.advanceTimersByTime(999);
 			notifications.pause(id);
 			vi.advanceTimersByTime(5000);
@@ -147,7 +148,7 @@ describe('notification store', () => {
 
 		it('keeps the whole duration when paused and resumed at once (boundary)', () => {
 			// GIVEN: A fresh 1 s notification.
-			const id = notifications.add('Saved', 'success', 1000);
+			const id = notifications.add('Saved', 'success', { duration: 1000 });
 
 			// WHEN: It is paused and resumed without time elapsing.
 			notifications.pause(id);
@@ -162,7 +163,7 @@ describe('notification store', () => {
 
 		it('does not restart the count when paused twice (limit)', () => {
 			// GIVEN: A 1 s notification paused at 400 ms.
-			const id = notifications.add('Saved', 'success', 1000);
+			const id = notifications.add('Saved', 'success', { duration: 1000 });
 			vi.advanceTimersByTime(400);
 			notifications.pause(id);
 
@@ -180,7 +181,7 @@ describe('notification store', () => {
 
 		it('ignores a resume of a running notification, which a later pause still stops (limit)', () => {
 			// GIVEN: A running 1 s notification resumed without having been paused.
-			const id = notifications.add('Saved', 'success', 1000);
+			const id = notifications.add('Saved', 'success', { duration: 1000 });
 			vi.advanceTimersByTime(400);
 			notifications.resume(id);
 
@@ -195,7 +196,7 @@ describe('notification store', () => {
 
 		it('ignores pause and resume of an unknown notification (sad path)', () => {
 			// GIVEN: One running notification.
-			const id = notifications.add('Saved', 'success', 1000);
+			const id = notifications.add('Saved', 'success', { duration: 1000 });
 
 			// WHEN: An unknown id is paused and resumed.
 			notifications.pause('notif-unknown');
@@ -209,7 +210,7 @@ describe('notification store', () => {
 
 		it('never removes a duration-0 notification, even after pause and resume (boundary)', () => {
 			// GIVEN: A notification without timer.
-			const id = notifications.add('Sticky', 'info', 0);
+			const id = notifications.add('Sticky', 'info', { duration: 0 });
 
 			// WHEN: It is paused and resumed.
 			notifications.pause(id);
@@ -223,7 +224,7 @@ describe('notification store', () => {
 
 		it('does not bring back a notification dismissed while paused (exception)', () => {
 			// GIVEN: A paused notification.
-			const id = notifications.add('Saved', 'success', 1000);
+			const id = notifications.add('Saved', 'success', { duration: 1000 });
 			notifications.pause(id);
 
 			// WHEN: It is dismissed, then resumed (pointer leaving a removed toast).
@@ -237,7 +238,7 @@ describe('notification store', () => {
 
 		it('cancels the pending timer of a dismissed notification (exception)', () => {
 			// GIVEN: A running notification.
-			const id = notifications.add('Saved', 'success', 1000);
+			const id = notifications.add('Saved', 'success', { duration: 1000 });
 
 			// WHEN: It is dismissed before its end.
 			notifications.remove(id);
@@ -320,13 +321,241 @@ describe('notification store', () => {
 
 		it('does not touch toasts already shown (limit)', () => {
 			// GIVEN: A persistent error toast.
-			const id = notifications.add('Broken', 'error', 0);
+			const id = notifications.add('Broken', 'error', { duration: 0 });
 
 			// WHEN: A message is announced.
 			notifications.announce('Sorted');
 
 			// THEN: The toast is untouched.
 			expect(notifications.items.map((toast) => toast.id)).toEqual([id]);
+		});
+	});
+
+	describe('options, action and close callback', () => {
+		const close = () => vi.fn<(reason: CloseReason) => void>();
+
+		it('takes the duration and the reference from the options (happy path)', () => {
+			// GIVEN / WHEN: A toast with both options.
+			const id = notifications.add('Saved', 'success', { duration: 1000, reference: 'req-1' });
+
+			// THEN: They are on the item, and the toast leaves at the end of its duration.
+			expect(notifications.items).toEqual([
+				{ id, message: 'Saved', type: 'success', duration: 1000, reference: 'req-1' }
+			]);
+			vi.advanceTimersByTime(1000);
+			expect(notifications.items).toEqual([]);
+		});
+
+		it('keeps the shape of a plain toast: no action, no callback on the item (limit)', () => {
+			// GIVEN / WHEN: A toast with a callback but no action.
+			const id = notifications.add('Saved', 'info', { onclose: close() });
+
+			// THEN: The callback is the store's business, not part of the item.
+			expect(notifications.items).toEqual([{ id, message: 'Saved', type: 'info', duration: 3000 }]);
+		});
+
+		it('keeps the action on the item (happy path)', () => {
+			// GIVEN / WHEN: A toast with an action.
+			const action = { label: 'Undo', run: vi.fn() };
+			const id = notifications.add('Task deleted', 'info', { action });
+
+			// THEN: The item carries it for the toast to render; nothing ran.
+			expect(notifications.items).toEqual([
+				{ id, message: 'Task deleted', type: 'info', duration: 3000, action }
+			]);
+			expect(action.run).not.toHaveBeenCalled();
+		});
+
+		it('runs the action once, removes the toast and closes it with "action" (happy path)', () => {
+			// GIVEN: A toast with an action and a close callback.
+			const run = vi.fn();
+			const onclose = close();
+			const id = notifications.add('Task deleted', 'info', {
+				action: { label: 'Undo', run },
+				onclose
+			});
+
+			// WHEN: The action is run.
+			notifications.runAction(id);
+
+			// THEN: Action first, then the close with its reason, once; the toast and its timer are gone.
+			expect(run).toHaveBeenCalledTimes(1);
+			expect(onclose).toHaveBeenCalledTimes(1);
+			expect(onclose).toHaveBeenCalledWith('action');
+			expect(run.mock.invocationCallOrder[0]).toBeLessThan(
+				onclose.mock.invocationCallOrder[0] ?? 0
+			);
+			expect(notifications.items).toEqual([]);
+			expect(vi.getTimerCount()).toBe(0);
+		});
+
+		it('closes with "dismissed" when the user removes it (happy path)', () => {
+			// GIVEN: A toast with a close callback.
+			const onclose = close();
+			const id = notifications.add('Task deleted', 'info', { duration: 0, onclose });
+
+			// WHEN: It is removed.
+			notifications.remove(id);
+
+			// THEN: The reason is "dismissed".
+			expect(onclose).toHaveBeenCalledExactlyOnceWith('dismissed');
+		});
+
+		it('closes with "expired" at exactly its duration, not before (boundary)', () => {
+			// GIVEN: A 6 s toast with a close callback.
+			const onclose = close();
+			notifications.add('Task deleted', 'info', { duration: 6000, onclose });
+
+			// WHEN / THEN: Nothing at 5999 ms; "expired" at 6000 ms.
+			vi.advanceTimersByTime(5999);
+			expect(onclose).not.toHaveBeenCalled();
+			vi.advanceTimersByTime(1);
+			expect(onclose).toHaveBeenCalledExactlyOnceWith('expired');
+		});
+
+		it('never closes a toast of duration 0 by itself (boundary)', () => {
+			// GIVEN: A toast without end.
+			const onclose = close();
+			notifications.add('Broken', 'error', { duration: 0, onclose });
+
+			// WHEN: A day passes.
+			vi.advanceTimersByTime(24 * 60 * 60 * 1000);
+
+			// THEN: It is still there, nothing was called.
+			expect(onclose).not.toHaveBeenCalled();
+			expect(notifications.items).toHaveLength(1);
+		});
+
+		it('closes once only, whatever comes after (limit)', () => {
+			// GIVEN: A toast with an action, a close callback and a timer.
+			const run = vi.fn();
+			const onclose = close();
+			const id = notifications.add('Task deleted', 'info', {
+				duration: 1000,
+				action: { label: 'Undo', run },
+				onclose
+			});
+
+			// WHEN: It is dismissed, then removed again, acted on and left to expire.
+			notifications.remove(id);
+			notifications.remove(id);
+			notifications.runAction(id);
+			vi.advanceTimersByTime(5000);
+
+			// THEN: One close, and the action never ran.
+			expect(onclose).toHaveBeenCalledExactlyOnceWith('dismissed');
+			expect(run).not.toHaveBeenCalled();
+		});
+
+		it('runs the action once when it is triggered twice (limit)', () => {
+			// GIVEN: A toast with an action.
+			const run = vi.fn();
+			const id = notifications.add('Task deleted', 'info', { action: { label: 'Undo', run } });
+
+			// WHEN: A double click reaches the store.
+			notifications.runAction(id);
+			notifications.runAction(id);
+
+			// THEN: The action ran once.
+			expect(run).toHaveBeenCalledTimes(1);
+		});
+
+		it('does not run an action after the toast expired (limit)', () => {
+			// GIVEN: A toast with an action, left to expire.
+			const run = vi.fn();
+			const id = notifications.add('Task deleted', 'info', {
+				duration: 1000,
+				action: { label: 'Undo', run }
+			});
+			vi.advanceTimersByTime(1000);
+
+			// WHEN: A late click arrives.
+			notifications.runAction(id);
+
+			// THEN: Too late: nothing ran.
+			expect(run).not.toHaveBeenCalled();
+		});
+
+		it('ignores an unknown id and a toast without action (sad path)', () => {
+			// GIVEN: A plain toast.
+			const onclose = close();
+			const id = notifications.add('Saved', 'success', { duration: 0, onclose });
+
+			// WHEN: Actions are asked of an unknown id and of the plain toast.
+			notifications.runAction('notif-unknown');
+			notifications.runAction(id);
+
+			// THEN: Nothing happens: the plain toast stays, not closed.
+			expect(notifications.items.map((toast) => toast.id)).toEqual([id]);
+			expect(onclose).not.toHaveBeenCalled();
+		});
+
+		it('closes once as "expired" after a pause and a resume (boundary)', () => {
+			// GIVEN: A 1 s toast paused after 400 ms.
+			const onclose = close();
+			const id = notifications.add('Task deleted', 'info', { duration: 1000, onclose });
+			vi.advanceTimersByTime(400);
+			notifications.pause(id);
+			vi.advanceTimersByTime(60_000);
+			expect(onclose).not.toHaveBeenCalled();
+
+			// WHEN: It resumes and the 600 ms left pass.
+			notifications.resume(id);
+			vi.advanceTimersByTime(600);
+
+			// THEN: One "expired".
+			expect(onclose).toHaveBeenCalledExactlyOnceWith('expired');
+		});
+
+		it('removes the toast and still closes it when the action throws (exception)', () => {
+			// GIVEN: An action that fails.
+			const onclose = close();
+			const id = notifications.add('Task deleted', 'info', {
+				action: {
+					label: 'Undo',
+					run: () => {
+						throw new Error('undo failed');
+					}
+				},
+				onclose
+			});
+
+			// WHEN / THEN: The error reaches the caller; the toast is gone and closed with "action".
+			expect(() => notifications.runAction(id)).toThrow('undo failed');
+			expect(notifications.items).toEqual([]);
+			expect(onclose).toHaveBeenCalledExactlyOnceWith('action');
+			expect(vi.getTimerCount()).toBe(0);
+		});
+
+		it('removes the toast before its close callback runs, even if the callback throws (exception)', () => {
+			// GIVEN: A close callback that fails, and a state read from inside it.
+			let itemsSeenByCallback: number | undefined;
+			const id = notifications.add('Task deleted', 'info', {
+				duration: 0,
+				onclose: () => {
+					itemsSeenByCallback = notifications.items.length;
+					throw new Error('commit failed');
+				}
+			});
+
+			// WHEN / THEN: The error reaches the caller; the toast was already gone.
+			expect(() => notifications.remove(id)).toThrow('commit failed');
+			expect(itemsSeenByCallback).toBe(0);
+			expect(notifications.items).toEqual([]);
+		});
+
+		it('lets the close callback add another toast (limit)', () => {
+			// GIVEN: A callback that notifies a failure.
+			const id = notifications.add('Task deleted', 'info', {
+				duration: 0,
+				onclose: () => notifications.add('Could not delete', 'error', { duration: 0 })
+			});
+
+			// WHEN: The first toast is removed.
+			notifications.remove(id);
+
+			// THEN: Only the new toast is left.
+			expect(notifications.items.map((toast) => toast.message)).toEqual(['Could not delete']);
 		});
 	});
 });

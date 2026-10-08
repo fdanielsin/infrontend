@@ -66,7 +66,7 @@ describe('interface language', () => {
 		app.users.status.error = 'Email already in use';
 		app.tasks.status.error = 'Task not found';
 		app.tasks.status.loading = true;
-		app.notifications.add('Saved', 'success', 0);
+		app.notifications.add('Saved', 'success', { duration: 0 });
 
 		// WHEN: The language changes.
 		app.changeLocale('de');
