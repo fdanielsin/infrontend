@@ -19,11 +19,11 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   actions move under the text and the page margins shrink (infrontend#47).
 - The statistics page no longer shows "Loading…" forever during an outage: it says it waits for
   the service, offers "Retry" after a failure and invites to create a user when there is
-  nothing to count.
+  nothing to count (infrontend#50).
 - A "Title is required" error, a draft or a task being edited no longer follows to another
-  selected user.
+  selected user (infrontend#50).
 - Server errors are worded for people ("Something went wrong on our side. Please try again in a
-  moment.") instead of "Internal server error" and "Database unavailable".
+  moment.") instead of "Internal server error" and "Database unavailable" (infrontend#50).
 
 ## [1.3.0] - 2026-10-08
 
