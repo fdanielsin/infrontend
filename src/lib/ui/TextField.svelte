@@ -18,6 +18,8 @@
 		compact?: boolean;
 		// Keeps the label for assistive technology only.
 		labelHidden?: boolean;
+		// A multiline field that grows with its content instead of scrolling.
+		autoGrow?: boolean;
 	}
 
 	let {
@@ -32,6 +34,7 @@
 		errorId = `${id}-error`,
 		compact = false,
 		labelHidden = false,
+		autoGrow = false,
 		...rest
 	}: Props = $props();
 
@@ -41,6 +44,33 @@
 	const SIZE_CLASSES = { default: 'mt-1 px-3 py-2', compact: 'px-2 py-1' };
 	const ERROR_CLASSES = { default: 'mt-1 text-sm text-danger', compact: 'text-sm text-danger' };
 	const size = $derived(compact ? 'compact' : 'default');
+
+	// The height follows the content: typed, pasted, or reflowed by a new column width. Only a width
+	// change is observed, since resizing the field itself must not notify the observer again.
+	function growToContent(field: HTMLElement) {
+		const resize = () => {
+			field.style.height = 'auto';
+			field.style.height = `${field.scrollHeight + field.offsetHeight - field.clientHeight}px`;
+		};
+		resize();
+		field.addEventListener('input', resize);
+		let width = field.clientWidth;
+		let observer: ResizeObserver | undefined;
+		try {
+			observer = new ResizeObserver(() => {
+				if (field.clientWidth === width) return;
+				width = field.clientWidth;
+				resize();
+			});
+			observer.observe(field);
+		} catch {
+			observer = undefined;
+		}
+		return () => {
+			field.removeEventListener('input', resize);
+			observer?.disconnect();
+		};
+	}
 </script>
 
 <label for={id} class={labelHidden ? 'sr-only' : 'block text-sm font-medium text-label'}>
@@ -54,7 +84,8 @@
 		{required}
 		aria-invalid={!!error}
 		aria-describedby={error ? errorId : undefined}
-		class={[CONTROL_CLASSES, SIZE_CLASSES[size]]}
+		class={[CONTROL_CLASSES, SIZE_CLASSES[size], autoGrow && 'resize-none overflow-hidden']}
+		{@attach autoGrow ? growToContent : undefined}
 		{...rest}></textarea>
 {:else if type === 'email'}
 	<input
