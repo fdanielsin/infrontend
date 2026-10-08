@@ -13,14 +13,13 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   new component type is added (`docs/design-system.md`) (infrontend#46).
 - Icons come from Iconoir through one `Icon` component: sizes of 16, 20 and 24 px, a single
   1.5 px stroke, always hidden from assistive technology (infrontend#53).
+- A toast can carry an action button and a close callback (pressed, dismissed or expired), for
+  an "Undo" on a deletion; no visible change yet.
 
 ### Changed
 
 - The cross of the close and delete buttons is an Iconoir icon with a 1.5 px stroke
   (infrontend#53).
-
-### Changed
-
 - The user list is a card of its own; a whole row is clickable, shows a chevron, and the selected
   user is marked by a fill, a bar and a check instead of a ring that looked like the keyboard
   focus (infrontend#51).

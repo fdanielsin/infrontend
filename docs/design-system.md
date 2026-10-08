@@ -410,6 +410,21 @@ bouton de fermeture atteint par Tab est ramené entièrement dans la pile
 (`scrollIntoView({ block: 'nearest' })`). Preuves : `tests/unit/components/Notification.test.ts`,
 `tests/e2e/keyboard-focus.test.ts`.
 
+Un toast peut porter une **action** : `notifications.add(message, type, { duration, reference,
+action: { label, run }, onclose })`. Le bouton (même style que « Copier », en attendant
+l'harmonisation des boutons) vient après le message et la référence, avant la fermeture ;
+son libellé arrive traduit et se coupe n'importe où. Activé, il retire le toast puis lance
+`run` une fois (un second appui, ou un appui après l'expiration, ne fait rien) ; si `run`
+lève, le toast part quand même et l'erreur remonte. `onclose(raison)` est appelé une seule
+fois, après le départ du toast : `'action'`, `'dismissed'` (fermeture par l'utilisateur) ou
+`'expired'` (durée écoulée) ; la pause au survol et au focus s'applique au bouton aussi
+(WCAG 2.2.1). Après l'action, le focus suit la règle de la fermeture, sauf si `run` l'a déjà
+placé sur un élément présent (l'annulation d'une suppression le place sur la ligne rétablie).
+Le toast ne s'enregistre pas pour un départ de la page : un appelant qui engage quelque chose
+à l'expiration (suppression différée) l'engage aussi au `pagehide`. Preuves :
+`tests/unit/stores/notification.test.ts`, `tests/unit/components/Notification.test.ts` ;
+pas encore d'E2E (aucun écran n'utilise l'action : le premier usage porte le test navigateur).
+
 Règles complémentaires ([notification-system](https://designmotionhq.com/patterns/notification-system), [toast-notifications](https://designmotionhq.com/patterns/toast-notifications)) :
 
 - Quatre surfaces selon la gravité : toast, bandeau, modale, badge ; chacune a sa
