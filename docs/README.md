@@ -7,6 +7,7 @@ Cette documentation décrit l'architecture et les règles propres à
 
 - [Architecture](./architecture.md)
 - [Conventions](./conventions.md)
+- [Design system](./design-system.md)
 - [Roadmap](./roadmap.md)
 - [Handoff](./handoff.md)
 - [Décisions](./decisions/)

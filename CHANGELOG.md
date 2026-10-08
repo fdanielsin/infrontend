@@ -4,6 +4,11 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- A design system guide documents the tokens, components, patterns and content rules of the
+  interface (`docs/design-system.md`) (infrontend#45).
+
 ## [1.3.0] - 2026-10-08
 
 ### Added
