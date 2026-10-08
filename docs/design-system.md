@@ -53,6 +53,7 @@ commentaire du jeton. Ratios mesurés (WCAG 1.4.3 texte 4,5:1, 1.4.11 non-texte 
 | `surface`, `surface-muted`         | blanc, gray-100      | carte, ligne de liste                     |                                                                                                                             |
 | `label`, `muted`, `subtle`         | gray-700, 600, 500   | libellé, texte secondaire, état vide      | muted 7,56:1 ; subtle 4,84:1 sur blanc                                                                                      |
 | `field-border`                     | gray-500             | bordure des champs                        | 4,84 blanc, 4,39 gray-100, 3,93 au pire sur le dégradé (extrémité indigo-100 ; 4,44 sur blue-50 ; 3:1 requis)               |
+| `page-from`, `page-to`             | blue-50, indigo-100  | dégradé de fond de page, porté par `html` | texte sur le dégradé : voir ci-dessous                                                                                      |
 | `line`                             | gray-300             | cadre de carte, séparateur                | décoratif, pas pour un champ                                                                                                |
 | `disabled`                         | gray-400             | fond d'un bouton désactivé                |                                                                                                                             |
 | `primary` / `-hover`               | blue-600 / 700       | action principale                         | texte blanc 4,5:1 ou plus                                                                                                   |
@@ -90,19 +91,19 @@ Règles complémentaires :
 Police : celle de Tailwind par défaut (aucun `font-family` défini). Pas d'échelle
 propre au projet ; usages constatés :
 
-| Rôle                   | Classes                                              |
-| ---------------------- | ---------------------------------------------------- |
-| Titre de page (`h1`)   | `text-4xl font-bold`, `wrap-break-word hyphens-auto` |
-| Titre de carte (`h2`)  | `text-xl font-bold`                                  |
-| Titre de liste (`h3`)  | `font-semibold`                                      |
-| Libellé de champ       | `text-sm font-medium text-label`                     |
-| Texte secondaire, aide | `text-sm text-muted`                                 |
-| État vide              | `text-subtle`                                        |
+| Rôle                   | Classes                                                          |
+| ---------------------- | ---------------------------------------------------------------- |
+| Titre de page (`h1`)   | `text-2xl sm:text-4xl font-bold`, `wrap-break-word hyphens-auto` |
+| Titre de carte (`h2`)  | `text-xl font-bold`                                              |
+| Titre de liste (`h3`)  | `font-semibold`                                                  |
+| Libellé de champ       | `text-sm font-medium text-label`                                 |
+| Texte secondaire, aide | `text-sm text-muted`                                             |
+| État vide              | `text-subtle`                                                    |
 
-Espacements : `p-6` (carte, `p-8` en `lg`), `space-y-4` entre champs, `space-y-2`
-entre lignes de liste, `gap-2` ou `gap-3` entre contrôles. Page : `main` en `p-8`,
+Espacements : `p-4 sm:p-6` (carte, `p-6 sm:p-8` en `lg`), `space-y-4` entre champs, `space-y-2`
+entre lignes de liste, `gap-2` ou `gap-3` entre contrôles. Page : `main` en `p-4 sm:p-8`,
 largeur max 6xl (accueil) ou 2xl (statistiques), fond en dégradé
-`from-blue-50 to-indigo-100`. Rayons : `control` (0,25 rem) pour boutons, champs,
+(`page-from` vers `page-to`) porté par `html`. Rayons : `control` (0,25 rem) pour boutons, champs,
 lignes ; `card` (`rounded-lg`) pour cartes et toasts. Ombres : `card`,
 `card-raised`, `card-raised-hover` (carte « raised » au survol).
 
@@ -181,16 +182,23 @@ Aucun défilement horizontal à 320 px ni à 200 % de zoom (WCAG 1.4.10). Les ti
 longs se coupent (`wrap-break-word`, `wrap-anywhere` dans les lignes de tâche),
 le sélecteur de langue est dans le flux, au-dessus du titre. Preuve :
 `tests/e2e/i18n.test.ts` (« Reflow », 320, 640, 1280 px, quatre langues),
-`tests/e2e/task-sorting.test.ts` (titre de 200 caractères).
+`tests/e2e/task-sorting.test.ts` (titre de 200 caractères),
+`tests/e2e/layout-overflow.test.ts` (valeurs au maximum du contrat, sans espace, à 1280,
+768, 375 et 320 px, quatre langues).
 
-Règles complémentaires :
+Règles :
 
 - Tout texte qui affiche une donnée saisie (nom, e-mail, titre, description) passe à
-  la ligne n'importe où (`wrap-anywhere`). **Cible / écart actuel** :
-  `UserForm.svelte` lignes 97-98.
-- Le fond de page couvre toute la zone défilable : il est porté par `html` et `body`,
-  pas seulement par `<main>`. **Cible / écart actuel** : `routes/+page.svelte` ligne 21,
-  `routes/stats/+page.svelte` ligne 33.
+  la ligne n'importe où (`wrap-anywhere`) : carte utilisateur, titre « Tâches de… »,
+  lignes de tâche, alertes, toasts, tuiles de statistiques. Un enfant de grille ou de
+  flex qui porte du texte saisi a `min-w-0` (ou `minmax(0,1fr)`), sinon il s'élargit.
+- Le fond de page couvre toute la zone défilable : il est porté par `html` (jetons
+  `page-from` et `page-to`), jamais par `<main>`.
+- Dans une ligne de tâche, le texte garde toute la largeur de sa colonne : les actions
+  passent sous le texte quand la colonne mesure moins de 28 rem (container query
+  `@md`), à côté sinon. `wrap-anywhere` ne coupe un mot que s'il ne tient pas seul sur
+  une ligne.
+- Marge de page `p-4` sous `sm`, deux colonnes dès `md` (768 px).
 
 ### Écarts constatés
 
@@ -207,11 +215,6 @@ Règles complémentaires :
 - Le bouton d'envoi est `disabled` pendant la requête, ce qui fait perdre le focus à
   qui valide au bouton. Non corrigé volontairement (les tests s'appuient sur
   `disabled`, gain faible). Voir la règle de [Button](#button).
-- La carte utilisateur (`UserForm.svelte`, lignes 97-98) affiche le nom et l'e-mail
-  sans `wrap-anywhere` : la règle de la section 320 px n'y est pas tenue.
-- Le dégradé de fond est posé sur `<main>` (`routes/+page.svelte` ligne 21,
-  `routes/stats/+page.svelte` ligne 33), pas sur `html`/`body` : il ne couvre pas toute
-  la zone défilable.
 - Le trait des icônes (croix de `IconButton`, trait 2) n'est pas celui visé pour le jeu
   Iconoir (1,5 px) : voir Cible.
 
@@ -262,7 +265,7 @@ Sur écran tactile, la cible visuelle de 24 px reçoit une zone de tap de 44 px
 
 Conteneur. Variantes : `outlined` (cadre `line`, ombre `card`), `raised` (ombre
 relevée, plus forte au survol, pour les chiffres des statistiques), `flat` (ombre
-relevée sans survol). Marge intérieure `md` (`p-6`) ou `lg` (`p-8`). Rôle
+relevée sans survol). Marge intérieure `md` (`p-4 sm:p-6`) ou `lg` (`p-6 sm:p-8`). Rôle
 purement visuel : le titre de la carte est un `h2` posé par l'écran. Règles
 complémentaires ([perfect-card](https://designmotionhq.com/patterns/perfect-card)) : titre plus gras que la description, description
 atténuée (`text-muted`), marge intérieure généreuse, contenu jamais collé au bord. Le
@@ -522,8 +525,8 @@ de classes les fige : ne pas les remplacer par un jeton sans prévenir qa.
 - [ ] Textes dans les quatre fichiers `messages/*.json`, libellés longs testés.
 - [ ] Animation sous `prefers-reduced-motion: no-preference` seulement.
 - [ ] Aucune action principale cachée derrière un survol ; zone de tap suffisante.
-- [ ] Donnée saisie affichée en `wrap-anywhere` ; fond de page sur `html`/`body`
-      (**Cible**, écarts actuels listés en section 2).
+- [ ] Donnée saisie affichée en `wrap-anywhere` (et `min-w-0` sur le parent flex ou
+      grille) ; fond de page sur `html`.
 - [ ] Axe sans violation sur l'écran touché ; tests existants ni affaiblis ni
       modifiés pour passer.
 

@@ -12,6 +12,12 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   today's interface, target rules marked as such, and a section of patterns to apply when a
   new component type is added (`docs/design-system.md`) (infrontend#46).
 
+### Fixed
+
+- A long name, e-mail, title or description without spaces no longer widens the page or
+  overlaps the panels; the page background covers the whole page; on a narrow screen the task
+  actions move under the text and the page margins shrink.
+
 ## [1.3.0] - 2026-10-08
 
 ### Added
