@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { AxeBuilder } from '@axe-core/playwright';
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
+import { expectAnnounced } from './support/announcement';
 import { ada, adaTasks, grace, mockApi } from './support/mock-api';
 
 // Interface languages (I2): cookie, then Accept-Language, then English; no URL prefix.
@@ -202,9 +203,7 @@ test.describe('Language switcher', () => {
 		await expect(page.getByLabel(t('fr', 'users_name_label'), { exact: true })).toHaveValue(
 			'Grace draft'
 		);
-		await expect(
-			page.getByRole('status').getByText(t('fr', 'language_changed', { language: 'Français' }))
-		).toBeVisible();
+		await expectAnnounced(page, t('fr', 'language_changed', { language: 'Français' }));
 		expect(
 			(await context.cookies()).find((cookie) => cookie.name === 'PARAGLIDE_LOCALE')?.value
 		).toBe('fr');

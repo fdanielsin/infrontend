@@ -75,18 +75,24 @@ describe('LanguageSwitcher', () => {
 		}
 	);
 
-	it('announces the change in the new language, in the status region (happy path)', async () => {
-		// GIVEN: The English switcher.
-		const view = renderWithApp(app, LanguageSwitcher);
+	it.each([
+		['fr', 'Langue modifiée\u00a0: Français'],
+		['de', 'Sprache geändert: Deutsch'],
+		['es', 'Idioma cambiado a Español']
+	] as const)(
+		'announces the switch to %s in the new language, without a toast (happy path)',
+		async (locale, sentence) => {
+			// GIVEN: The English switcher.
+			const view = renderWithApp(app, LanguageSwitcher);
 
-		// WHEN: German is chosen.
-		await choose(view, 'de');
+			// WHEN: Another language is chosen.
+			await choose(view, locale);
 
-		// THEN: One information toast, written in German, names the language.
-		expect(app.notifications.items).toHaveLength(1);
-		expect(app.notifications.items[0]?.type).toBe('info');
-		expect(app.notifications.items[0]?.message).toContain('Deutsch');
-	});
+			// THEN: The status announcement is written in the new language; no toast is shown.
+			expect(app.notifications.announcement?.message).toBe(sentence);
+			expect(app.notifications.items).toEqual([]);
+		}
+	);
 
 	it('clears the errors shown by the features when switching (limit)', async () => {
 		// GIVEN: Errors in both features.
@@ -113,8 +119,9 @@ describe('LanguageSwitcher', () => {
 		// WHEN: That value is chosen.
 		await choose(view, 'it' as Locale);
 
-		// THEN: The language and the toasts are unchanged.
+		// THEN: The language is unchanged, and nothing was shown or announced.
 		expect(app.locale.current).toBe('en');
 		expect(app.notifications.items).toEqual([]);
+		expect(app.notifications.announcement).toBeNull();
 	});
 });

@@ -17,7 +17,7 @@
 		const chosen = locale.available.find((available) => available === value);
 		if (!chosen) return;
 		app.changeLocale(chosen);
-		app.notifications.add(m.language_changed({ language: LOCALE_NAMES[chosen] }), 'info');
+		app.notifications.announce(m.language_changed({ language: LOCALE_NAMES[chosen] }));
 	}
 </script>
 
