@@ -54,11 +54,13 @@ async function cardsAreContained(page: Page, expectSideBySide: boolean) {
 			})
 	);
 	const width = await page.evaluate(() => document.documentElement.clientWidth);
-	expect.soft(cards.length).toBeGreaterThanOrEqual(2);
+	// The form and the user list (left column), then the tasks (right column).
+	expect.soft(cards.length).toBeGreaterThanOrEqual(3);
 	for (const card of cards) expect.soft(card.right).toBeLessThanOrEqual(width + 0.5);
-	const [first, second] = cards;
-	if (expectSideBySide && first && second) {
-		expect.soft(first.right).toBeLessThanOrEqual(second.left + 0.5);
+	const first = cards[0];
+	const last = cards[cards.length - 1];
+	if (expectSideBySide && first && last) {
+		expect.soft(first.right).toBeLessThanOrEqual(last.left + 0.5);
 	}
 }
 
@@ -93,6 +95,26 @@ async function openHomeWithUser(page: Page) {
 	await page.goto('/');
 	await page.locator('button[aria-pressed]').first().click();
 	await page.getByRole('checkbox').first().waitFor();
+	await scrollSettled(page);
+}
+
+// In a single column the page scrolls to the tasks after a selection (smoothly): measures wait for
+// it, or the boxes of two elements would be taken at two different scroll positions.
+async function scrollSettled(page: Page) {
+	await page.evaluate(
+		() =>
+			new Promise<void>((done) => {
+				let last = -1;
+				let stable = 0;
+				const tick = () => {
+					stable = window.scrollY === last ? stable + 1 : 0;
+					last = window.scrollY;
+					if (stable >= 5) done();
+					else requestAnimationFrame(tick);
+				};
+				tick();
+			})
+	);
 }
 
 test.describe('Layout without sideways scroll (mocked API)', () => {
@@ -154,7 +176,7 @@ test.describe('Layout without sideways scroll (mocked API)', () => {
 				// THEN: The panels are side by side from 768 px, stacked under it, without overflow.
 				const [users, tasks] = [
 					await page.locator('main h2').nth(0).boundingBox(),
-					await page.locator('main h2').nth(1).boundingBox()
+					await page.locator('main h2').nth(2).boundingBox()
 				];
 				expect(users && tasks).toBeTruthy();
 				if (users && tasks) {
