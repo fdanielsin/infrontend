@@ -175,6 +175,29 @@ describe('TaskList readable rows', () => {
 		);
 	});
 
+	it('sends one update when Enter is pressed again while the save is pending (exception)', async () => {
+		// GIVEN: A save that has not answered yet.
+		let answer: (value: { success: true; data: typeof review }) => void = () => {};
+		vi.mocked(api.updateTask).mockReturnValue(
+			new Promise((resolve) => {
+				answer = resolve;
+			})
+		);
+		const view = renderWithApp(app, TaskForm, { user });
+		await startEditing(view);
+		const title = view.getByLabelText('Task Title', { selector: '#edit-title-10' });
+		await fireEvent.input(title, { target: { value: 'Plan' } });
+
+		// WHEN: Enter is pressed three times.
+		await fireEvent.keyDown(title, { key: 'Enter' });
+		await fireEvent.keyDown(title, { key: 'Enter' });
+		await fireEvent.keyDown(title, { key: 'Enter' });
+
+		// THEN: One request left.
+		expect(api.updateTask).toHaveBeenCalledTimes(1);
+		answer({ success: true, data: { ...review, title: 'Plan' } });
+	});
+
 	it('turns pasted line breaks into spaces (limit)', async () => {
 		// GIVEN: A task in edition.
 		const view = renderWithApp(app, TaskForm, { user });

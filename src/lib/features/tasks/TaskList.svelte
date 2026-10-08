@@ -101,7 +101,7 @@
 	}
 
 	async function handleEditTask() {
-		if (editingTaskId === null) return;
+		if (editingTaskId === null || status.loading) return;
 
 		editErrors = {};
 		const result = TaskSchema.safeParse({
