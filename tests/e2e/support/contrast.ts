@@ -29,7 +29,7 @@ export function contrast(first: Rgb, second: Rgb): number {
 // what surrounds the element, not against its own fill); the page gradient is read from its two tokens.
 export async function measure(
 	locator: Locator,
-	property: 'outlineColor' | 'color' | 'borderTopColor',
+	property: 'outlineColor' | 'color' | 'borderTopColor' | 'borderLeftColor',
 	from: 'parent' | 'self' = 'parent'
 ): Promise<Measure> {
 	return locator.evaluate(
