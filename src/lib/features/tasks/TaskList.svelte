@@ -67,7 +67,7 @@
 			title: m.tasks_sorted_title,
 			status: m.tasks_sorted_status
 		};
-		notifications.add(announcements[value](), 'info');
+		notifications.announce(announcements[value]());
 	}
 
 	// A change that moves the row: the new position is announced (the row is gone from where the
@@ -76,7 +76,7 @@
 		const position = positionOf(taskId);
 		if (position === 0 || position === positionBefore) return false;
 		const title = tasks.tasks.find((task) => task.id === taskId)?.title ?? '';
-		notifications.add(m.tasks_moved({ title, position, count: tasks.tasks.length }), 'info');
+		notifications.announce(m.tasks_moved({ title, position, count: tasks.tasks.length }));
 		return true;
 	}
 

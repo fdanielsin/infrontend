@@ -50,6 +50,8 @@ describe('task sorting in the list', () => {
 	const titlesShown = (view: ReturnType<typeof render>) =>
 		view.getAllByRole('checkbox').map((box) => box.id);
 	const messages = () => app.notifications.items.map((item) => item.message);
+	// What the hidden live region says: low-severity news is announced, never shown as a toast.
+	const announced = () => app.notifications.announcement?.message ?? null;
 	const choose = (view: ReturnType<typeof render>, value: string) =>
 		fireEvent.change(view.getByLabelText('Sort by'), { target: { value } });
 
@@ -121,8 +123,8 @@ describe('task sorting in the list', () => {
 			await choose(view, 'title');
 
 			expect(titlesShown(view)).toEqual(['task-2', 'task-1', 'task-3']);
-			expect(messages()).toEqual(['Tasks sorted by title']);
-			expect(app.notifications.items[0]?.type).toBe('info');
+			expect(messages()).toEqual([]);
+			expect(announced()).toBe('Tasks sorted by title');
 			expect(storage.getItem('indrive.task-order')).toBe('title');
 		});
 
@@ -132,10 +134,12 @@ describe('task sorting in the list', () => {
 
 			await choose(view, 'status');
 			expect(titlesShown(view)).toEqual(['task-2', 'task-4', 'task-1', 'task-3']);
+			expect(announced()).toBe('Tasks sorted by status');
 			await choose(view, 'created');
 
 			expect(titlesShown(view)).toEqual(['task-1', 'task-2', 'task-3', 'task-4']);
-			expect(messages()).toEqual(['Tasks sorted by status', 'Tasks sorted by creation order']);
+			expect(messages()).toEqual([]);
+			expect(announced()).toBe('Tasks sorted by creation order');
 		});
 
 		it('says nothing when the choice does not change (boundary)', async () => {
@@ -143,6 +147,40 @@ describe('task sorting in the list', () => {
 
 			await choose(view, 'created');
 
+			expect(messages()).toEqual([]);
+		});
+
+		it('announces nothing when the choice does not change, nor for an unknown value (boundary)', async () => {
+			const view = render();
+
+			await choose(view, 'created');
+			await choose(view, 'bogus');
+
+			expect(announced()).toBeNull();
+			expect(messages()).toEqual([]);
+		});
+
+		it('announces nothing when the stored order is restored at load (boundary)', () => {
+			storage.setItem('indrive.task-order', 'status');
+			app = new AppState();
+			app.tasks.tasks = THREE;
+
+			render();
+
+			expect(announced()).toBeNull();
+			expect(messages()).toEqual([]);
+		});
+
+		it('announces again each time the order changes back to a previous one (limit)', async () => {
+			const view = render();
+
+			await choose(view, 'title');
+			const first = app.notifications.announcement;
+			await choose(view, 'created');
+			await choose(view, 'title');
+
+			expect(announced()).toBe('Tasks sorted by title');
+			expect(app.notifications.announcement?.id).not.toBe(first?.id);
 			expect(messages()).toEqual([]);
 		});
 
@@ -229,7 +267,8 @@ describe('task sorting in the list', () => {
 			await waitFor(() =>
 				expect(document.activeElement).toBe(view.getByRole('button', { name: 'Edit zzz' }))
 			);
-			expect(messages()).toEqual(['zzz: position 3 of 3']);
+			expect(messages()).toEqual([]);
+			expect(announced()).toBe('zzz: position 3 of 3');
 		});
 
 		it('says nothing when an edit keeps the row in place (boundary)', async () => {
@@ -264,7 +303,8 @@ describe('task sorting in the list', () => {
 
 			await waitFor(() => expect(titlesShown(view)).toEqual(['task-2', 'task-3', 'task-1']));
 			await waitFor(() => expect(document.activeElement?.id).toBe('task-1'));
-			expect(messages()).toEqual(['Banana: position 3 of 3']);
+			expect(messages()).toEqual([]);
+			expect(announced()).toBe('Banana: position 3 of 3');
 		});
 
 		it('says nothing when the row stays where it is (boundary)', async () => {

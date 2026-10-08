@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { AxeBuilder } from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { measure, worstContrast } from './support/contrast';
+import { expectAnnounced, expectSilent } from './support/announcement';
 import { ada, mockApi, openHomeWithUser, type MockTask } from './support/mock-api';
 
 // Sorting of the task list, with a mocked API. Creation order of the tasks below: Banana, apple,
@@ -39,6 +40,7 @@ test.describe('Task sorting (mocked API)', () => {
 		expect(await titles(page)).toEqual(['Banana', 'apple', 'Cherry 10', 'Cherry 2']);
 		await expect(orderSelect(page)).toHaveValue('created');
 		await expect(page.locator('[data-toast]')).toHaveCount(0);
+		await expectSilent(page);
 	});
 
 	test('sorts by title: case ignored, "Cherry 2" before "Cherry 10", announced once (happy path)', async ({
@@ -49,7 +51,7 @@ test.describe('Task sorting (mocked API)', () => {
 		await orderSelect(page).selectOption('title');
 
 		expect(await titles(page)).toEqual(['apple', 'Banana', 'Cherry 2', 'Cherry 10']);
-		await expect(page.getByRole('status').getByText('Tasks sorted by title')).toHaveCount(1);
+		await expectAnnounced(page, 'Tasks sorted by title');
 	});
 
 	test('sorts by status, then back to creation order, exactly as it was (happy path)', async ({
@@ -78,6 +80,7 @@ test.describe('Task sorting (mocked API)', () => {
 
 			await expect(orderSelect(page)).toHaveValue(order);
 			await expect(page.getByRole('status').filter({ hasText: /sorted/ })).toHaveCount(0);
+			await expectSilent(page);
 		});
 	}
 
@@ -144,7 +147,7 @@ test.describe('Task sorting (mocked API)', () => {
 
 		await expect.poll(() => titles(page)).toEqual(['Cherry 10', 'Cherry 2', 'Banana', 'apple']);
 		await expect(checkbox).toBeFocused();
-		await expect(page.getByRole('status').getByText('Banana: position 3 of 4')).toHaveCount(1);
+		await expectAnnounced(page, 'Banana: position 3 of 4');
 	});
 
 	test('an edit that moves the row keeps the focus on its Edit button (happy path)', async ({
@@ -159,7 +162,7 @@ test.describe('Task sorting (mocked API)', () => {
 
 		await expect.poll(() => titles(page)).toEqual(['Banana', 'Cherry 2', 'Cherry 10', 'zzz']);
 		await expect(page.getByRole('button', { name: 'Edit zzz' })).toBeFocused();
-		await expect(page.getByRole('status').getByText('zzz: position 4 of 4')).toHaveCount(1);
+		await expectAnnounced(page, 'zzz: position 4 of 4');
 	});
 
 	test('a failed toggle reorders nothing, announces no move and restores the box (exception)', async ({
@@ -240,9 +243,7 @@ test.describe('Task sorting (mocked API)', () => {
 				text(locale, 'tasks_order_title'),
 				text(locale, 'tasks_order_status')
 			]);
-			await expect(
-				page.getByRole('status').getByText(text(locale, 'tasks_sorted_title'))
-			).toHaveCount(1);
+			await expectAnnounced(page, text(locale, 'tasks_sorted_title'));
 			expect(worstContrast(await measure(select, 'color'))).toBeGreaterThanOrEqual(4.5);
 			expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
 			const { violations } = await new AxeBuilder({ page }).analyze();
