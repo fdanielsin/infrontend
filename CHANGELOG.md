@@ -42,6 +42,8 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Security
 
+- `cookie` is pinned to 0.7.0, which fixes GHSA-pxg6-pf52-xh8x (out-of-bounds characters in cookie
+  attributes, low) (infrontend#42).
 - `source-map-js` is pinned to 1.2.2, which fixes GHSA-68fv-2mgg-jv7q (denial of service, high);
   the dependency audit is green again (infrontend#36).
 

@@ -64,6 +64,7 @@
 		"openapi-fetch": "^0.17.0"
 	},
 	"overrides": {
+		"cookie": "0.7.0",
 		"devalue": "5.9.3",
 		"js-yaml": "4.3.2",
 		"qs": "6.16.0",
