@@ -3,8 +3,9 @@
 ## Statut
 
 Stack : SvelteKit avec Svelte 5 (runes), TypeScript strict, Bun, Tailwind CSS 4,
-Paraglide (textes en en/fr/de/es), openapi-fetch avec types générés, zod pour la
-validation locale ; tests avec Vitest et Playwright.
+Paraglide (textes en en/fr/de/es), icônes Iconoir (`unplugin-icons`, voir l'ADR
+[0003](./decisions/0003-icones-iconoir-unplugin-icons.md)), openapi-fetch avec types
+générés, zod pour la validation locale ; tests avec Vitest et Playwright.
 
 Architecture retenue pour une modularisation progressive. `users` et `tasks`
 sont réellement modularisés (composant dédié chacun) ; `stats` reste dans sa
