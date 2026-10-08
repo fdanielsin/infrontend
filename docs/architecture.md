@@ -26,8 +26,8 @@ src/
 └── lib/
     ├── api/                # Client HTTP et types du contrat
     ├── features/           # Fonctionnalités orientées utilisateur
-    │   ├── users/          # UserForm (création) + UserList (liste, sélection)
-    │   ├── tasks/          # TaskForm (ajout, brouillon d'édition) + TaskList + TaskItem (une ligne)
+    │   ├── users/          # UserForm (création) + UserList (liste en carte propre, sélection)
+    │   ├── tasks/          # TaskForm (ajout, brouillon d'édition) + TaskList + TaskItem (une ligne) + ClampedText (description repliée)
     │   └── stats/
     ├── ui/                 # Composants visuels génériques et jetons de design (layout.css)
     ├── state/              # Classes d'état réactif ($state), fournies par contexte

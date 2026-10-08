@@ -48,19 +48,20 @@ Les jetons vivent dans le bloc `@theme` de `src/routes/layout.css`. Chacun nomme
 une teinte de palette Tailwind déjà rendue ; ses ratios validés sont en
 commentaire du jeton. Ratios mesurés (WCAG 1.4.3 texte 4,5:1, 1.4.11 non-texte 3:1) :
 
-| Jeton                              | Teinte               | Usage                                     | Contraste (source : commentaires de `layout.css`)                                                                           |
-| ---------------------------------- | -------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `surface`, `surface-muted`         | blanc, gray-100      | carte, ligne de liste                     |                                                                                                                             |
-| `label`, `muted`, `subtle`         | gray-700, 600, 500   | libellé, texte secondaire, état vide      | muted 7,56:1 ; subtle 4,84:1 sur blanc                                                                                      |
-| `field-border`                     | gray-500             | bordure des champs                        | 4,84 blanc, 4,39 gray-100, 3,93 au pire sur le dégradé (extrémité indigo-100 ; 4,44 sur blue-50 ; 3:1 requis)               |
-| `page-from`, `page-to`             | blue-50, indigo-100  | dégradé de fond de page, porté par `html` | texte sur le dégradé : voir ci-dessous                                                                                      |
-| `line`                             | gray-300             | cadre de carte, séparateur                | décoratif, pas pour un champ                                                                                                |
-| `disabled`                         | gray-400             | fond d'un bouton désactivé                |                                                                                                                             |
-| `primary` / `-hover`               | blue-600 / 700       | action principale                         | texte blanc 4,5:1 ou plus                                                                                                   |
-| `action-strong` / `-hover`         | blue-700 / 900       | petite action, lien, toast d'info         | aussi texte sur gris : 4,5:1 ou plus                                                                                        |
-| `success`, `warning`               | green-700, amber-700 | action de succès, toast de succès, alerte | texte blanc 4,5:1 ou plus                                                                                                   |
-| `danger` / `-hover`, `danger-soft` | red-700 / 900, 100   | l'unique couleur d'erreur, fond d'erreur  | 5,21:1 ou plus sur blanc, gray-100, red-100, dégradé                                                                        |
-| `focus`, `focus-inverse`           | blue-700, blanc      | contour de focus                          | 6,83 blanc, 5,55 indigo-100 ; inverse 4,95 ou plus sur les toasts (succès 4,95, avertissement 5,03, erreur 6,42, info 6,83) |
+| Jeton                               | Teinte               | Usage                                      | Contraste (source : commentaires de `layout.css`)                                                                                                                  |
+| ----------------------------------- | -------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `surface`, `surface-muted`          | blanc, gray-100      | carte, ligne de liste                      |                                                                                                                                                                    |
+| `surface-hover`, `surface-selected` | gray-200, blue-100   | ligne sous le pointeur, ligne sélectionnée | mesurés (`readable-lists.test.ts`) : nom 16,96 / 17,21, e-mail 6,10 / 6,19 (survol / sélectionnée) ; barre `primary` 4,30:1 et coche 6,19:1 sur `surface-selected` |
+| `label`, `muted`, `subtle`          | gray-700, 600, 500   | libellé, texte secondaire, état vide       | muted 7,56:1 ; subtle 4,84:1 sur blanc                                                                                                                             |
+| `field-border`                      | gray-500             | bordure des champs                         | 4,84 blanc, 4,39 gray-100, 3,93 au pire sur le dégradé (extrémité indigo-100 ; 4,44 sur blue-50 ; 3:1 requis)                                                      |
+| `page-from`, `page-to`              | blue-50, indigo-100  | dégradé de fond de page, porté par `html`  | texte sur le dégradé : voir ci-dessous                                                                                                                             |
+| `line`                              | gray-300             | cadre de carte, séparateur                 | décoratif, pas pour un champ                                                                                                                                       |
+| `disabled`                          | gray-400             | fond d'un bouton désactivé                 |                                                                                                                                                                    |
+| `primary` / `-hover`                | blue-600 / 700       | action principale                          | texte blanc 4,5:1 ou plus                                                                                                                                          |
+| `action-strong` / `-hover`          | blue-700 / 900       | petite action, lien, toast d'info          | aussi texte sur gris : 4,5:1 ou plus                                                                                                                               |
+| `success`, `warning`                | green-700, amber-700 | action de succès, toast de succès, alerte  | texte blanc 4,5:1 ou plus                                                                                                                                          |
+| `danger` / `-hover`, `danger-soft`  | red-700 / 900, 100   | l'unique couleur d'erreur, fond d'erreur   | 5,21:1 ou plus sur blanc, gray-100, red-100, dégradé                                                                                                               |
+| `focus`, `focus-inverse`            | blue-700, blanc      | contour de focus                           | 6,83 blanc, 5,55 indigo-100 ; inverse 4,95 ou plus sur les toasts (succès 4,95, avertissement 5,03, erreur 6,42, info 6,83)                                        |
 
 Preuves : `tests/e2e/focus-and-errors.test.ts` (même contour de focus à 4,5:1, même
 rouge pour toutes les erreurs, dans les quatre langues), `tests/e2e/field-borders.test.ts`
@@ -183,6 +184,14 @@ colorés (toasts). Interdits : `focus:ring-*`, `outline-none` dans un composant,
 en dur. Seule exception : `main`, cible programmatique (`tabindex="-1"`,
 `focus:outline-none`) qui reçoit le focus après une action, jamais au clavier.
 Un champ invalide a aussi une bordure `danger`.
+
+Sélection et focus sont deux choses (`UserList`) : la sélection est un fond, une barre et une
+coche, le focus est le contour ci-dessus, décalé de 2 px hors de la ligne. Après une sélection
+explicite, quand les deux panneaux sont l'un sous l'autre (moins de 48 rem, même seuil que la
+grille), le titre de la liste de tâches est amené dans la fenêtre et reçoit le focus (défilement
+immédiat sous `prefers-reduced-motion`) : le focus quitte la liste volontairement, parce que son
+résultat est plus bas ; côte à côte, rien ne bouge et le focus reste dans la liste
+d'utilisateurs (`reveal-tasks.ts`).
 
 Règles complémentaires ([focus-states](https://designmotionhq.com/patterns/focus-states)) : `:focus-visible` seulement ; l'ordre du DOM est
 l'ordre visuel ; dans une modale, le focus est piégé, Échap ferme et rend le focus au
@@ -320,7 +329,7 @@ Champ texte, e-mail ou zone de texte (`multiline`). Anatomie : libellé visible
 (`labelHidden` le réserve aux technologies d'assistance, pour les lignes d'édition),
 contrôle, message d'erreur. États : défaut, focus global, invalide (la présence de
 `error` donne `aria-invalid`, la bordure `danger` et `aria-describedby` vers
-`<id>-error`), `required`. Variante `compact` pour une ligne de liste. Après un
+`<id>-error`), `required`. Variante `compact` pour une ligne de liste. Option `autoGrow` (zone de texte seulement, désactivée par défaut) : la hauteur suit le contenu, à la saisie, au collage et quand la largeur change (le champ lui-même n'est pas observé, pour ne pas boucler) ; le titre d'une tâche en édition l'utilise (une ligne logique : Entrée valide, Maj+Entrée ne fait rien, un retour à la ligne collé devient une espace). Après un
 échec de validation, le focus va au premier champ invalide (`UserForm`,
 `TaskForm`). À éviter : un placeholder à la place du libellé, un message d'erreur
 non relié.
@@ -331,6 +340,34 @@ Une erreur combine couleur, icône et message (jamais une bordure rouge seule). 
 s'affiche dans le champ. Un champ désactivé n'est pas un champ en chargement, et le
 désactivé ne se simule pas par une simple opacité. L'anneau de focus atteint 3:1.
 **Cible** : états succès, chargement et icône d'erreur, absents aujourd'hui.
+
+### UserList
+
+Carte de la liste des utilisateurs, à part du formulaire de création (`UserForm` rend deux
+cartes), titre `h2`. Toute la ligne est un `button` (`aria-pressed`, `min-h-11`) : un clic sur
+sa marge sélectionne. Au repos un chevron, sélectionnée une coche (formes, pas seulement des
+couleurs) ; survol `surface-hover` (sous `@media (hover: hover)`). Sélectionnée = fond
+`surface-selected`, barre gauche de 4 px `primary` qui prend la place de 4 px de marge (le texte
+ne bouge pas) et coche. Ce n'est jamais un anneau : le contour de focus (voir « Focus ») reste
+le seul trait entourant la ligne, donc « sélectionné » et « focalisé » se distinguent. Ni pagination
+ni défilement interne pour l'instant (voir « Motifs à venir »). Les icônes sont des SVG en ligne,
+**temporaires** : à remplacer par `ui/Icon` (lot Iconoir). Preuve :
+`tests/unit/components/UserList.test.ts`, `tests/e2e/readable-lists.test.ts`.
+
+### TaskItem et ClampedText
+
+`TaskItem` est une ligne de tâche : case, texte, actions. En édition, la case et la suppression de
+la ligne éditée sont `disabled` (restent dans l'arbre d'accessibilité avec leur nom) : une tâche
+en cours de modification ne se coche ni ne se supprime. Les actions « Modifier » et « Supprimer »
+ont une cible de 44 px sur pointeur grossier (`pointer-coarse:min-h-11 pointer-coarse:min-w-11`,
+passés par `class`). **Cible** : mêmes icônes pour les deux actions (lot Iconoir).
+`ClampedText` limite la description à trois lignes (`line-clamp-3`) ; le bouton « Afficher
+plus / moins » n'existe que si le texte déborde (un pixel d'écart est un arrondi), reste
+disponible une fois déplié, et porte un nom propre à la ligne (« Afficher plus : {titre} »,
+qui commence par le texte visible, WCAG 2.5.3) avec `aria-expanded` et `aria-controls`. Le texte
+complet reste dans le DOM. La mesure se refait quand la largeur change. Preuve :
+`tests/unit/components/ClampedText.test.ts`, `tests/unit/components/TaskList.readable.test.ts`,
+`tests/e2e/readable-lists.test.ts`.
 
 ### Select
 
@@ -451,7 +488,7 @@ référence). La prévention (validation en ligne) vaut mieux que le message.
 
 ### États vides et chargement
 
-États vides en `text-subtle` (« Aucun utilisateur », « Aucune tâche »). Chargement :
+États vides en `text-subtle` (« Aucun utilisateur », « Aucune tâche »), suivis d'une ligne d'aide plus petite qui dit quoi faire (« Créez le premier avec le formulaire ci-dessus ») ; le panneau sans utilisateur choisi dit où choisir. Chargement :
 l'état discriminé `RequestStatus` ; le texte du bouton change pendant l'envoi, la
 page statistiques affiche « Chargement… ». Aucune requête de liste n'est lancée
 tant que le service est indisponible (`runWhenAvailable`), pour éviter une cascade
@@ -526,7 +563,7 @@ jamais la place habituelle du bouton de confirmation. La fenêtre d'annulation e
 Le bouton « Modifier » ouvre un formulaire dans la ligne : le focus va au champ
 titre, Échap annule sans appeler l'API, enregistrer ou annuler rend le focus au
 bouton « Modifier ». La case à cocher garde pour nom accessible le titre exact de la
-tâche, quel que soit son état. Preuve : `tests/unit/components/TaskForm.a11y.test.ts`.
+tâche, quel que soit son état ; pendant l'édition elle et la suppression de la ligne sont désactivées. Le champ titre grandit avec son texte (`autoGrow`) et Entrée enregistre (hors composition IME et Maj+Entrée). Preuve : `tests/unit/components/TaskForm.a11y.test.ts`.
 
 Règles complémentaires ([inline-editing](https://designmotionhq.com/patterns/inline-editing)) : la bascule ne décale rien (même police, même
 taille, même marge) ; Entrée valide, Échap annule ; le départ du champ (blur) se

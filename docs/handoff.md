@@ -13,7 +13,7 @@ est à sens unique et ne réécrit pas le DOM quand la valeur lue reste identiqu
 (vérifié par un test qui a d'abord fait échouer un correctif purement store,
 avant de corriger l'hypothèse). Le correctif agit directement sur l'élément
 DOM reçu par l'évènement `onchange` de la case
-(`src/lib/features/tasks/TaskForm.svelte`), et `toggleTask`
+(`src/lib/features/tasks/TaskList.svelte`, `handleToggleTask`), et `toggleTask`
 (`src/lib/features/tasks/store.ts`) retourne désormais `Promise<boolean>` pour
 que l'appelant sache s'il doit annuler son changement optimiste. Le point 1 de
 Q-01 (faire consommer `response.data` par `toggleTask`/`editTask`) reste
@@ -164,7 +164,7 @@ info « Task already deleted » : ce n'est pas une erreur (`isHandled` de
 notification n'ont lieu que si la tâche est encore dans la liste courante
 (double action, changement d'utilisateur pendant la requête : rien). Les autres
 404 (`USER_NOT_FOUND`, `ROUTE_NOT_FOUND`, sans code) restent des erreurs.
-`TaskForm` ferme l'édition si la tâche éditée a disparu. Tests à écrire par qa
+`TaskList` ferme l'édition si la tâche éditée a disparu (`handleEditTask`). Tests à écrire par qa
 après le lot C backend.
 
 ## Lot « accessibilité » (branche `fix/frontend-a11y`)

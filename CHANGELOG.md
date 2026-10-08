@@ -19,6 +19,17 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - The cross of the close and delete buttons is an Iconoir icon with a 1.5 px stroke
   (infrontend#53).
 
+### Changed
+
+- The user list is a card of its own; a whole row is clickable, shows a chevron, and the selected
+  user is marked by a fill, a bar and a check instead of a ring that looked like the keyboard
+  focus (infrontend#PR).
+- A task description is cut at three lines with a "Show more" button; while a task is edited,
+  its checkbox and delete button are disabled and the title field grows with its text; row
+  actions are 44 px on touch screens (infrontend#PR).
+- Choosing a user on a narrow screen scrolls to the task list; empty lists say what to do next
+  (infrontend#PR).
+
 ### Fixed
 
 - A long name, e-mail, title or description without spaces no longer widens the page or
