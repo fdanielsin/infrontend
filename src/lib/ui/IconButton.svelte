@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { HTMLButtonAttributes } from 'svelte/elements';
+	import Icon from '$lib/ui/Icon.svelte';
 
 	type Tone = 'danger' | 'inverse';
 
@@ -21,14 +22,5 @@
 </script>
 
 <button {type} class={[TONE_CLASSES[tone], className]} {...rest} aria-label={label}>
-	<svg
-		aria-hidden="true"
-		viewBox="0 0 20 20"
-		class="h-4 w-4"
-		fill="none"
-		stroke="currentColor"
-		stroke-width="2"
-	>
-		<path d="M5 5l10 10M15 5L5 15" />
-	</svg>
+	<Icon icon="xmark" size={16} />
 </button>

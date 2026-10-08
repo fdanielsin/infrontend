@@ -26,19 +26,22 @@ Les E2E de `tests/e2e/backend/` nécessitent un backend `inbackend` disponible s
 Les E2E d'accessibilité (`accessibility.test.ts`, axe avec les règles par
 défaut), de clavier (`keyboard-focus.test.ts`), de langues (`i18n.test.ts`), de
 focus et d'erreurs (`focus-and-errors.test.ts`), de bordures de champs
-(`field-borders.test.ts`) et de stabilité de page (`page-stability.test.ts`)
-mockent l'API avec `page.route` (`e2e/support/mock-api.ts`) et tournent sans
-backend ; `focus-and-errors.test.ts` et `field-borders.test.ts` mesurent le
-style calculé avec `e2e/support/contrast.ts` :
-`PUBLIC_API_URL=http://localhost:8080 bun x playwright test accessibility keyboard-focus i18n focus-and-errors field-borders page-stability --project=chromium`.
+(`field-borders.test.ts`), d'icônes (`icons.test.ts`) et de stabilité de page
+(`page-stability.test.ts`) mockent l'API avec `page.route` (`e2e/support/mock-api.ts`)
+et tournent sans backend ; `focus-and-errors.test.ts`, `field-borders.test.ts` et
+`icons.test.ts` mesurent le style calculé avec `e2e/support/contrast.ts` :
+`PUBLIC_API_URL=http://localhost:8080 bun x playwright test accessibility keyboard-focus i18n focus-and-errors field-borders icons page-stability --project=chromium`.
 Ces E2E tournent contre un build de production (`vite build` puis `vite preview`,
 port 4173, jamais réutilisé : un serveur déjà présent sur ce port fait échouer
 le lancement), pas contre `vite dev` : le client de développement recharge la page
 quand sa websocket HMR est perdue (par exemple quand la machine se fige), ce qui
 efface l'état d'un test en cours (`page-stability.test.ts` le vérifie). Le
 `webServer` de `playwright.config.ts` construit donc l'application avant les
-tests (`PUBLIC_API_URL` doit être défini, la valeur n'a pas d'effet avec l'API
-mockée).
+tests (`PUBLIC_API_URL` doit être défini ; avec l'API mockée la valeur n'a pas d'effet, sauf
+son port : Firefox et WebKit refusent un « bad port » du
+[Fetch Standard](https://fetch.spec.whatwg.org/#port-blocking) (9, par exemple) avant que
+`page.route` l'intercepte, et le bandeau « service indisponible » s'affiche partout ;
+`http://localhost:59999` est injoignable exprès sans être interdit).
 
 Machine saturée. Ne l'accuser que si deux signes se cumulent : un swap plein
 (`sysctl vm.swapusage`) et des échecs simultanés sur tous les workers (lancement
@@ -115,3 +118,12 @@ sans cette option, Vite résout le build serveur de Svelte même sous Vitest, et
 
 Chaque test de composant nettoie le DOM rendu (`cleanup()` dans un
 `afterEach`).
+
+Trois fichiers de `tests/unit/components/` sortent du moule jsdom pour les icônes :
+`Icon.server.test.ts` et `icon-bundle.test.ts` portent `// @vitest-environment node`
+(Vitest compile alors les composants pour le serveur : `render` de `svelte/server`
+produit le HTML du serveur) ; `icon-bundle.test.ts` lance un vrai `vite build` en
+mémoire (environ 10 s) pour prouver que seules les icônes importées sont embarquées ;
+`Icon.hydration.test.ts` hydrate, sous jsdom, le HTML figé dans
+`tests/unit/support/icon-server-markup.ts` (que le test serveur épingle), sans
+avertissement de désaccord.
