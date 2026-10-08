@@ -37,7 +37,7 @@ export class UserState {
 		const requestId = ++this.#selectionRequest;
 		const isCurrent = () => requestId === this.#selectionRequest;
 		this.selected = null;
-		this.#tasks.clear();
+		this.#tasks.clear(id);
 		const result = await this.status.run(() => api.getUser(id), {
 			fallbackMessage: m.error_fetch_user,
 			isCurrent

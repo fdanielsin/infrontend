@@ -15,8 +15,9 @@ export class TaskState {
 	readonly status: RequestStatus;
 
 	readonly #notifications: NotificationState;
-	// Whose tasks the list holds: a task created for someone else, whose answer comes late, is not
-	// added to it. Unknown (null) before the first load.
+	// Whose tasks the list is for, set as soon as a user is selected (before his tasks arrive): a
+	// task created for someone else, whose answer comes late, is never added to it. Null only
+	// while no user was ever selected, when there is no list to protect.
 	#listOwnerId: number | null = null;
 
 	constructor(notifications: NotificationState) {
@@ -24,9 +25,10 @@ export class TaskState {
 		this.status = new RequestStatus(notifications);
 	}
 
-	clear() {
+	// Empties the list for the user being selected, and makes him its owner from now on.
+	clear(ownerId: number | null = null) {
 		this.tasks = [];
-		this.#listOwnerId = null;
+		this.#listOwnerId = ownerId;
 	}
 
 	async load(userId: number, isCurrent: () => boolean) {
