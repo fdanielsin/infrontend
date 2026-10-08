@@ -639,7 +639,7 @@ de classes les fige : ne pas les remplacer par un jeton sans prévenir qa.
       sens 3:1, mesuré (`tests/e2e/support/contrast.ts`), pas estimé.
 - [ ] Cible d'au moins 24 px (`min-h-6 min-w-6`, WCAG 2.5.8).
 - [ ] Contour de focus global ; ni `outline-none`, ni `focus:ring-*`, ni rouge en dur.
-- [ ] Nom accessible stable ; pas d'`aria-label` qui change avec l'état.
+- [ ] Nom accessible stable ; pas d'`aria-label` qui change avec l'état. Exception assumée : le bouton « Afficher plus / moins » de `ClampedText` change de nom avec son état (« Afficher plus : {titre} » puis « Afficher moins : {titre} »), parce que son texte visible change (WCAG 2.5.3, le nom commence par le texte visible).
 - [ ] Erreurs de champ reliées (`aria-describedby`, `aria-invalid`).
 - [ ] Fonctionne à 320 px et à 200 % de zoom.
 - [ ] Textes dans les quatre fichiers `messages/*.json`, libellés longs testés.
