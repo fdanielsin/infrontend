@@ -35,47 +35,48 @@
 	}
 </script>
 
-<Card>
-	<h2 class="mb-4 text-xl font-bold">{m.users_create_heading()}</h2>
+<div class="space-y-6">
+	<Card>
+		<h2 class="mb-4 text-xl font-bold">{m.users_create_heading()}</h2>
 
-	{#if status.error}
-		<Alert class="mb-4">{status.error}</Alert>
-	{/if}
+		{#if status.error}
+			<Alert class="mb-4">{status.error}</Alert>
+		{/if}
 
-	<form
-		onsubmit={(e) => {
-			e.preventDefault();
-			void handleSubmit();
-		}}
-		class="space-y-4"
-	>
-		<div>
-			<TextField
-				id="name"
-				label={m.users_name_label()}
-				bind:value={name}
-				{@attach ref(refs, 'nameInput')}
-				required
-				error={fieldErrors.name ? validationMessage(fieldErrors.name) : undefined}
-			/>
-		</div>
+		<form
+			onsubmit={(e) => {
+				e.preventDefault();
+				void handleSubmit();
+			}}
+			class="space-y-4"
+		>
+			<div>
+				<TextField
+					id="name"
+					label={m.users_name_label()}
+					bind:value={name}
+					{@attach ref(refs, 'nameInput')}
+					required
+					error={fieldErrors.name ? validationMessage(fieldErrors.name) : undefined}
+				/>
+			</div>
 
-		<div>
-			<TextField
-				id="email"
-				type="email"
-				label={m.users_email_label()}
-				bind:value={email}
-				{@attach ref(refs, 'emailInput')}
-				required
-				error={fieldErrors.email ? validationMessage(fieldErrors.email) : undefined}
-			/>
-		</div>
+			<div>
+				<TextField
+					id="email"
+					type="email"
+					label={m.users_email_label()}
+					bind:value={email}
+					{@attach ref(refs, 'emailInput')}
+					required
+					error={fieldErrors.email ? validationMessage(fieldErrors.email) : undefined}
+				/>
+			</div>
 
-		<Button type="submit" disabled={status.loading}>
-			{status.loading ? m.users_creating() : m.users_create_button()}
-		</Button>
-	</form>
-
+			<Button type="submit" disabled={status.loading}>
+				{status.loading ? m.users_creating() : m.users_create_button()}
+			</Button>
+		</form>
+	</Card>
 	<UserList />
-</Card>
+</div>

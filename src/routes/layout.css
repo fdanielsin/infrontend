@@ -9,6 +9,12 @@
 	/* Surfaces and lines */
 	--color-surface: var(--color-white);
 	--color-surface-muted: var(--color-gray-100);
+	--color-surface-hover: var(
+		--color-gray-200
+	); /* row under the pointer: name 16.96:1, e-mail 6.10:1 */
+	--color-surface-selected: var(
+		--color-blue-100
+	); /* selected row: name 17.21:1, e-mail 6.19:1, bar (primary) 4.30:1, check 6.19:1 */
 	--color-line: var(--color-gray-300);
 	--color-field-border: var(
 		--color-gray-500
