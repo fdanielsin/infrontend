@@ -16,7 +16,7 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - A long name, e-mail, title or description without spaces no longer widens the page or
   overlaps the panels; the page background covers the whole page; on a narrow screen the task
-  actions move under the text and the page margins shrink.
+  actions move under the text and the page margins shrink (infrontend#47).
 
 ## [1.3.0] - 2026-10-08
 
