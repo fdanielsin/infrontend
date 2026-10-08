@@ -21,6 +21,13 @@ export interface Notification {
 	action?: ToastAction;
 }
 
+export interface ErrorOptions {
+	// A server-side reference the user can copy for a support request.
+	reference?: string | undefined;
+	// Stays until closed, instead of leaving after ERROR_NOTIFICATION_DURATION.
+	persistent?: boolean;
+}
+
 export interface ToastOptions {
 	// Milliseconds before the toast leaves by itself; 0 keeps it until it is closed.
 	duration?: number;
@@ -31,6 +38,7 @@ export interface ToastOptions {
 }
 
 const DEFAULT_DURATION = 3000;
+const PERSISTENT = 0;
 
 export const ERROR_NOTIFICATION_DURATION = 6000;
 // Long enough for a screen reader to read it; short enough not to leave a stale sentence for a
@@ -98,8 +106,20 @@ export class NotificationState {
 		this.#announcementTimeout = setTimeout(() => (this.announcement = null), ANNOUNCEMENT_LIFETIME);
 	}
 
-	notifyError(message: string, reference?: string) {
-		return this.add(message, 'error', { duration: ERROR_NOTIFICATION_DURATION, reference });
+	// A persistent error has no end of its own. The same one is not shown twice at once (a list that
+	// retries would pile them up); two answers with different references stay apart.
+	notifyError(message: string, { reference, persistent = false }: ErrorOptions = {}) {
+		if (!persistent) {
+			return this.add(message, 'error', { duration: ERROR_NOTIFICATION_DURATION, reference });
+		}
+		const shown = this.items.find(
+			(notification) =>
+				notification.type === 'error' &&
+				notification.duration === PERSISTENT &&
+				notification.message === message &&
+				notification.reference === reference
+		);
+		return shown?.id ?? this.add(message, 'error', { duration: PERSISTENT, reference });
 	}
 
 	// The confirmation is a status toast, announced politely; the reference stays selectable

@@ -98,6 +98,157 @@ describe('notification store', () => {
 		expect(notifications.items).toEqual([]);
 	});
 
+	describe('notifyError, persistent or not', () => {
+		it('keeps a persistent error until it is closed, however long it takes (happy path, WCAG 2.2.1)', () => {
+			// GIVEN / WHEN: A persistent error with its server reference.
+			const id = notifications.notifyError('Internal server error', {
+				reference: 'req-1',
+				persistent: true
+			});
+
+			// THEN: No end of its own: duration 0, and nothing happens in a day.
+			expect(notifications.items).toEqual([
+				{ id, message: 'Internal server error', type: 'error', duration: 0, reference: 'req-1' }
+			]);
+			vi.advanceTimersByTime(24 * 60 * 60 * 1000);
+			expect(notifications.items).toHaveLength(1);
+			expect(vi.getTimerCount()).toBe(0);
+
+			// WHEN: The user closes it.
+			notifications.remove(id);
+
+			// THEN: It is gone.
+			expect(notifications.items).toEqual([]);
+		});
+
+		it('still lets a non-persistent error expire at exactly 6 s, with its reference (limit)', () => {
+			// GIVEN / WHEN: A transient error with a reference.
+			const id = notifications.notifyError('Invalid data', {
+				reference: 'req-2',
+				persistent: false
+			});
+
+			// THEN: 6000 ms like before.
+			expect(notifications.items).toEqual([
+				{ id, message: 'Invalid data', type: 'error', duration: 6000, reference: 'req-2' }
+			]);
+			vi.advanceTimersByTime(5999);
+			expect(notifications.items).toHaveLength(1);
+			vi.advanceTimersByTime(1);
+			expect(notifications.items).toEqual([]);
+		});
+
+		it('treats an error without options as transient (boundary)', () => {
+			// GIVEN / WHEN: The old call, without options.
+			notifications.notifyError('Email already in use');
+			notifications.notifyError('Email already in use', {});
+
+			// THEN: Both last 6 s, and only the first was kept: it is not persistent.
+			expect(notifications.items.map((toast) => toast.duration)).toEqual([6000, 6000]);
+		});
+
+		it('pauses and resumes nothing for a persistent error: no timer to stop (boundary)', () => {
+			// GIVEN: A persistent error.
+			const id = notifications.notifyError('Broken', { persistent: true });
+
+			// WHEN: The pointer enters and leaves it.
+			notifications.pause(id);
+			notifications.resume(id);
+
+			// THEN: No timer was created, the error is still there.
+			expect(vi.getTimerCount()).toBe(0);
+			expect(notifications.items).toHaveLength(1);
+		});
+
+		it('shows a persistent error once when the same one comes again without a reference (limit)', () => {
+			// GIVEN: A network error, kept.
+			const first = notifications.notifyError('Failed to fetch', { persistent: true });
+
+			// WHEN: The same message comes three more times (a list that retries).
+			const again = [1, 2, 3].map(() =>
+				notifications.notifyError('Failed to fetch', { persistent: true })
+			);
+
+			// THEN: One toast; each call gives back its id.
+			expect(notifications.items.map((toast) => toast.id)).toEqual([first]);
+			expect(again).toEqual([first, first, first]);
+		});
+
+		it('shows two persistent errors with the same message and different references (limit)', () => {
+			// GIVEN / WHEN: Two 500 answers, each with its own reference.
+			notifications.notifyError('Internal server error', { reference: 'req-1', persistent: true });
+			notifications.notifyError('Internal server error', { reference: 'req-2', persistent: true });
+
+			// THEN: Both stay: a person quoting a reference to support needs each of them.
+			expect(notifications.items.map((toast) => toast.reference)).toEqual(['req-1', 'req-2']);
+		});
+
+		it('shows two persistent errors with the same reference but another message (limit)', () => {
+			// GIVEN / WHEN: Same reference, two messages.
+			notifications.notifyError('One', { reference: 'req-1', persistent: true });
+			notifications.notifyError('Two', { reference: 'req-1', persistent: true });
+
+			// THEN: Two toasts.
+			expect(notifications.items.map((toast) => toast.message)).toEqual(['One', 'Two']);
+		});
+
+		it('does not merge a persistent error with one that has a reference and one that has not (boundary)', () => {
+			// GIVEN / WHEN: The same message, once without reference, once with.
+			notifications.notifyError('Internal server error', { persistent: true });
+			notifications.notifyError('Internal server error', { reference: 'req-1', persistent: true });
+
+			// THEN: Two toasts.
+			expect(notifications.items).toHaveLength(2);
+		});
+
+		it('shows the error again once the first one was closed (limit)', () => {
+			// GIVEN: A persistent error, closed by the user.
+			const first = notifications.notifyError('Failed to fetch', { persistent: true });
+			notifications.remove(first);
+
+			// WHEN: The same error comes again.
+			const second = notifications.notifyError('Failed to fetch', { persistent: true });
+
+			// THEN: It is shown again, as a new toast.
+			expect(second).not.toBe(first);
+			expect(notifications.items.map((toast) => toast.id)).toEqual([second]);
+		});
+
+		it('does not merge transient errors: each one lasts its own 6 s (boundary)', () => {
+			// GIVEN / WHEN: The same transient error twice.
+			notifications.notifyError('Email already in use');
+			vi.advanceTimersByTime(3000);
+			notifications.notifyError('Email already in use');
+
+			// THEN: Two toasts, the first leaving 3 s before the second.
+			expect(notifications.items).toHaveLength(2);
+			vi.advanceTimersByTime(3000);
+			expect(notifications.items).toHaveLength(1);
+		});
+
+		it('does not merge a persistent error with a transient one of the same message (boundary)', () => {
+			// GIVEN: A transient error still on screen.
+			notifications.notifyError('Failed to fetch');
+
+			// WHEN: The same message arrives as persistent.
+			notifications.notifyError('Failed to fetch', { persistent: true });
+
+			// THEN: The persistent one is shown too: the other would leave by itself.
+			expect(notifications.items.map((toast) => toast.duration)).toEqual([6000, 0]);
+		});
+
+		it('does not merge an error with a persistent info toast of the same text (boundary)', () => {
+			// GIVEN: A persistent info toast.
+			notifications.add('Failed to fetch', 'info', { duration: 0 });
+
+			// WHEN: The same text arrives as a persistent error.
+			notifications.notifyError('Failed to fetch', { persistent: true });
+
+			// THEN: The error is shown: an error is announced as an alert.
+			expect(notifications.items.map((toast) => toast.type)).toEqual(['info', 'error']);
+		});
+	});
+
 	it('defaults to an info notification of 3 s (happy path)', () => {
 		// GIVEN / WHEN: A notification is added without type nor duration.
 		const id = notifications.add('Hello');

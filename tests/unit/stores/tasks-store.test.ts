@@ -286,7 +286,11 @@ describe('tasks store', () => {
 	it('publishes a failed toggle as an error notification (sad path, QM-02)', async () => {
 		// GIVEN: The API refuses the toggle.
 		app.tasks.tasks = [task];
-		vi.mocked(api.updateTask).mockResolvedValue({ success: false, error: 'Task not found' });
+		vi.mocked(api.updateTask).mockResolvedValue({
+			success: false,
+			error: 'Task not found',
+			status: 404
+		});
 
 		// WHEN: The task is toggled.
 		await app.tasks.toggle(task.id, true);

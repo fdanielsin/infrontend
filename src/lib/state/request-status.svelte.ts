@@ -1,6 +1,7 @@
 import type { ApiFailure, ApiResult } from '$lib/api/client';
 import { failureMessage } from '$lib/i18n/errors';
 import { m } from '$lib/paraglide/messages';
+import { isPersistentFailure } from './failure-persistence';
 import type { NotificationState } from './notification.svelte';
 
 interface RunOptions {
@@ -49,7 +50,10 @@ export class RequestStatus {
 			if (!result.success && !isHandled(result)) {
 				const message = failureMessage(result, fallbackMessage);
 				this.error = message;
-				this.#notifications.notifyError(message, result.requestId);
+				this.#notifications.notifyError(message, {
+					reference: result.requestId,
+					persistent: isPersistentFailure(result)
+				});
 			}
 			if (tracksLoading) this.loading = false;
 		}

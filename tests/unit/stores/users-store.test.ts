@@ -336,7 +336,8 @@ describe('users store', () => {
 			vi.useFakeTimers();
 			vi.mocked(api.createUser).mockResolvedValue({
 				success: false,
-				error: 'Email already in use'
+				error: 'Email already in use',
+				status: 409
 			});
 
 			// WHEN: The user is created.

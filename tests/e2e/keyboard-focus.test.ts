@@ -179,11 +179,12 @@ test.describe('Keyboard and focus (mocked API)', () => {
 		test('a hovered toast stays, then leaves after the time left (happy path)', async ({
 			page
 		}) => {
-			// GIVEN: A fake clock and an error toast.
+			// GIVEN: A fake clock and an error toast. A 400, not a 500: a server error stays until it
+			// is closed (tests/e2e/persistent-errors.test.ts), and this test is about the time left.
 			await page.clock.install();
 			const api = await mockApi(page, { users: [ada], tasks: adaTasks });
 			await openHomeWithUser(page);
-			api.failNext('PUT /tasks/{id}', { status: 500, error: 'Database unavailable' });
+			api.failNext('PUT /tasks/{id}', { status: 400, error: 'Database unavailable' });
 			await page.getByRole('checkbox', { name: 'Review', exact: true }).click();
 			const toast = page.getByRole('alert').getByText('Database unavailable');
 			await expect(toast).toBeVisible();

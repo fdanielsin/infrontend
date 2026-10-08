@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ApiResult } from '$lib/api/client';
 import { AppState } from '$lib/state/app-state.svelte';
 import { NotificationState } from '$lib/state/notification.svelte';
@@ -59,6 +59,94 @@ describe('createRequestStatus', () => {
 		expect(result).toEqual({ success: false, error: 'Unknown error', kind: 'unknown' });
 		expect(status.error).toBe('Unknown error');
 		expect(notifications.items).toEqual([expect.objectContaining({ message: 'Unknown error' })]);
+	});
+
+	describe('how long the error toast stays', () => {
+		const run = (status: RequestStatus, result: ApiResult<number>) =>
+			status.run(() => Promise.resolve(result), { fallbackMessage: () => 'fallback' });
+
+		it.each([
+			['a 500 with a reference', { status: 500, requestId: 'req-1' }],
+			['a 503', { status: 503, code: 'DATABASE_UNAVAILABLE' }],
+			['a network error', {}],
+			['a timeout', { kind: 'timeout' as const }],
+			['a malformed answer', { status: 200, kind: 'invalid_response' as const }]
+		])('keeps the toast of %s until it is closed (happy path)', async (_name, fields) => {
+			// GIVEN / WHEN: The failure goes through a request.
+			vi.useFakeTimers();
+			const status = new RequestStatus(notifications);
+			await run(status, { success: false, error: 'Server said no', ...fields });
+
+			// THEN: One error toast with no end of its own; the inline error is shown as before.
+			expect(notifications.items).toEqual([
+				expect.objectContaining({ type: 'error', duration: 0 })
+			]);
+			vi.advanceTimersByTime(60 * 60 * 1000);
+			expect(notifications.items).toHaveLength(1);
+			expect(status.error).not.toBeNull();
+			vi.useRealTimers();
+		});
+
+		it.each([
+			['a 400', { status: 400 }],
+			['a 404', { status: 404 }],
+			['a 409', { status: 409 }],
+			['a 499', { status: 499 }]
+		])('lets the toast of %s leave after 6 s (limit)', async (_name, fields) => {
+			// GIVEN / WHEN: A client error goes through a request.
+			vi.useFakeTimers();
+			await run(new RequestStatus(notifications), {
+				success: false,
+				error: 'Refused',
+				...fields
+			});
+
+			// THEN: 6000 ms, like before.
+			expect(notifications.items).toEqual([
+				expect.objectContaining({ type: 'error', duration: 6000 })
+			]);
+			vi.advanceTimersByTime(6000);
+			expect(notifications.items).toEqual([]);
+			vi.useRealTimers();
+		});
+
+		it('keeps the reference of a persistent toast (happy path)', async () => {
+			// GIVEN / WHEN: A 500 with a reference.
+			await run(new RequestStatus(notifications), {
+				success: false,
+				error: 'Boom',
+				status: 500,
+				requestId: 'req-9'
+			});
+
+			// THEN: The toast carries it, to copy for support.
+			expect(notifications.items).toEqual([
+				expect.objectContaining({ duration: 0, reference: 'req-9' })
+			]);
+		});
+
+		it('shows one toast when the same network failure repeats (boundary)', async () => {
+			// GIVEN / WHEN: Two requests fail the same way, on the same status.
+			const status = new RequestStatus(notifications);
+			await run(status, { success: false, error: 'Failed to fetch' });
+			await run(status, { success: false, error: 'Failed to fetch' });
+
+			// THEN: One toast.
+			expect(notifications.items).toHaveLength(1);
+		});
+
+		it('keeps the toast of an exception thrown by the action, which is no answer (exception)', async () => {
+			// GIVEN / WHEN: The action throws.
+			await new RequestStatus(notifications).run(
+				(): Promise<ApiResult<number>> => Promise.reject(new TypeError('Failed to fetch')),
+				{ fallbackMessage: () => 'fallback' }
+			);
+
+			// THEN: Persistent, as a network error.
+			expect(notifications.items).toEqual([
+				expect.objectContaining({ message: 'Failed to fetch', duration: 0 })
+			]);
+		});
 	});
 });
 

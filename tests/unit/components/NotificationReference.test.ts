@@ -38,7 +38,7 @@ describe('notification reference', () => {
 	});
 
 	it('shows the reference of an error with a copy button (happy path)', () => {
-		app.notifications.notifyError('Internal server error', REFERENCE);
+		app.notifications.notifyError('Internal server error', { reference: REFERENCE });
 
 		const view = renderWithApp(app, Notification);
 
@@ -57,7 +57,7 @@ describe('notification reference', () => {
 	});
 
 	it('has two stops in an error with a reference: copy, then dismiss, in that order (happy path)', () => {
-		app.notifications.notifyError('Internal server error', REFERENCE);
+		app.notifications.notifyError('Internal server error', { reference: REFERENCE });
 
 		const view = renderWithApp(app, Notification);
 
@@ -68,7 +68,7 @@ describe('notification reference', () => {
 	it('copies the reference and confirms in the status region (happy path)', async () => {
 		const writeText = vi.fn().mockResolvedValue(undefined);
 		stubClipboard(writeText);
-		app.notifications.notifyError('Internal server error', REFERENCE);
+		app.notifications.notifyError('Internal server error', { reference: REFERENCE });
 		const view = renderWithApp(app, Notification);
 
 		await fireEvent.click(view.getByRole('button', { name: /Copy reference/ }));
@@ -80,7 +80,7 @@ describe('notification reference', () => {
 
 	it('says the copy is impossible when the clipboard refuses, without an exception (sad path)', async () => {
 		stubClipboard(() => Promise.reject(new DOMException('denied', 'NotAllowedError')));
-		app.notifications.notifyError('Internal server error', REFERENCE);
+		app.notifications.notifyError('Internal server error', { reference: REFERENCE });
 		const view = renderWithApp(app, Notification);
 
 		await fireEvent.click(view.getByRole('button', { name: /Copy reference/ }));
@@ -92,7 +92,7 @@ describe('notification reference', () => {
 
 	it('says the copy is impossible when there is no clipboard (exception)', async () => {
 		vi.stubGlobal('navigator', { ...navigator, clipboard: undefined });
-		app.notifications.notifyError('Internal server error', REFERENCE);
+		app.notifications.notifyError('Internal server error', { reference: REFERENCE });
 		const view = renderWithApp(app, Notification);
 
 		await fireEvent.click(view.getByRole('button', { name: /Copy reference/ }));
@@ -101,7 +101,7 @@ describe('notification reference', () => {
 	});
 
 	it('keeps the reference selectable as a whole (limit)', () => {
-		app.notifications.notifyError('Internal server error', REFERENCE);
+		app.notifications.notifyError('Internal server error', { reference: REFERENCE });
 
 		const view = renderWithApp(app, Notification);
 
@@ -109,8 +109,8 @@ describe('notification reference', () => {
 	});
 
 	it('gives the focus to the dismiss button of the next toast, not to its copy button (boundary)', async () => {
-		app.notifications.notifyError('First', REFERENCE);
-		app.notifications.notifyError('Second', 'second-ref');
+		app.notifications.notifyError('First', { reference: REFERENCE });
+		app.notifications.notifyError('Second', { reference: 'second-ref' });
 		const view = renderWithApp(app, Notification);
 		const [firstDismiss, secondDismiss] = view.getAllByRole('button', {
 			name: 'Dismiss notification'
@@ -124,7 +124,7 @@ describe('notification reference', () => {
 
 	it('keeps the reference on a long text without leaving the toast (limit)', () => {
 		const long = 'a'.repeat(64);
-		app.notifications.notifyError('Internal server error', long);
+		app.notifications.notifyError('Internal server error', { reference: long });
 
 		const view = renderWithApp(app, Notification);
 
