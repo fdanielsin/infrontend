@@ -230,72 +230,10 @@ Un commentaire affirmant une propriété durable doit être garanti par un type
 ou par un test. Sinon, le commentaire doit expliquer une raison, une limite ou
 un piège sans présenter cette information comme une garantie.
 
-## Design system
+## Design system et accessibilité
 
-- Les jetons vivent dans le bloc `@theme` de `src/routes/layout.css` : couleurs
-  sémantiques (`surface`, `line`, `field-border`, `muted`, `primary`, `danger`, `focus`…), rayons
-  (`control`, `card`) et ombres (`card`, `card-raised`). Un jeton nomme une valeur
-  déjà utilisée (une teinte de palette Tailwind) ; ses ratios de contraste validés
-  sont en commentaire. On ajoute un jeton quand une valeur est utilisée deux fois
-  ou plus, jamais par anticipation.
-- Les composants de `src/lib/ui/` (`Button`, `IconButton`, `Card`, `TextField`,
-  `Select`, `Alert`, `ToastItem`) portent leur accessibilité : nom accessible
-  obligatoire (`label` de `IconButton`, `label` de `TextField` et `Select`), cible
-  de 24 px, `aria-invalid` et `aria-describedby` de `TextField`. Les libellés
-  arrivent déjà traduits en props : un composant n'a de texte propre que son
-  libellé d'accessibilité (`ToastItem`).
-- Les classes Tailwind d'un composant sont des chaînes complètes (pas de
-  concaténation), sinon Tailwind ne les trouve pas. Les `{@attach}` et attributs
-  posés sur un composant passent par `...rest` jusqu'à l'élément.
-- Un test qui vérifie des noms de classes (ex. la sélection d'un utilisateur)
-  fige ces classes : ne pas les remplacer par un jeton sans le dire à qa.
-- Focus et erreurs passent par les jetons : un seul contour de focus global
-  (`--color-focus`, règle `:focus-visible` de `layout.css`, `--color-focus-inverse`
-  sur les fonds colorés) et une seule couleur d'erreur (`--color-danger`). Pas de
-  `focus:ring-*`, de `outline-none` ni de rouge en dur dans un composant ; un
-  champ invalide a aussi une bordure `danger`. La bordure d'un champ (`TextField`,
-  `Select`) est `field-border` (3:1 minimum, WCAG 1.4.11) ; `line` reste pour les
-  cadres de cartes et séparateurs. Les toasts sont en bas ; la hauteur mesurée de
-  la pile (`--toast-stack-height`, publiée par `Notification`) est réservée par
-  `scroll-padding-bottom` et `padding-bottom` : un contrôle focalisé ne reste jamais dessous.
-  Un gestionnaire `focusin` de `Notification` termine le travail : Chromium ne remonte pas un
-  contrôle déjà partiellement visible, donc il le défile (instantanément) au-dessus de la pile.
-
-## Accessibilité (WCAG 2.2 AA)
-
-- Un contrôle a un nom accessible stable : label visible, jamais un
-  `aria-label` qui change avec l'état (case à cocher = titre de la tâche).
-- Un bouton d'icône a un `aria-label` et une icône `aria-hidden` ; toute cible
-  fait au moins 24 px (`min-h-6 min-w-6`).
-- Les erreurs de champ sont reliées par `aria-describedby` et `aria-invalid` ;
-  après un échec de validation, le focus va au premier champ invalide.
-- Après une action qui retire l'élément focalisé (suppression, fermeture d'une
-  édition, tâche disparue du serveur à la coche, à l'édition ou à la
-  suppression), le focus va à un endroit logique (titre de la liste ou bouton
-  d'origine), jamais au `body`. Échap annule une édition. Fermer un toast
-  qui avait le focus (mesuré avant la suppression) le déplace vers le bouton de fermeture du toast voisin (suivant, sinon
-  précédent), sinon vers l'élément qui l'avait avant l'entrée dans les toasts,
-  sinon vers `main` (`tabindex="-1"`) ; un toast fermé à la souris sans
-  focus (Safari) laisse le focus où il est.
-- Les notifications vivent dans deux régions persistantes : `role="status"`
-  (info, succès, avertissement) et `role="alert"` (erreur). Un toast se met en
-  pause au survol et au focus et peut être fermé. Les bannières d'erreur en
-  ligne n'ont pas de rôle : une seule annonce, par le toast.
-  La pile n'est une région nommée (`notifications_region`) que tant qu'il y a des
-  toasts : sans eux, pas de repère vide ; les régions `status` et `alert`
-  qu'elle contient restent rendues en permanence, vides, pour que l'annonce
-  suivante soit lue. Un bouton de fermeture
-  focalisé est ramené entièrement dans la pile par `scrollIntoView({ block: 'nearest' })`
-  (Firefox sous Linux le laissait rogné de 4 px, hors du contour de focus).
-- Contraste texte 4,5:1 minimum : teintes 700 sur fond coloré. Le texte posé
-  sur le dégradé de la page n'est pas mesurable par axe (« incomplet ») ; il a
-  été calculé à la main (> 6:1).
-- Les émojis décoratifs sont `aria-hidden` ; le contenu en français de la page
-  stats porte `lang="fr"`.
-- Animations désactivées avec `prefers-reduced-motion`.
-- Limite connue : le bouton d'envoi est `disabled` pendant une requête, ce qui
-  fait perdre le focus à qui valide au bouton ; non corrigé volontairement (les
-  tests s'appuient sur `disabled`, gain faible).
+Jetons, composants de `src/lib/ui/`, règles de focus, de contraste, de notifications
+et d'accessibilité (WCAG 2.2 AA) : [design-system.md](./design-system.md).
 
 ## Internationalisation
 
@@ -335,10 +273,7 @@ un piège sans présenter cette information comme une garantie.
   déclarera dans le contrat (lot api-i18n).
 - Nombres : `formatNumber` (`Intl.NumberFormat` de la langue active), valeurs
   CLDR telles quelles.
-- Sélecteur : `<select>` natif avec label visible traduit ; chaque option porte
-  sa langue en `lang` et son nom dans sa propre langue. Il est en haut de chaque
-  page (dans le flux, rien ne le chevauche à 320 px de large ni à 200 % de zoom) ; le
-  focus reste sur lui à la bascule.
+- Sélecteur de langue : voir [design-system.md](./design-system.md#languageswitcher).
 
 ## Références
 

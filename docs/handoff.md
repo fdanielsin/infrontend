@@ -167,8 +167,8 @@ après le lot C backend.
 
 ## Lot « accessibilité » (branche `fix/frontend-a11y`)
 
-Audit et correctifs WCAG 2.2 AA : voir `conventions.md` (section
-Accessibilité) pour les règles. Mesuré avant/après avec axe (Chromium, API
+Audit et correctifs WCAG 2.2 AA : voir `design-system.md` pour les
+règles. Mesuré avant/après avec axe (Chromium, API
 mockée) : avant, 1 violation `color-contrast` (3,21:1 bouton « Add Task » ; 4,39:1
 titre barré ; 3,8:1 et 3,76:1 toasts erreur/info) et `document-title` sur la page
 stats ; après, 0 violation sur l'accueil, l'utilisateur sélectionné, l'édition,
@@ -214,8 +214,7 @@ Traductions FR, DE et ES rédigées par l'agent : relecture humaine à prévoir.
 Jetons dans `@theme` (`src/routes/layout.css`) et sept composants dans
 `src/lib/ui/` (`Button`, `IconButton`, `Card`, `TextField`, `Select`, `Alert`,
 `ToastItem`) ; les écrans les utilisent, sans changement de rendu ni de
-comportement (aucun test modifié). Règles : `conventions.md`, section Design
-system. Preuve d'apparence : captures, styles calculés et arbres d'accessibilité
+comportement (aucun test modifié). Règles : `design-system.md`. Preuve d'apparence : captures, styles calculés et arbres d'accessibilité
 avant/après par qa-front (référence prise sur `52cd2dd`). Restent hors lot : le
 focus uniforme des champs et l'unification des couleurs d'erreur, qui sont des
 changements visibles à proposer à part.

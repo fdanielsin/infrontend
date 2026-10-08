@@ -7,7 +7,7 @@
 	}
 
 	// An inline error banner. It has no ARIA role on purpose: the error is announced once, by its
-	// toast (see conventions.md).
+	// toast (see design-system.md).
 	let { class: className, children, ...rest }: Props = $props();
 </script>
 

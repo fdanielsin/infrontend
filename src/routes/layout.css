@@ -12,13 +12,13 @@
 	--color-line: var(--color-gray-300);
 	--color-field-border: var(
 		--color-gray-500
-	); /* WCAG 1.4.11: 4.84:1 on white, 4.39:1 on gray-100, 4.16:1 on the page gradient */
+	); /* WCAG 1.4.11: 4.84:1 on white, 4.39:1 on gray-100, 3.93:1 at worst on the page gradient (indigo-100 end, 4.44:1 on blue-50) */
 	--color-disabled: var(--color-gray-400);
 
 	/* Text on a white surface */
 	--color-label: var(--color-gray-700);
 	--color-muted: var(--color-gray-600); /* 7.56:1 */
-	--color-subtle: var(--color-gray-500); /* 4.83:1 */
+	--color-subtle: var(--color-gray-500); /* 4.84:1 */
 
 	/* Actions: white text on these backgrounds reaches 4.5:1 or more */
 	--color-primary: var(--color-blue-600);
@@ -36,7 +36,7 @@
 
 	/* Focus: the one outline of the interface (3:1 or more on white, gray-100, blue-100 and the page gradient) */
 	--color-focus: var(--color-blue-700); /* 5.55:1 on indigo-100, 6.83:1 on white */
-	--color-focus-inverse: var(--color-white); /* on the colored toasts: 5.02:1 or more */
+	--color-focus-inverse: var(--color-white); /* on the colored toasts: 4.95:1 or more */
 
 	/* Radii and shadows */
 	--radius-control: 0.25rem;
