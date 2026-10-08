@@ -10,6 +10,7 @@
 	import { zodIssuesToFieldErrors } from '$lib/validation/field-errors';
 	import { isTaskOrder, sortTasks, type TaskOrder } from './sort-tasks';
 	import { focusFirstInvalidField, TASK_FIELDS, type FieldErrors } from './task-fields';
+	import { revealTasks } from './reveal-tasks';
 	import TaskItem from './TaskItem.svelte';
 
 	const { tasks, taskOrder, locale, notifications } = getAppState();
@@ -163,11 +164,17 @@
 <svelte:window onkeydown={cancelEditingOnEscape} />
 
 <div>
-	<h3 {@attach ref(refs, 'tasksHeading')} tabindex="-1" class="mb-3 font-semibold">
+	<h3
+		{@attach ref(refs, 'tasksHeading')}
+		{@attach revealTasks}
+		tabindex="-1"
+		class="mb-3 font-semibold"
+	>
 		{m.tasks_list_heading({ count: tasks.tasks.length })}
 	</h3>
 	{#if tasks.tasks.length === 0}
 		<p class="text-subtle">{m.tasks_empty()}</p>
+		<p class="mt-1 text-sm text-subtle">{m.tasks_empty_hint()}</p>
 	{:else}
 		{#if tasks.tasks.length > 1}
 			<div class="mb-3">

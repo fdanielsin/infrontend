@@ -8,6 +8,8 @@
 	import type { Task } from '$lib/api/client';
 	import { validationMessage } from '$lib/validation/schemas';
 	import type { FieldErrors } from './task-fields';
+	import ClampedText from './ClampedText.svelte';
+	import { oneLine, submitOnEnter } from './title-field';
 
 	type EditRefs = Partial<
 		Record<'editForm' | 'editTitleInput' | 'editDescriptionInput', HTMLElement>
@@ -42,6 +44,9 @@
 		onsave: () => void;
 		oncancel: () => void;
 	} = $props();
+
+	// A 44 px target on touch screens, the smaller size kept for a fine pointer.
+	const TOUCH_TARGET = 'pointer-coarse:min-h-11 pointer-coarse:min-w-11';
 </script>
 
 <li
@@ -53,6 +58,7 @@
 		checked={task.completed}
 		onchange={(event) => ontoggle(event.currentTarget)}
 		aria-label={editing ? task.title : undefined}
+		disabled={editing}
 		class="mt-1 h-4 w-4"
 	/>
 	{#if editing}
@@ -67,10 +73,21 @@
 			<TextField
 				compact
 				labelHidden
+				multiline
+				autoGrow
+				rows={1}
 				id={`edit-title-${task.id}`}
 				errorId={`edit-title-error-${task.id}`}
 				label={m.tasks_title_label()}
 				bind:value={editingTitle}
+				onkeydown={submitOnEnter}
+				oninput={(event: Event & { currentTarget: HTMLElement }) => {
+					const field = event.currentTarget;
+					if (!(field instanceof HTMLTextAreaElement)) return;
+					const title = oneLine(field.value);
+					if (title !== field.value) field.value = title;
+					editingTitle = title;
+				}}
 				{@attach focusOnMount}
 				{@attach ref(refs, 'editTitleInput')}
 				error={editErrors.title ? validationMessage(editErrors.title) : undefined}
@@ -104,7 +121,7 @@
 			>
 				{task.title}
 			</label>
-			<p class="text-sm text-muted">{task.description}</p>
+			<ClampedText id={`task-description-${task.id}`} text={task.description} title={task.title} />
 		</div>
 	{/if}
 	<div class="col-start-2 flex items-center gap-2 @md:col-start-3 @md:row-start-1">
@@ -114,10 +131,16 @@
 				{@attach registerEditButton(task.id)}
 				onclick={onedit}
 				aria-label={m.tasks_edit_named({ title: task.title })}
+				class={TOUCH_TARGET}
 			>
 				{m.tasks_edit()}
 			</Button>
 		{/if}
-		<IconButton label={m.tasks_delete_named({ title: task.title })} onclick={onremove} />
+		<IconButton
+			label={m.tasks_delete_named({ title: task.title })}
+			onclick={onremove}
+			disabled={editing}
+			class={[TOUCH_TARGET, 'disabled:cursor-not-allowed disabled:opacity-50']}
+		/>
 	</div>
 </li>

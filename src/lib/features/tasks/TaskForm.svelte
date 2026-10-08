@@ -55,6 +55,7 @@
 {#if !user}
 	<Card>
 		<p class="text-subtle">{m.tasks_select_user()}</p>
+		<p class="mt-1 text-sm text-subtle">{m.tasks_select_user_hint()}</p>
 	</Card>
 {:else}
 	<div class="space-y-6">

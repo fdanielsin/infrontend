@@ -57,7 +57,7 @@ describe('TaskForm list and edit behaviour', () => {
 		cleanup();
 	});
 
-	it.each(['a', 'Tab', 'Enter', 'ArrowDown', ' ', 'Backspace', 'Esc', 'Escape '])(
+	it.each(['a', 'Tab', 'ArrowDown', ' ', 'Backspace', 'Esc', 'Escape '])(
 		'keeps the edit open with its draft when "%s" is pressed in the title field (boundary)',
 		async (key) => {
 			// GIVEN: An edit in progress with a draft.
