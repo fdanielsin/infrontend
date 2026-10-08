@@ -12,11 +12,12 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   today's interface, target rules marked as such, and a section of patterns to apply when a
   new component type is added (`docs/design-system.md`) (infrontend#46).
 - Icons come from Iconoir through one `Icon` component: sizes of 16, 20 and 24 px, a single
-  1.5 px stroke, always hidden from assistive technology.
+  1.5 px stroke, always hidden from assistive technology (infrontend#53).
 
 ### Changed
 
-- The cross of the close and delete buttons is an Iconoir icon with a 1.5 px stroke.
+- The cross of the close and delete buttons is an Iconoir icon with a 1.5 px stroke
+  (infrontend#53).
 
 ### Fixed
 
