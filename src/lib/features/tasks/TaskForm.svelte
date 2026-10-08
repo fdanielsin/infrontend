@@ -212,7 +212,7 @@
 {:else}
 	<div class="space-y-6">
 		<Card>
-			<h2 class="mb-4 text-xl font-bold">{m.tasks_for_user({ name: user.name })}</h2>
+			<h2 class="mb-4 text-xl font-bold wrap-anywhere">{m.tasks_for_user({ name: user.name })}</h2>
 
 			{#if status.error}
 				<Alert class="mb-4">{status.error}</Alert>
@@ -271,21 +271,23 @@
 							/>
 						</div>
 					{/if}
-					<ul class="space-y-2">
+					<ul class="@container space-y-2">
 						{#each sortedTasks as task (task.id)}
-							<li class="flex items-start rounded-control bg-surface-muted p-3">
+							<li
+								class="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 gap-y-2 rounded-control bg-surface-muted p-3 @md:grid-cols-[auto_minmax(0,1fr)_auto]"
+							>
 								<input
 									id={`task-${task.id}`}
 									type="checkbox"
 									checked={task.completed}
 									onchange={(event) => void handleToggleTask(event.currentTarget, task.id)}
 									aria-label={editingTaskId === task.id ? task.title : undefined}
-									class="mt-1 mr-3 h-4 w-4"
+									class="mt-1 h-4 w-4"
 								/>
 								{#if editingTaskId === task.id}
 									<form
 										{@attach ref(refs, 'editForm')}
-										class="flex-1 space-y-2"
+										class="min-w-0 space-y-2"
 										onsubmit={(e) => {
 											e.preventDefault();
 											void handleEditTask();
@@ -316,7 +318,7 @@
 												? validationMessage(editErrors.description)
 												: undefined}
 										/>
-										<div class="flex gap-2">
+										<div class="flex flex-wrap gap-2">
 											<Button variant="strong" type="submit" disabled={status.loading}>
 												{m.tasks_save()}
 											</Button>
@@ -326,7 +328,7 @@
 										</div>
 									</form>
 								{:else}
-									<div class="min-w-0 flex-1 wrap-anywhere">
+									<div class="min-w-0 wrap-anywhere">
 										<label
 											for={`task-${task.id}`}
 											class={['block', task.completed ? 'text-muted line-through' : 'font-medium']}
@@ -335,21 +337,23 @@
 										</label>
 										<p class="text-sm text-muted">{task.description}</p>
 									</div>
-									<Button
-										variant="link"
-										{@attach registerEditButton(task.id)}
-										onclick={() => startEditing(task)}
-										aria-label={m.tasks_edit_named({ title: task.title })}
-										class="ml-2"
-									>
-										{m.tasks_edit()}
-									</Button>
 								{/if}
-								<IconButton
-									label={m.tasks_delete_named({ title: task.title })}
-									onclick={() => void handleRemoveTask(task.id)}
-									class="ml-2"
-								/>
+								<div class="col-start-2 flex items-center gap-2 @md:col-start-3 @md:row-start-1">
+									{#if editingTaskId !== task.id}
+										<Button
+											variant="link"
+											{@attach registerEditButton(task.id)}
+											onclick={() => startEditing(task)}
+											aria-label={m.tasks_edit_named({ title: task.title })}
+										>
+											{m.tasks_edit()}
+										</Button>
+									{/if}
+									<IconButton
+										label={m.tasks_delete_named({ title: task.title })}
+										onclick={() => void handleRemoveTask(task.id)}
+									/>
+								</div>
 							</li>
 						{/each}
 					</ul>

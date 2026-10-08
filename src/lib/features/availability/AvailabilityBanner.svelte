@@ -23,7 +23,7 @@
 	{#if availability.status === 'unavailable'}
 		<section
 			aria-label={m.availability_region()}
-			class="flex flex-wrap items-center justify-center gap-3 bg-danger-soft px-4 py-3 text-danger"
+			class="flex flex-wrap items-center justify-start gap-3 bg-danger-soft px-4 py-3 text-left text-danger sm:justify-center sm:text-center"
 		>
 			{#key availability.retryFailures}
 				<p role="alert">{m.availability_unavailable()}</p>
@@ -35,7 +35,7 @@
 			{#if availability.reference}
 				<ReferenceLine
 					tone="danger"
-					class="basis-full justify-center"
+					class="basis-full justify-start sm:justify-center"
 					reference={availability.reference}
 					oncopy={(reference: string) => void notifications.copyReference(reference)}
 				/>

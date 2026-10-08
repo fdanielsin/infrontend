@@ -11,6 +11,6 @@
 	let { class: className, children, ...rest }: Props = $props();
 </script>
 
-<div class={['rounded-control bg-danger-soft p-3 text-danger', className]} {...rest}>
+<div class={['rounded-control bg-danger-soft p-3 wrap-anywhere text-danger', className]} {...rest}>
 	{@render children()}
 </div>

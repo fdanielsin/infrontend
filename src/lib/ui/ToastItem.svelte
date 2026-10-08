@@ -29,7 +29,7 @@
 <div
 	data-toast
 	class={[
-		'animate-slide-in grid grid-cols-[1fr_auto] items-start gap-x-3 rounded-card px-4 py-3 text-white shadow-card-raised',
+		'animate-slide-in grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 rounded-card px-4 py-3 text-white shadow-card-raised',
 		TYPE_CLASSES[toast.type]
 	]}
 	onmouseenter={onpause}
@@ -41,7 +41,7 @@
 		if (!event.currentTarget.matches(':hover')) onresume();
 	}}
 >
-	<p>{toast.message}</p>
+	<p class="min-w-0 wrap-anywhere">{toast.message}</p>
 	{#if toast.reference}
 		<!-- Under the message, before the close button in the reading order. -->
 		<ReferenceLine reference={toast.reference} oncopy={oncopyreference} class="col-start-1 mt-1" />

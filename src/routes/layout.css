@@ -38,6 +38,10 @@
 	--color-focus: var(--color-blue-700); /* 5.55:1 on indigo-100, 6.83:1 on white */
 	--color-focus-inverse: var(--color-white); /* on the colored toasts: 4.95:1 or more */
 
+	/* Page background: a gradient carried by <html>, so it covers the whole scrollable area */
+	--color-page-from: var(--color-blue-50);
+	--color-page-to: var(--color-indigo-100);
+
 	/* Radii and shadows */
 	--radius-control: 0.25rem;
 	--radius-card: var(--radius-lg);
@@ -59,6 +63,10 @@
 	 * stack, never left under it (WCAG 2.4.11).
 	 */
 	html {
+		min-height: 100%;
+		background: linear-gradient(to bottom right, var(--color-page-from), var(--color-page-to))
+			no-repeat;
+		background-color: var(--color-page-to);
 		scroll-padding-bottom: calc(var(--toast-stack-height, 0px) + 1rem);
 	}
 

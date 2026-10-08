@@ -88,14 +88,14 @@
 						<button
 							type="button"
 							class={[
-								'w-full rounded-control p-1 text-left',
+								'w-full min-w-0 rounded-control p-1 text-left',
 								selected && 'bg-blue-100 ring-2 ring-primary ring-inset'
 							]}
 							aria-pressed={selected}
 							onclick={() => users.select(user.id)}
 						>
-							<p class="font-medium">{user.name}</p>
-							<p class="text-sm text-muted">{user.email}</p>
+							<p class="font-medium wrap-anywhere">{user.name}</p>
+							<p class="text-sm wrap-anywhere text-muted">{user.email}</p>
 						</button>
 					</li>
 				{/each}

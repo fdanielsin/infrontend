@@ -16,16 +16,13 @@
 	<title>{m.home_page_title()}</title>
 </svelte:head>
 
-<main
-	tabindex="-1"
-	class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8 focus:outline-none"
->
+<main tabindex="-1" class="min-h-screen p-4 focus:outline-none sm:p-8">
 	<div class="mx-auto max-w-6xl">
 		<header class="mb-8 text-center">
 			<div class="mb-4 flex justify-end">
 				<LanguageSwitcher />
 			</div>
-			<h1 class="text-4xl font-bold wrap-break-word hyphens-auto text-gray-900">
+			<h1 class="text-2xl font-bold wrap-break-word hyphens-auto text-gray-900 sm:text-4xl">
 				<span aria-hidden="true">📋</span>
 				{m.home_heading()}
 			</h1>
@@ -41,11 +38,11 @@
 			</div>
 		</header>
 
-		<div class="grid gap-8 lg:grid-cols-2">
-			<div>
+		<div class="grid gap-8 md:grid-cols-2">
+			<div class="min-w-0">
 				<UserForm />
 			</div>
-			<div>
+			<div class="min-w-0">
 				<TaskForm user={users.selected} />
 			</div>
 		</div>

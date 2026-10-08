@@ -23,7 +23,7 @@
 		raised: 'rounded-card bg-surface shadow-card-raised transition hover:shadow-card-raised-hover',
 		flat: 'rounded-card bg-surface shadow-card-raised'
 	};
-	const PADDING_CLASSES = { md: 'p-6', lg: 'p-8' };
+	const PADDING_CLASSES = { md: 'p-4 sm:p-6', lg: 'p-6 sm:p-8' };
 </script>
 
 <div class={[VARIANT_CLASSES[variant], PADDING_CLASSES[padding], className]} {...rest}>

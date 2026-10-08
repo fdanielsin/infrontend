@@ -28,15 +28,12 @@
 	<title>{m.stats_page_title()}</title>
 </svelte:head>
 
-<main
-	tabindex="-1"
-	class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8 focus:outline-none"
->
+<main tabindex="-1" class="min-h-screen p-4 focus:outline-none sm:p-8">
 	<div class="mx-auto max-w-2xl">
 		<div class="mb-4 flex justify-end">
 			<LanguageSwitcher />
 		</div>
-		<h1 class="mb-8 text-4xl font-bold wrap-break-word hyphens-auto text-gray-800">
+		<h1 class="mb-8 text-2xl font-bold wrap-break-word hyphens-auto text-gray-800 sm:text-4xl">
 			<span aria-hidden="true">📊</span>
 			{m.stats_heading()}
 		</h1>
@@ -51,17 +48,21 @@
 				{m.stats_error({ message: status.error })}
 			</Alert>
 		{:else if stats}
-			<div class="grid grid-cols-2 gap-6">
+			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
 				<Card variant="raised">
-					<div class="text-5xl font-bold text-blue-600">{formatNumber(stats.users)}</div>
-					<p class="mt-2 text-lg text-muted">
+					<div class="text-4xl font-bold wrap-anywhere text-blue-600 sm:text-5xl">
+						{formatNumber(stats.users)}
+					</div>
+					<p class="mt-2 text-lg wrap-anywhere text-muted">
 						<span aria-hidden="true">👥</span>
 						{m.stats_users()}
 					</p>
 				</Card>
 				<Card variant="raised">
-					<div class="text-5xl font-bold text-indigo-600">{formatNumber(stats.tasks)}</div>
-					<p class="mt-2 text-lg text-muted">
+					<div class="text-4xl font-bold wrap-anywhere text-indigo-600 sm:text-5xl">
+						{formatNumber(stats.tasks)}
+					</div>
+					<p class="mt-2 text-lg wrap-anywhere text-muted">
 						<span aria-hidden="true">✅</span>
 						{m.stats_tasks()}
 					</p>
