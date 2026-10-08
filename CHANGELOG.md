@@ -23,12 +23,12 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - The user list is a card of its own; a whole row is clickable, shows a chevron, and the selected
   user is marked by a fill, a bar and a check instead of a ring that looked like the keyboard
-  focus (infrontend#PR).
+  focus (infrontend#51).
 - A task description is cut at three lines with a "Show more" button; while a task is edited,
   its checkbox and delete button are disabled and the title field grows with its text; row
-  actions are 44 px on touch screens (infrontend#PR).
+  actions are 44 px on touch screens (infrontend#51).
 - Choosing a user on a narrow screen scrolls to the task list; empty lists say what to do next
-  (infrontend#PR).
+  (infrontend#51).
 
 ### Fixed
 
