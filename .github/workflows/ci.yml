@@ -1,8 +1,10 @@
 name: Frontend CI
 
+# A work branch is checked by its pull request: pushing it alone starts nothing, so a push and
+# its pull request never run the same checks twice (GitHub Actions minutes).
 on:
   push:
-    branches: [main, develop, 'feature/**', 'bugfix/**', 'hotfix/**', 'release/**', 'chore/**']
+    branches: [main, develop]
   pull_request:
     branches: [main, develop]
   workflow_dispatch:
