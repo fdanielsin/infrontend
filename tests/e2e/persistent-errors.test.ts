@@ -4,15 +4,19 @@ import { ada, adaTasks, mockApi, openHomeWithUser } from './support/mock-api';
 
 // How long an error toast stays (WCAG 2.2.1): an error the user cannot fix (5xx, no answer) stays
 // until it is closed, so that its reference can be copied; a refusal the user can fix leaves after
-// 6 s. A fake clock moves time. The API is mocked.
+// 6 s. A frozen clock is moved by the test. The API is mocked.
 
 const TEN_MINUTES = 10 * 60 * 1000;
 const alertToasts = (page: Page) => page.getByRole('alert').locator('[data-toast]');
 const horizontalOverflow = (page: Page) =>
 	page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 
+// The clock is frozen: no timer runs unless the test moves it, so that "exactly 6 s" is exact. Motion
+// is off so that the contrast is measured on a toast that has finished sliding in.
 async function openWithClock(page: Page) {
-	await page.clock.install();
+	await page.emulateMedia({ reducedMotion: 'reduce' });
+	await page.clock.install({ time: 0 });
+	await page.clock.pauseAt(1000);
 	const api = await mockApi(page, { users: [ada], tasks: adaTasks });
 	await openHomeWithUser(page);
 	return api;
