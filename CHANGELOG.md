@@ -4,6 +4,8 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-10-08
+
 ### Added
 
 - A banner tells the user when the service is unavailable, retries by itself (5 s up to 60 s)
@@ -20,6 +22,11 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - A long title without spaces no longer makes the task list wider than a narrow screen
   (infrontend#41).
+
+### Security
+
+- `cookie` is pinned to 0.7.0, which fixes GHSA-pxg6-pf52-xh8x (out-of-bounds characters in cookie
+  attributes, low) (infrontend#42).
 
 ## [1.2.0] - 2026-10-06
 
@@ -42,8 +49,6 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Security
 
-- `cookie` is pinned to 0.7.0, which fixes GHSA-pxg6-pf52-xh8x (out-of-bounds characters in cookie
-  attributes, low) (infrontend#42).
 - `source-map-js` is pinned to 1.2.2, which fixes GHSA-68fv-2mgg-jv7q (denial of service, high);
   the dependency audit is green again (infrontend#36).
 
@@ -164,7 +169,8 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Stats page.
 
-[Unreleased]: https://github.com/fdanielsin/infrontend/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/fdanielsin/infrontend/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/fdanielsin/infrontend/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/fdanielsin/infrontend/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/fdanielsin/infrontend/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/fdanielsin/infrontend/releases/tag/v1.0.0
