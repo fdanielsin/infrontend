@@ -125,14 +125,54 @@ Règles complémentaires :
   (contact, intermédiaire, diffuse), un halo teinté de l'accent possible, une bordure
   éclaircie au survol, sans parallaxe excessive ; valeurs à définir (**Cible : jeton à
   créer**) ([shadow-elevation](https://designmotionhq.com/patterns/shadow-elevation), [depth-layers](https://designmotionhq.com/patterns/depth-layers)).
-- **Icônes** : un seul style (contour), le même trait sur tout le jeu, la même boîte
-  englobante, une grille de 24 px (16 px en dense), formes rondes un peu agrandies
-  pour l'équilibre optique, tailles prises dans l'échelle ([icon-design-rules](https://designmotionhq.com/patterns/icon-design-rules)).
-  **Cible** (lot Iconoir) : trait de 1,5 px constant, dessin natif d'Iconoir. Écart
-  volontaire avec la fiche, qui prescrit 2 px : ce qui compte est le même trait pour
-  tout le jeu.
+- **Icônes** : voir [Icônes](#icônes).
 - **Zones tactiles** : une icône d'environ 20 px garde une zone de tap de 44 px sur
   écran tactile ([hover-trap](https://designmotionhq.com/patterns/hover-trap)) ; le minimum du projet reste 24 px (WCAG 2.5.8).
+
+### Icônes
+
+Un seul jeu, [Iconoir](https://iconoir.com) (contour, grille de 24 px, licence MIT), et un
+seul composant, `Icon` (`src/lib/ui/Icon.svelte`). Le choix du jeu et de l'outil est dans
+l'[ADR 0003](./decisions/0003-icones-iconoir-unplugin-icons.md). Règles de dessin tirées de
+[icon-design-rules](https://designmotionhq.com/patterns/icon-design-rules) : un seul style, le
+même trait sur tout le jeu, la même boîte englobante, des tailles prises dans l'échelle.
+
+| `size` | Classe   | Usage                                                                                   |
+| ------ | -------- | --------------------------------------------------------------------------------------- |
+| 16     | `size-4` | À côté d'un texte `text-sm` (boutons `strong`, `outline`, `link`), croix d'`IconButton` |
+| 20     | `size-5` | Défaut : texte courant, boutons `primary` et `success`, icônes denses                   |
+| 24     | `size-6` | Titres, états vides                                                                     |
+
+- **Trait** : 1,5 px d'écran à toutes les tailles. Iconoir dessine à 1,5 sur une grille de
+  24, ce qui ferait 1 px à 16 px (trop mince, surtout en blanc sur un toast) ; `Icon` applique
+  `vector-effect: non-scaling-stroke` aux tracés
+  ([MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/vector-effect)), donc le trait garde sa
+  largeur d'écran quand la taille change. Écart volontaire avec la fiche, qui prescrit 2 px :
+  ce qui compte est le même trait pour tout le jeu. Preuve : `tests/e2e/icons.test.ts`
+  (`stroke-width` et `vector-effect` calculés, trois navigateurs). Les icônes denses (langue,
+  wifi coupé, tri, liste) restent lisibles à 16 px mais serrées : les mettre à 20 px
+  (planches-contact du lot, 2026-10-08, non versionnées).
+- **Couleur** : `currentColor`, héritée du texte du bouton ou du parent ; l'icône n'impose
+  jamais de couleur (preuve : `tests/unit/components/Icon.test.ts`). Une icône qui porte seule
+  un sens atteint 3:1 sur son fond (WCAG 1.4.11, `tests/e2e/icons.test.ts`) ; à côté d'un
+  texte, c'est le texte qui porte le sens.
+- **Décorative, toujours** : `aria-hidden="true"` et `focusable="false"`, sans `role`, sans
+  `<title>`, et pas de prop `label` (le typage la refuse). Le sens passe par un texte visible
+  ou par le nom accessible du contrôle qui l'entoure : une icône seule dans un bouton passe par
+  `IconButton` et son `label`. Visible en mode contraste forcé (la couleur système remplace
+  `currentColor`).
+- **Usage** : `<Icon icon="xmark" size={16} />`, `size` vaut 20 par défaut. Le nom `icon` est
+  une liste fermée (`IconName`) : une chaîne libre est une erreur de type.
+- **Ajouter une icône** : chercher son nom sur iconoir.com, l'importer dans `Icon.svelte`
+  (`import Nom from '~icons/iconoir/<nom>'`), l'ajouter à la liste `ICONS` dans l'ordre
+  alphabétique, puis l'utiliser. Un nom inconnu fait échouer le build ; on n'importe jamais la
+  collection entière (`icon-bundle.test.ts` échoue si elle entre dans le code livré). Ne mettre
+  dans la liste que les icônes utilisées.
+- **À faire** : une icône à côté d'un texte visible ; la même icône pour la même action dans
+  toute l'interface ; une taille de l'échelle.
+- **À éviter** : une icône seule sans `IconButton` ; une icône pour remplacer le texte d'une
+  action ; l'émoji comme icône ; une couleur codée en dur ; un second jeu d'icônes ; une taille
+  hors de l'échelle ; un état annoncé par la couleur de l'icône seule.
 
 ### Focus
 
@@ -216,8 +256,6 @@ Règles :
 - Le bouton d'envoi est `disabled` pendant la requête, ce qui fait perdre le focus à
   qui valide au bouton. Non corrigé volontairement (les tests s'appuient sur
   `disabled`, gain faible). Voir la règle de [Button](#button).
-- Le trait des icônes (croix de `IconButton`, trait 2) n'est pas celui visé pour le jeu
-  Iconoir (1,5 px) : voir Cible.
 
 ## 3. Composants
 
@@ -254,10 +292,10 @@ Règles complémentaires ([disabled-buttons](https://designmotionhq.com/patterns
 Action sans texte (aujourd'hui : fermer un toast, supprimer une tâche), avec un
 `label` obligatoire qui devient l'`aria-label`. Tons : `danger` (rouge, survol
 `danger-hover`) et `inverse` (sur fond coloré, contour de focus blanc). Cible
-`min-h-6 min-w-6`. Le dessin est une croix en SVG inline `aria-hidden`, taille
-`h-4 w-4`, trait 2. À faire : un nom qui nomme l'objet (« Supprimer {titre} »,
-« Fermer la notification »). **Cible** : remplacer la croix inline par une icône du
-jeu d'icônes à venir (voir [Cible](#7-cible)).
+`min-h-6 min-w-6`. Le dessin est la croix `xmark` d'Iconoir par `Icon`
+(16 px, trait 1,5 px, `aria-hidden`, voir [Icônes](#icônes)) : le nom accessible reste celui du
+bouton. À faire : un nom qui nomme l'objet (« Supprimer {titre} », « Fermer la
+notification »).
 
 Sur écran tactile, la cible visuelle de 24 px reçoit une zone de tap de 44 px
 (**Cible**, [hover-trap](https://designmotionhq.com/patterns/hover-trap)).
@@ -577,10 +615,9 @@ de classes les fige : ne pas les remplacer par un jeton sans prévenir qa.
 
 ## 7. Cible
 
-Non réalisé : un jeu d'icônes cohérent (échelle de tailles, un seul trait), icône
-décorative à côté du texte des actions et des toasts, et la croix d'`IconButton`
-issue de ce jeu ; l'unification des écarts listés en section 2. Le lot Iconoir
-complète ce document.
+Non réalisé : l'usage de `Icon` (voir [Icônes](#icônes)) à côté du texte des actions, dans
+les toasts, le bandeau et les états vides, et à la place des émojis décoratifs ; l'unification
+des écarts listés en section 2.
 
 ## 8. Motifs à venir
 
@@ -676,8 +713,8 @@ est devenue la section 7.
 
 - [golden-ratio](https://designmotionhq.com/patterns/golden-ratio) : l'échelle de 4 px de Tailwind et les jetons existants gardent
   l'autorité.
-- [icon-design-rules](https://designmotionhq.com/patterns/icon-design-rules) : trait constant de 1,5 px (dessin natif d'Iconoir) au lieu
-  de 2 px.
+- [icon-design-rules](https://designmotionhq.com/patterns/icon-design-rules) : trait constant de 1,5 px d'écran à toutes les tailles
+  (dessin d'Iconoir, `non-scaling-stroke`) au lieu de 2 px.
 - [perfect-card](https://designmotionhq.com/patterns/perfect-card) et [card-hover-anatomy](https://designmotionhq.com/patterns/card-hover-anatomy) : jamais de `scale` sur la carte
   entière ; rayon de 24 px écarté au profit de `card`.
 - [border-radius](https://designmotionhq.com/patterns/border-radius) : seuls `control` et `card` existent, l'échelle de la fiche n'est
