@@ -8,6 +8,9 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - A design system guide documents the tokens, components, patterns and content rules of the
   interface (`docs/design-system.md`) (infrontend#45).
+- The design system guide now holds the rules of all 76 reference pattern sheets: rules for
+  today's interface, target rules marked as such, and a section of patterns to apply when a
+  new component type is added (`docs/design-system.md`) (infrontend#46).
 
 ## [1.3.0] - 2026-10-08
 

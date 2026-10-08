@@ -2,9 +2,12 @@
 
 Ce document décrit l'interface telle qu'elle est dans le code : jetons, composants
 de `src/lib/ui/`, motifs d'écran, règles de contenu. Il sert à un développeur qui
-ajoute un écran et à un relecteur qui vérifie qu'il reste cohérent. Une règle n'y
-figure que si le code ou un test la porte, et cite sa **preuve**. Ce qui n'existe
-pas encore est marqué **Cible**. Les règles d'architecture (où vit le code, qui
+ajoute un écran et à un relecteur qui vérifie qu'il reste cohérent. Quatre sortes
+de contenu, toujours distinguées : une règle portée par le code ou un test cite sa
+**preuve** ; une règle à suivre n'a pas de preuve ; ce que le code ne fait pas encore est
+marqué **Cible** ; la section 8 liste des motifs pour des composants qui n'existent pas
+encore. Les règles complémentaires viennent des fiches de
+[designmotionhq.com](https://designmotionhq.com/patterns) et citent leur fiche. Les règles d'architecture (où vit le code, qui
 parle à l'API) restent dans [architecture.md](./architecture.md) et
 [conventions.md](./conventions.md).
 
@@ -14,6 +17,9 @@ parle à l'API) restent dans [architecture.md](./architecture.md) et
 4. [Motifs](#4-motifs)
 5. [Contenu](#5-contenu)
 6. [Gouvernance et checklist de revue](#6-gouvernance-et-checklist-de-revue)
+7. [Cible](#7-cible)
+8. [Motifs à venir](#8-motifs-à-venir)
+9. [Compte rendu de l'intégration des fiches](#9-compte-rendu-de-lintégration-des-fiches)
 
 ## 1. Principes
 
@@ -28,6 +34,11 @@ parle à l'API) restent dans [architecture.md](./architecture.md) et
    le focus va à un endroit logique, jamais au `body` (WCAG 2.4.3), y compris quand la tâche a disparu du serveur à la coche, à l'édition ou à la suppression (titre de la liste).
 4. **Pas d'état par la couleur seule.** Un état se lit aussi dans le texte
    (« Création… », barré, `aria-invalid` avec message).
+5. **Un seul élément mis en avant par vue** (échelle, couleur, élévation) ; les voisins
+   restent calmes ([von-restorff](https://designmotionhq.com/patterns/von-restorff)).
+6. **Agir puis permettre d'annuler**, plutôt que demander confirmation ; la friction
+   forte est réservée à l'irréversible ([undo-ux](https://designmotionhq.com/patterns/undo-ux)). **Cible** : l'annulation
+   n'existe pas encore (voir [Action destructive](#action-destructive)).
 
 ## 2. Fondations
 
@@ -56,6 +67,24 @@ rouge pour toutes les erreurs, dans les quatre langues), `tests/e2e/field-border
 Le texte posé sur le dégradé de la page n'est pas mesurable par axe (« incomplet ») :
 il a été calculé à la main (plus de 6:1).
 
+Règles complémentaires :
+
+- **Nommer par rôle**, jamais par valeur (`primary`, pas `blue-600`). Trois couches :
+  palette Tailwind, jeton sémantique (`@theme`), composant. Un composant n'écrit ni
+  hex ni teinte brute, sauf les écarts listés plus bas ; changer un jeton se propage partout ([design-tokens](https://designmotionhq.com/patterns/design-tokens)). Une
+  valeur hors échelle se ramène à l'échelle. Source unique : `layout.css`.
+- **Le fond décide de la lisibilité** : le contraste se mesure sur le fond réel
+  (gris `surface-muted`, dégradé), pas sur du blanc. Les gris « décoratifs » échouent
+  souvent : une bordure ou un texte porteur de sens prend `field-border` ou `muted`
+  ([color-accessibility](https://designmotionhq.com/patterns/color-accessibility)).
+- **Jamais la couleur seule** : tout état a un second signal (icône, libellé, motif,
+  flèche). Rouge et vert ne se distinguent pas seuls ([color-accessibility](https://designmotionhq.com/patterns/color-accessibility)).
+- **Une seule couleur d'accent pour l'action principale** (`primary`). La hiérarchie
+  vient du contraste entre rôles (titre fort, texte atténué ; bouton plein, bouton
+  secondaire discret), de la taille, de la graisse et de l'espace, cumulés ; pas
+  d'une couleur par élément ([visual-hierarchy](https://designmotionhq.com/patterns/visual-hierarchy)).
+- **Mode sombre** : voir [Mode sombre et système visuel](#mode-sombre-et-système-visuel).
+
 ### Typographie, espacements, rayons, ombres
 
 Police : celle de Tailwind par défaut (aucun `font-family` défini). Pas d'échelle
@@ -77,6 +106,33 @@ largeur max 6xl (accueil) ou 2xl (statistiques), fond en dégradé
 lignes ; `card` (`rounded-lg`) pour cartes et toasts. Ombres : `card`,
 `card-raised`, `card-raised-hover` (carte « raised » au survol).
 
+Règles complémentaires :
+
+- **Proximité** : l'écart à l'intérieur d'un groupe est plus petit que l'écart entre
+  groupes. Dans le code : `space-y-4` entre champs liés, `space-y-2` entre lignes de
+  liste, `space-y-6` entre blocs d'un même écran ; l'espace précède un séparateur, et
+  l'on ne met pas de cadre là où l'espace suffit ([proximity-rule](https://designmotionhq.com/patterns/proximity-rule)).
+- **Échelle** : espacements en multiples de 4 px (échelle de Tailwind), jamais
+  « à l'œil ». Pas de suite de type nombre d'or (écart volontaire, [golden-ratio](https://designmotionhq.com/patterns/golden-ratio) : facteur 1,618 et partage 62/38 écartés).
+- **Rayons** : jetons `control` et `card` seulement. Dans une surface arrondie qui
+  contient un élément arrondi, rayon intérieur = rayon extérieur moins la marge
+  intérieure. Le rayon croît avec la surface (champ, carte, panneau). Un rayon qui
+  manque est une **Cible : jeton à créer**, jamais une valeur au hasard
+  ([border-radius](https://designmotionhq.com/patterns/border-radius)).
+- **Ombres** : seules les ombres nommées ci-dessus ; plus un élément est élevé, plus il
+  est important, et une ombre n'est jamais décorative. **Cible** : trois niveaux
+  (contact, intermédiaire, diffuse), un halo teinté de l'accent possible, une bordure
+  éclaircie au survol, sans parallaxe excessive ; valeurs à définir (**Cible : jeton à
+  créer**) ([shadow-elevation](https://designmotionhq.com/patterns/shadow-elevation), [depth-layers](https://designmotionhq.com/patterns/depth-layers)).
+- **Icônes** : un seul style (contour), le même trait sur tout le jeu, la même boîte
+  englobante, une grille de 24 px (16 px en dense), formes rondes un peu agrandies
+  pour l'équilibre optique, tailles prises dans l'échelle ([icon-design-rules](https://designmotionhq.com/patterns/icon-design-rules)).
+  **Cible** (lot Iconoir) : trait de 1,5 px constant, dessin natif d'Iconoir. Écart
+  volontaire avec la fiche, qui prescrit 2 px : ce qui compte est le même trait pour
+  tout le jeu.
+- **Zones tactiles** : une icône d'environ 20 px garde une zone de tap de 44 px sur
+  écran tactile ([hover-trap](https://designmotionhq.com/patterns/hover-trap)) ; le minimum du projet reste 24 px (WCAG 2.5.8).
+
 ### Focus
 
 Un seul contour : règle `:focus-visible` de `layout.css`, `outline: 2px solid
@@ -86,6 +142,11 @@ colorés (toasts). Interdits : `focus:ring-*`, `outline-none` dans un composant,
 en dur. Seule exception : `main`, cible programmatique (`tabindex="-1"`,
 `focus:outline-none`) qui reçoit le focus après une action, jamais au clavier.
 Un champ invalide a aussi une bordure `danger`.
+
+Règles complémentaires ([focus-states](https://designmotionhq.com/patterns/focus-states)) : `:focus-visible` seulement ; l'ordre du DOM est
+l'ordre visuel ; dans une modale, le focus est piégé, Échap ferme et rend le focus au
+déclencheur. **Cible** : un lien d'évitement comme premier élément focalisable
+(absent aujourd'hui).
 
 La pile de toasts est fixée en bas ; sa hauteur mesurée (`--toast-stack-height`,
 publiée par `Notification`) est réservée par `scroll-padding-bottom` et
@@ -101,6 +162,19 @@ Seule animation par keyframes : l'entrée des toasts (`slideIn`, 0,3 s), déclar
 nouvelle animation suit la même règle (les transitions de survol existantes y échappent : voir les écarts). Preuve : `tests/e2e/availability.test.ts`
 (émulation `reducedMotion: 'reduce'`).
 
+Règles complémentaires :
+
+- Une entrée dure de 200 à 300 ms en `ease-out` ; une sortie est plus courte que
+  l'entrée ; le linéaire ne sert qu'aux mouvements continus (spinner) ; un ressort est
+  réservé aux moments qui le méritent, sans oscillation. Une cascade décale les éléments
+  de quelques dizaines de ms. Courbes et durées réutilisées : **Cible : jeton à créer** ([animation-timing](https://designmotionhq.com/patterns/animation-timing),
+  [easing-curves](https://designmotionhq.com/patterns/easing-curves)).
+- **Temps de réponse** : retour visuel à l'action en moins de 100 ms ; aucun indicateur
+  de chargement sous 300 ms, un indicateur au-delà ([doherty-threshold](https://designmotionhq.com/patterns/doherty-threshold),
+  [loading-states-system](https://designmotionhq.com/patterns/loading-states-system)).
+- **Survol d'une carte** : jamais de `scale` sur la carte entière. On anime le
+  contenu (ombre, élévation) ; la grille ne bouge pas ([card-hover-anatomy](https://designmotionhq.com/patterns/card-hover-anatomy) ; pour une carte, les rayons et ombres de la section Composants).
+
 ### 320 px
 
 Aucun défilement horizontal à 320 px ni à 200 % de zoom (WCAG 1.4.10). Les titres
@@ -108,6 +182,15 @@ longs se coupent (`wrap-break-word`, `wrap-anywhere` dans les lignes de tâche),
 le sélecteur de langue est dans le flux, au-dessus du titre. Preuve :
 `tests/e2e/i18n.test.ts` (« Reflow », 320, 640, 1280 px, quatre langues),
 `tests/e2e/task-sorting.test.ts` (titre de 200 caractères).
+
+Règles complémentaires :
+
+- Tout texte qui affiche une donnée saisie (nom, e-mail, titre, description) passe à
+  la ligne n'importe où (`wrap-anywhere`). **Cible / écart actuel** :
+  `UserForm.svelte` lignes 97-98.
+- Le fond de page couvre toute la zone défilable : il est porté par `html` et `body`,
+  pas seulement par `<main>`. **Cible / écart actuel** : `routes/+page.svelte` ligne 21,
+  `routes/stats/+page.svelte` ligne 33.
 
 ### Écarts constatés
 
@@ -123,7 +206,14 @@ le sélecteur de langue est dans le flux, au-dessus du titre. Preuve :
   `disabled`.
 - Le bouton d'envoi est `disabled` pendant la requête, ce qui fait perdre le focus à
   qui valide au bouton. Non corrigé volontairement (les tests s'appuient sur
-  `disabled`, gain faible).
+  `disabled`, gain faible). Voir la règle de [Button](#button).
+- La carte utilisateur (`UserForm.svelte`, lignes 97-98) affiche le nom et l'e-mail
+  sans `wrap-anywhere` : la règle de la section 320 px n'y est pas tenue.
+- Le dégradé de fond est posé sur `<main>` (`routes/+page.svelte` ligne 21,
+  `routes/stats/+page.svelte` ligne 33), pas sur `html`/`body` : il ne couvre pas toute
+  la zone défilable.
+- Le trait des icônes (croix de `IconButton`, trait 2) n'est pas celui visé pour le jeu
+  Iconoir (1,5 px) : voir Cible.
 
 ## 3. Composants
 
@@ -144,6 +234,17 @@ petites variantes. À faire : un verbe court, décrit par le texte ; un
 `messages/*.json` `tasks_edit_named`). À éviter : un bouton sans texte (utiliser
 `IconButton`), un `aria-label` qui contredit le texte visible.
 
+Règles complémentaires ([disabled-buttons](https://designmotionhq.com/patterns/disabled-buttons), [microcopy](https://designmotionhq.com/patterns/microcopy)) :
+
+- Le libellé dit ce que l'on obtient (« Ajouter la tâche »), pas « Valider ».
+- **Cible** : pas de `disabled` pour empêcher une validation. Le bouton reste actif, la
+  validation se fait au clic et le focus va au premier champ invalide. Un bouton
+  `disabled` sort de la tabulation, son infobulle ne s'affiche pas et son contraste
+  échoue : réservé à une action réellement indisponible.
+- **Cible** : pendant un envoi, `aria-busy` à la place de `disabled`, un second envoi
+  est ignoré et le focus reste sur le bouton (aujourd'hui : `disabled`, voir
+  [Écarts constatés](#écarts-constatés)).
+
 ### IconButton
 
 Action sans texte (aujourd'hui : fermer un toast, supprimer une tâche), avec un
@@ -152,14 +253,24 @@ Action sans texte (aujourd'hui : fermer un toast, supprimer une tâche), avec un
 `min-h-6 min-w-6`. Le dessin est une croix en SVG inline `aria-hidden`, taille
 `h-4 w-4`, trait 2. À faire : un nom qui nomme l'objet (« Supprimer {titre} »,
 « Fermer la notification »). **Cible** : remplacer la croix inline par une icône du
-jeu d'icônes à venir (voir [Cible](#cible)).
+jeu d'icônes à venir (voir [Cible](#7-cible)).
+
+Sur écran tactile, la cible visuelle de 24 px reçoit une zone de tap de 44 px
+(**Cible**, [hover-trap](https://designmotionhq.com/patterns/hover-trap)).
 
 ### Card
 
 Conteneur. Variantes : `outlined` (cadre `line`, ombre `card`), `raised` (ombre
 relevée, plus forte au survol, pour les chiffres des statistiques), `flat` (ombre
 relevée sans survol). Marge intérieure `md` (`p-6`) ou `lg` (`p-8`). Rôle
-purement visuel : le titre de la carte est un `h2` posé par l'écran.
+purement visuel : le titre de la carte est un `h2` posé par l'écran. Règles
+complémentaires ([perfect-card](https://designmotionhq.com/patterns/perfect-card)) : titre plus gras que la description, description
+atténuée (`text-muted`), marge intérieure généreuse, contenu jamais collé au bord. Le
+rayon reste `card` et la bordure `line` (rayon de 24 px de la fiche écarté, voir
+[le compte rendu](#9-compte-rendu-de-lintégration-des-fiches)). **Cible** : au survol de
+`raised`, ombre et élévation en environ 200 ms `ease-out` (aujourd'hui : la
+`transition` Tailwind par défaut, 150 ms, sur l'ombre seule) et un signal d'interactivité
+sur le bord d'une carte cliquable. Jamais de `scale` : voir [Mouvement](#mouvement).
 
 ### TextField
 
@@ -172,11 +283,22 @@ contrôle, message d'erreur. États : défaut, focus global, invalide (la prése
 `TaskForm`). À éviter : un placeholder à la place du libellé, un message d'erreur
 non relié.
 
+Règles complémentaires ([form-field-states](https://designmotionhq.com/patterns/form-field-states)) : six états distincts : défaut, focus,
+erreur, succès, désactivé, chargement. Le libellé est hors du champ, l'aide dessous.
+Une erreur combine couleur, icône et message (jamais une bordure rouge seule). Le succès
+s'affiche dans le champ. Un champ désactivé n'est pas un champ en chargement, et le
+désactivé ne se simule pas par une simple opacité. L'anneau de focus atteint 3:1.
+**Cible** : états succès, chargement et icône d'erreur, absents aujourd'hui.
+
 ### Select
 
 `<select>` natif étiqueté (libellé visible), utilisé pour la langue et l'ordre
 de tri. Chaque option peut porter son `lang` (WCAG 3.1.2) ; le focus reste sur lui
 après un changement. Natif : navigation clavier et lecteurs d'écran sans code.
+Règles complémentaires ([dropdown-design](https://designmotionhq.com/patterns/dropdown-design)) pour un menu déroulant sur mesure : un
+déclencheur qui se voit cliquable (caret, survol, cible d'au moins 44 px sur
+tactile), un retournement vers le haut près du bord, la navigation au clavier, une
+recherche au-delà d'une dizaine d'options, une ouverture d'environ 150 ms.
 
 ### Alert
 
@@ -198,6 +320,18 @@ sinon à `main` ; fermé à la souris sans focus (Safari), le focus ne bouge pas
 bouton de fermeture atteint par Tab est ramené entièrement dans la pile
 (`scrollIntoView({ block: 'nearest' })`). Preuves : `tests/unit/components/Notification.test.ts`,
 `tests/e2e/keyboard-focus.test.ts`.
+
+Règles complémentaires ([notification-system](https://designmotionhq.com/patterns/notification-system), [toast-notifications](https://designmotionhq.com/patterns/toast-notifications)) :
+
+- Quatre surfaces selon la gravité : toast, bandeau, modale, badge ; chacune a sa
+  persistance. Une info ne justifie jamais une modale ; jamais de modales
+  superposées ; les toasts s'empilent.
+- Un toast porte couleur, icône et bordure d'accent (**Cible** pour l'icône et la bordure : `ToastItem.svelte` lignes 31-34 n'a que la couleur). Il ne
+  s'affiche jamais au centre de l'écran. Les durées actuelles (3 s, 6 s) et la pile
+  fixée en bas font autorité ; au-delà d'un petit nombre de toasts visibles, le
+  surplus attend en file (**Cible**).
+- **Cible** : une erreur 5xx ou réseau reste jusqu'à fermeture ; les autres erreurs
+  durent 6 s.
 
 ### ReferenceLine
 
@@ -236,6 +370,11 @@ toast. Preuve : `tests/unit/validation/validation.test.ts`,
 `tests/unit/components/UserForm.test.ts`, `tests/e2e/accessibility.test.ts`
 (« forms showing validation errors »).
 
+Règles complémentaires ([form-validation-timing](https://designmotionhq.com/patterns/form-validation-timing)) : **Cible** : valider au départ du champ
+(blur), revalider en direct une fois l'erreur affichée, confirmer un champ devenu
+valide ; ni tout à la soumission, ni une erreur à chaque frappe. Aujourd'hui la
+validation a lieu à la soumission.
+
 ### Toast, bandeau ou message en ligne
 
 | Besoin                                                                                              | Moyen                            | Pourquoi                                                            |
@@ -247,6 +386,13 @@ toast. Preuve : `tests/unit/validation/validation.test.ts`,
 
 Un succès de création n'a pas de toast : le formulaire se vide et la liste change.
 
+Règles complémentaires pour une erreur ([error-states](https://designmotionhq.com/patterns/error-states)) : son emplacement suit sa nature
+(champ : sous le champ ; connexion : bandeau ou toast ; serveur ou permission : espace
+visible) et sa surface suit la gravité (ligne, puis toast, puis modale ; jamais une
+modale pour une petite validation). Le message est humain (quoi, pourquoi, que faire),
+jamais « Error 500 » ou « OK » seul, et propose une issue (réessayer, copier la
+référence). La prévention (validation en ligne) vaut mieux que le message.
+
 ### États vides et chargement
 
 États vides en `text-subtle` (« Aucun utilisateur », « Aucune tâche »). Chargement :
@@ -254,6 +400,18 @@ l'état discriminé `RequestStatus` ; le texte du bouton change pendant l'envoi,
 page statistiques affiche « Chargement… ». Aucune requête de liste n'est lancée
 tant que le service est indisponible (`runWhenAvailable`), pour éviter une cascade
 d'erreurs.
+
+Règles complémentaires ([loading-states-system](https://designmotionhq.com/patterns/loading-states-system), [skeleton-loading](https://designmotionhq.com/patterns/skeleton-loading), [empty-states](https://designmotionhq.com/patterns/empty-states)) :
+
+- Rien sous 300 ms. Un squelette fidèle à la mise en page finale quand la forme est
+  connue ; un spinner pour une attente courte (moins de 3 s environ) de durée inconnue,
+  jamais en pleine page ; une barre de progression au-delà quand le pourcentage est
+  connu. Pas de squelette pour une action de l'utilisateur (voir « Réponse
+  optimiste ») ; pas de mélange squelette et spinner. Un shimmer ne tourne que sous
+  `prefers-reduced-motion: no-preference`.
+- Un état vide a (**Cible** pour l'icône, absente aujourd'hui) une petite icône ou illustration, le ton de la marque et une action
+  principale vers l'étape suivante. Quatre cas : premier lancement, aucun résultat,
+  erreur, résultat filtré. Jamais « No data » nu ni un ton de journal technique.
 
 ### Erreur avec référence
 
@@ -267,8 +425,15 @@ Supprimer une tâche est immédiat, sans confirmation (`IconButton` rouge, nom
 « Supprimer {titre} »). L'élément focalisé disparaît : le focus va au titre de la
 liste (`tabindex="-1"`). Une tâche déjà supprimée sur le serveur est retirée avec
 l'info « Tâche déjà supprimée ». Preuve : `tests/unit/components/TaskForm.a11y.test.ts`,
-`tests/unit/stores/task-not-found.test.ts`. **Cible** : décider si une annulation ou une
-confirmation est voulue (non tranché).
+`tests/unit/stores/task-not-found.test.ts`. Règle décidée, pas encore réalisée
+(**Cible**) : pas de « Êtes-vous sûr ? ». La tâche disparaît aussitôt et un toast
+« Tâche supprimée » offre « Annuler » pendant 6 s (pause au survol et au focus,
+comme tout toast). La requête `DELETE` part à la fin du délai ou au départ de la page.
+Règles complémentaires ([destructive-actions](https://designmotionhq.com/patterns/destructive-actions), [undo-ux](https://designmotionhq.com/patterns/undo-ux)) : le bouton nomme l'action
+(« Supprimer la tâche ») ; le rouge est réservé à la destruction ; une action
+irréversible demande une friction forte (saisie du nom, maintien appuyé) et n'occupe
+jamais la place habituelle du bouton de confirmation. La fenêtre d'annulation est de
+6 s partout.
 
 ### Édition en ligne
 
@@ -276,6 +441,11 @@ Le bouton « Modifier » ouvre un formulaire dans la ligne : le focus va au cham
 titre, Échap annule sans appeler l'API, enregistrer ou annuler rend le focus au
 bouton « Modifier ». La case à cocher garde pour nom accessible le titre exact de la
 tâche, quel que soit son état. Preuve : `tests/unit/components/TaskForm.a11y.test.ts`.
+
+Règles complémentaires ([inline-editing](https://designmotionhq.com/patterns/inline-editing)) : la bascule ne décale rien (même police, même
+taille, même marge) ; Entrée valide, Échap annule ; le départ du champ (blur) se
+comporte pareil partout ; en cas d'échec, le brouillon est conservé. **Cible** : un
+signal d'éditabilité au survol.
 
 ### Tri de la liste
 
@@ -285,6 +455,22 @@ Quand une modification déplace une ligne, le focus reste sur le même contrôle
 « titre : position N sur M » est annoncé. Règles de tri et stockage : voir
 [architecture.md](./architecture.md#tri-des-tâches). Preuve :
 `tests/e2e/task-sorting.test.ts`, `tests/unit/components/TaskSorting.test.ts`.
+
+### Réponse optimiste
+
+Mettre l'interface à jour tout de suite, puis revenir en arrière proprement en cas
+d'échec, vaut pour une action réversible et de faible enjeu (par exemple cocher une tâche). Jamais
+pour un paiement ni avant une validation que seul le serveur peut donner. Le serveur
+recalcule et l'interface s'aligne sur sa réponse ([optimistic-ui](https://designmotionhq.com/patterns/optimistic-ui), [behind-the-button](https://designmotionhq.com/patterns/behind-the-button) : validation côté client pour la vitesse, côté serveur pour la confiance).
+Preuve : aucune ; règle à suivre.
+
+### Survol et tactile
+
+Le survol n'existe pas au toucher : aucune action principale n'est cachée derrière un
+survol, et toute information donnée au survol a un équivalent tactile ou clavier. Les
+styles de survol se déclarent sous `@media (hover: hover)` quand ils révèlent
+quelque chose ([hover-trap](https://designmotionhq.com/patterns/hover-trap)). Preuve : aucune ; règle à suivre (les survols actuels ne
+changent que la couleur ou l'ombre).
 
 ## 5. Contenu
 
@@ -305,6 +491,10 @@ Quand une modification déplace une ligne, le focus reste sur le même contrôle
 - **Langue.** Cookie `PARAGLIDE_LOCALE` écrit seulement au choix explicite, sinon
   langue du navigateur, sinon anglais ; `lang` posé par le serveur. Détails :
   [conventions.md](./conventions.md#internationalisation).
+- **Microcopy** ([microcopy](https://designmotionhq.com/patterns/microcopy)). Un bouton dit ce que l'on obtient ; une erreur dit quoi
+  faire (« Entrez une adresse e-mail valide »), jamais « Invalid input » ou
+  « operation failed » ; un état vide propose la première action ; le libellé est
+  permanent, jamais remplacé par le placeholder ; le ton est celui d'un collègue.
 
 ## 6. Gouvernance et checklist de revue
 
@@ -331,12 +521,126 @@ de classes les fige : ne pas les remplacer par un jeton sans prévenir qa.
 - [ ] Fonctionne à 320 px et à 200 % de zoom.
 - [ ] Textes dans les quatre fichiers `messages/*.json`, libellés longs testés.
 - [ ] Animation sous `prefers-reduced-motion: no-preference` seulement.
+- [ ] Aucune action principale cachée derrière un survol ; zone de tap suffisante.
+- [ ] Donnée saisie affichée en `wrap-anywhere` ; fond de page sur `html`/`body`
+      (**Cible**, écarts actuels listés en section 2).
 - [ ] Axe sans violation sur l'écran touché ; tests existants ni affaiblis ni
       modifiés pour passer.
 
-## Cible
+## 7. Cible
 
 Non réalisé : un jeu d'icônes cohérent (échelle de tailles, un seul trait), icône
 décorative à côté du texte des actions et des toasts, et la croix d'`IconButton`
 issue de ce jeu ; l'unification des écarts listés en section 2. Le lot Iconoir
 complète ce document.
+
+## 8. Motifs à venir
+
+Aucun de ces composants n'existe encore dans l'application, qui va grossir : chaque règle
+**s'applique dès qu'un composant de ce type est ajouté**. Ce sont des règles à suivre,
+sans preuve dans le code. Elles se traduisent dans les jetons et l'échelle de 4 px du
+projet ; une valeur qui manque est une **Cible : jeton à créer**, jamais un nombre en
+dur. Le composant ajouté rejoint la section 3 et la checklist de la section 6. Les
+fiches dont la règle est déjà dans les sections 1 à 4 n'y sont pas répétées (voir le
+compte rendu).
+
+### Formulaires avancés
+
+- **Réglages** ([settings-system](https://designmotionhq.com/patterns/settings-system)) : bascule immédiate pour un réglage anodin, « Enregistrer » et « Annuler » sinon ; un réglage modifié se signale et se réinitialise ; zone dangereuse en bas, avec saisie du nom.
+- **Enregistrement automatique** ([autosave-ux](https://designmotionhq.com/patterns/autosave-ux)) : attendre environ 800 ms après la dernière frappe ; statut à états (saisie, enregistrement, enregistré, hors ligne, erreur), jamais « Enregistré » avant le succès ; garde `beforeunload` tant que des changements ne sont pas partis.
+- **Sélecteur de date** ([date-pickers](https://designmotionhq.com/patterns/date-pickers)) : préréglages d'abord ; plage avec aperçu au survol ; clavier complet, feuille plein écran sur mobile.
+- **Masque de saisie** ([input-masking](https://designmotionhq.com/patterns/input-masking)) : blocs de 4 chiffres pour une carte ; curseur stable, nettoyage au collage ; valeur stockée brute, validée au départ du champ.
+- **Curseur de plage** ([range-sliders](https://designmotionhq.com/patterns/range-sliders)) : piste remplie et cliquable, valeur affichée pendant le glissement ; deux poignées pour une plage ; flèches, Début et Fin au clavier.
+- **Assistant en étapes** ([stepper-wizard](https://designmotionhq.com/patterns/stepper-wizard)) : étapes découpées par sens avec progression visible ; validation et erreurs dans l'étape ; état conservé en revenant en arrière.
+- **Interrupteur** ([toggle-anatomy](https://designmotionhq.com/patterns/toggle-anatomy)) : transition d'environ 250 ms en `ease-out`, sous `prefers-reduced-motion: no-preference` ; Espace bascule, `aria-checked`, focus visible ; si asynchrone, optimiste avec retour arrière.
+- **Dépôt de fichier** ([file-upload-ux](https://designmotionhq.com/patterns/file-upload-ux)) : zone de dépôt qui réagit ; pourcentage et temps restant, relance sur place ; aperçu (miniature, type, taille) et progression par fichier.
+- **Mot de passe** ([password-field-ux](https://designmotionhq.com/patterns/password-field-ux)) : checklist et jauge en temps réel ; bouton pour afficher la valeur ; collage permis.
+- **Code à usage unique** ([otp-input](https://designmotionhq.com/patterns/otp-input)) : le collage est le chemin principal (nettoyer, répartir) ; `inputmode="numeric"` et `autocomplete="one-time-code"` ; retour immédiat (erreur : vider et refocaliser).
+
+### Navigation
+
+- **Patterns de navigation** ([navigation-patterns](https://designmotionhq.com/patterns/navigation-patterns)) : onglets en bas sur mobile (3 à 5 destinations), barre latérale sur bureau à partir de 5 sections ; hamburger réservé au secondaire ; fil d'Ariane au-delà de 2 niveaux.
+- **Onglets** ([tabs-system](https://designmotionhq.com/patterns/tabs-system)) : flèches, Début, Fin et Tab au clavier ; focus et onglet actif de couleurs différentes ; débordement en défilement horizontal avec fondus.
+- **Pagination** ([pagination](https://designmotionhq.com/patterns/pagination)) : curseur plutôt que décalage quand les données bougent ; pages tronquées (première, dernière, courante, voisines) ; page dans l'URL et défilement restauré au retour.
+- **Palette de commandes** ([command-palette](https://designmotionhq.com/patterns/command-palette)) : recherche floue, résultats groupés, tout au clavier ; jamais le seul accès à une action.
+
+### Données et graphiques
+
+- **Tableau de données** ([data-table](https://designmotionhq.com/patterns/data-table)) : tri à trois états (croissant, décroissant, ordre d'origine) ; nombres à droite en chiffres tabulaires ; en-tête figé et densité en jeton (**Cible : jeton à créer**).
+- **Graphiques honnêtes** ([charts-that-lie](https://designmotionhq.com/patterns/charts-that-lie)) : axe des barres à zéro ; type suivant la question (secteurs jusqu'à 5 parts) ; étiquettes directes, sans quadrillage ni 3D, titre qui énonce la conclusion.
+- **Pastilles de filtre** ([filter-chips](https://designmotionhq.com/patterns/filter-chips)) : trois états distincts (repos, actif avec coche, désactivé) ; « ou » dans un groupe, « et » entre groupes ; une seule remise à zéro.
+- **Actions groupées** ([bulk-actions](https://designmotionhq.com/patterns/bulk-actions)) : case d'en-tête à trois états et compteur en direct ; sélection dans l'état de l'application ; annuler plutôt que confirmer (6 s).
+- **Recherche** ([search-experience-system](https://designmotionhq.com/patterns/search-experience-system)) : placeholder descriptif en complément du libellé ; recherches récentes au focus ; zéro résultat avec suggestions.
+- **Note en étoiles** ([star-rating](https://designmotionhq.com/patterns/star-rating)) : aperçu au survol distinct de la valeur enregistrée ; une moyenne fractionnaire ne s'arrondit pas à l'étoile entière.
+
+### Surfaces et superpositions
+
+- **Hiérarchie des superpositions** ([modal-hierarchy](https://designmotionhq.com/patterns/modal-hierarchy)) : première question : bloque-t-elle l'utilisateur ? La modale est réservée à une décision critique ; feuille du bas sur mobile ; un popover est petit, ancré, jamais bloquant.
+- **Menu contextuel** ([context-menu](https://designmotionhq.com/patterns/context-menu)) : se retourner près du bord ; groupes par intention, destructif en bas et en rouge ; flèches et Échap d'un niveau au clavier, appui long sur mobile.
+- **Infobulle** ([tooltip-design](https://designmotionhq.com/patterns/tooltip-design)) : délai d'environ 300 ms ; fermée au départ, par Échap, au blur et au clic extérieur ; une phrase, jamais seule source d'une information.
+- **Feuille du bas** ([bottom-sheets](https://designmotionhq.com/patterns/bottom-sheets)) : actions à portée du pouce, page visible derrière ; fermeture par glissement ; voile et défilement verrouillé.
+- **Accordéon** ([accordion-disclosure](https://designmotionhq.com/patterns/accordion-disclosure)) : en-tête en `<button>` avec `aria-expanded` et `aria-controls` ; hauteur animée via `grid-template-rows` de `0fr` à `1fr` ; la liste ne saute pas à l'ouverture.
+- **Empilement** ([z-index-mastery](https://designmotionhq.com/patterns/z-index-mastery)) : `z-index` exige un positionnement ; `isolation: isolate` confine un composant ; petite échelle nommée plutôt que 9999 (**Cible : jeton à créer**).
+
+### Interaction avancée
+
+- **Glisser-déposer** ([drag-and-drop](https://designmotionhq.com/patterns/drag-and-drop)) : prise confirmée visuellement ; zones de dépôt visibles avant le relâchement ; annulation de 6 s.
+- **Actions au glissement** ([swipe-actions](https://designmotionhq.com/patterns/swipe-actions)) : affordance signalée ; jamais l'unique accès à une action ; deux actions au plus par côté, friction ou annulation pour le destructif.
+- **Curseurs partagés** ([live-cursors](https://designmotionhq.com/patterns/live-cursors)) : positions interpolées, couleur stable par utilisateur ; verrouillage d'un élément en cours d'édition.
+- **Sélecteur de couleur** ([color-picker-ux](https://designmotionhq.com/patterns/color-picker-ux)) : formats lisibles (OKLCH et hex) ; couleurs récentes ; contraste affiché en direct.
+- **Animations liées au défilement** ([scroll-driven-animations](https://designmotionhq.com/patterns/scroll-driven-animations)) : `animation-timeline: scroll()` ou `view()` en CSS natif, sans écouteur de défilement ni bibliothèque JS ; sous `prefers-reduced-motion: no-preference`.
+- **Sélecteur `:has()`** ([css-has-selector](https://designmotionhq.com/patterns/css-has-selector)) : quand l'état est dans le DOM ; `:user-invalid` plutôt que `:invalid` ; `body:has(dialog[open])` pour verrouiller le défilement.
+
+### Mode sombre et système visuel
+
+- **Mode sombre** ([dark-mode](https://designmotionhq.com/patterns/dark-mode)) : un autre jeu de jetons, jamais une inversion ; fond gris très sombre (pas de noir pur), texte blanc cassé, accents désaturés ; les ratios de la section 2 se remesurent. **Cible : jeton à créer**.
+- **Kit de design system** ([design-system-kit](https://designmotionhq.com/patterns/design-system-kit)) : jetons sémantiques plutôt que valeurs en dur ; échelle typographique fixe ; composants en variantes, tailles et états.
+- **Grille** ([grid-system](https://designmotionhq.com/patterns/grid-system)) : 12 colonnes, gouttière prise dans l'échelle de 4 px ; 12, 6, 4 puis 1 colonne selon le point de rupture ; on rompt la grille seulement après l'avoir établie.
+- **Lois de la Gestalt** ([gestalt-laws](https://designmotionhq.com/patterns/gestalt-laws)) : regrouper ce qui va ensemble (région commune, similarité, continuité sur un même axe) ; assombrir l'arrière-plan d'une modale.
+- **Interface dense de type Linear** ([reverse-engineered-linear](https://designmotionhq.com/patterns/reverse-engineered-linear)) : profondeur par trois valeurs de fond et bordure fine plutôt que par des ombres ; statut par icône grise, pas par pastille colorée ; raccourci affiché à côté de l'action.
+- **Dégradés** ([gradient-design](https://designmotionhq.com/patterns/gradient-design)) : teintes voisines, luminosité dans un seul sens ; jamais de texte courant sur la zone médiane ; contraste mesuré sur le fond le plus défavorable.
+
+### Parcours et pages marketing
+
+- **Temps fort et fin** ([peak-end-rule](https://designmotionhq.com/patterns/peak-end-rule)) : un moment fort voulu et une fin positive ; soigner la dernière interaction de chaque parcours.
+- **Position dans la série** ([serial-position](https://designmotionhq.com/patterns/serial-position)) : le plus important au début et à la fin d'une séquence.
+- **Boucle ouverte** ([zeigarnik-effect](https://designmotionhq.com/patterns/zeigarnik-effect)) : une boucle ouverte visible (jauge, case non cochée) ramène l'utilisateur, seulement pour un résultat qu'il veut ; jamais de progression fabriquée.
+- **Squelette de page d'accueil** ([landing-page-skeleton](https://designmotionhq.com/patterns/landing-page-skeleton)) : cinq sections dans l'ordre (hero, preuve, problème, solution, appel à l'action) ; un seul appel à l'action, repris en bas ; pas de carrousel dans le hero.
+- **Hero sobre** ([de-ai-landing-hero](https://designmotionhq.com/patterns/de-ai-landing-hero)) : titre = le résultat obtenu, sous-titre = le public visé ; un seul bouton principal, l'autre action en lien texte ; un vrai témoignage plutôt que trois cartes à icône.
+
+## 9. Compte rendu de l'intégration des fiches
+
+Les 76 fiches de [designmotionhq.com](https://designmotionhq.com/patterns) sont
+intégrées : 33 comme « Règles complémentaires » dans les sections 1 à 6, 43 en
+section 8. Les valeurs sans source claire n'ont pas été reprises (pourcentages
+d'engagement ou de daltonisme, usages attribués à d'autres produits).
+
+**Sections complétées** : Principes, Fondations (couleurs, typographie et espacements,
+focus, mouvement, 320 px, écarts constatés), Composants (`Button`, `IconButton`, `Card`,
+`TextField`, `Select`, `Notification`), Motifs (formulaires, erreurs, états vides et
+chargement, action destructive, édition en ligne, réponse optimiste, survol et
+tactile), Contenu, Gouvernance. Fiches : [design-tokens](https://designmotionhq.com/patterns/design-tokens), [color-accessibility](https://designmotionhq.com/patterns/color-accessibility), [visual-hierarchy](https://designmotionhq.com/patterns/visual-hierarchy), [proximity-rule](https://designmotionhq.com/patterns/proximity-rule), [border-radius](https://designmotionhq.com/patterns/border-radius), [icon-design-rules](https://designmotionhq.com/patterns/icon-design-rules), [animation-timing](https://designmotionhq.com/patterns/animation-timing), [easing-curves](https://designmotionhq.com/patterns/easing-curves), [error-states](https://designmotionhq.com/patterns/error-states), [loading-states-system](https://designmotionhq.com/patterns/loading-states-system), [notification-system](https://designmotionhq.com/patterns/notification-system), [toast-notifications](https://designmotionhq.com/patterns/toast-notifications), [optimistic-ui](https://designmotionhq.com/patterns/optimistic-ui), [doherty-threshold](https://designmotionhq.com/patterns/doherty-threshold), [undo-ux](https://designmotionhq.com/patterns/undo-ux), [form-field-states](https://designmotionhq.com/patterns/form-field-states), [form-validation-timing](https://designmotionhq.com/patterns/form-validation-timing), [disabled-buttons](https://designmotionhq.com/patterns/disabled-buttons), [inline-editing](https://designmotionhq.com/patterns/inline-editing), [destructive-actions](https://designmotionhq.com/patterns/destructive-actions), [dropdown-design](https://designmotionhq.com/patterns/dropdown-design), [hover-trap](https://designmotionhq.com/patterns/hover-trap), [focus-states](https://designmotionhq.com/patterns/focus-states), [empty-states](https://designmotionhq.com/patterns/empty-states), [microcopy](https://designmotionhq.com/patterns/microcopy), [von-restorff](https://designmotionhq.com/patterns/von-restorff), [skeleton-loading](https://designmotionhq.com/patterns/skeleton-loading), [behind-the-button](https://designmotionhq.com/patterns/behind-the-button), [shadow-elevation](https://designmotionhq.com/patterns/shadow-elevation), [depth-layers](https://designmotionhq.com/patterns/depth-layers), [golden-ratio](https://designmotionhq.com/patterns/golden-ratio), [perfect-card](https://designmotionhq.com/patterns/perfect-card), [card-hover-anatomy](https://designmotionhq.com/patterns/card-hover-anatomy).
+
+**Section créée** : « 8. Motifs à venir » (43 fiches, 7 thèmes). La section « Cible »
+est devenue la section 7.
+
+**Écarts volontaires** :
+
+- [golden-ratio](https://designmotionhq.com/patterns/golden-ratio) : l'échelle de 4 px de Tailwind et les jetons existants gardent
+  l'autorité.
+- [icon-design-rules](https://designmotionhq.com/patterns/icon-design-rules) : trait constant de 1,5 px (dessin natif d'Iconoir) au lieu
+  de 2 px.
+- [perfect-card](https://designmotionhq.com/patterns/perfect-card) et [card-hover-anatomy](https://designmotionhq.com/patterns/card-hover-anatomy) : jamais de `scale` sur la carte
+  entière ; rayon de 24 px écarté au profit de `card`.
+- [border-radius](https://designmotionhq.com/patterns/border-radius) : seuls `control` et `card` existent, l'échelle de la fiche n'est
+  pas reprise.
+- [doherty-threshold](https://designmotionhq.com/patterns/doherty-threshold) : seuils du projet (retour sous 100 ms, indicateur au-delà de
+  300 ms) au lieu des seuils de 200 ms (doherty-threshold) et 400 ms (optimistic-ui) des
+  fiches.
+- [undo-ux](https://designmotionhq.com/patterns/undo-ux), [drag-and-drop](https://designmotionhq.com/patterns/drag-and-drop) et [bulk-actions](https://designmotionhq.com/patterns/bulk-actions) : fenêtre d'annulation
+  unique de 6 s.
+- [toast-notifications](https://designmotionhq.com/patterns/toast-notifications) : durées de 3 s et 6 s conservées ; 5xx et erreur réseau
+  jusqu'à fermeture (**Cible**).
+- [disabled-buttons](https://designmotionhq.com/patterns/disabled-buttons) : pas de `disabled` pour la validation (**Cible**).
+- [easing-curves](https://designmotionhq.com/patterns/easing-curves), [shadow-elevation](https://designmotionhq.com/patterns/shadow-elevation) et [depth-layers](https://designmotionhq.com/patterns/depth-layers) : aucune valeur
+  reprise, à définir (**Cible : jeton à créer**).
