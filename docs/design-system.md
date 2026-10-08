@@ -198,7 +198,8 @@ Règles :
   passent sous le texte quand la colonne mesure moins de 28 rem (container query
   `@md`), à côté sinon. `wrap-anywhere` ne coupe un mot que s'il ne tient pas seul sur
   une ligne.
-- Marge de page `p-4` sous `sm`, deux colonnes dès `md` (768 px).
+- Marge de page `p-4` sous `sm`, deux colonnes dès `md` (768 px). Les tuiles de statistiques
+  passent sur une colonne sous `sm`, et leur chiffre est en `text-4xl` (`text-5xl` dès `sm`).
 
 ### Écarts constatés
 
@@ -404,6 +405,18 @@ page statistiques affiche « Chargement… ». Aucune requête de liste n'est la
 tant que le service est indisponible (`runWhenAvailable`), pour éviter une cascade
 d'erreurs.
 
+**Inconnu n'est pas vide.** Un écran qui n'a pas ses données ne le présente jamais comme
+« aucun » ni comme des zéros. La page statistiques a cinq états, dans cet ordre : chiffres ;
+invitation « Rien à compter » avec lien vers l'accueil quand utilisateurs et tâches sont à
+0 ; attente du service (« s'afficheront dès que le service sera rétabli », sans chargement ni
+second « Réessayer », le bandeau l'a) ; chargement ; échec (« Impossible de charger… » et
+« Réessayer », dont le clic met le focus sur `<main>` le temps du rechargement). Le toast
+garde le détail technique et la référence. **Cible** : la liste des utilisateurs de l'accueil
+affiche encore « Users (0) / No users yet » tant que ses données sont inconnues (panne au
+chargement) ; elle suivra la même règle, avec un état de chargement connu de `UserState`,
+dans un lot suivant. Preuve : `tests/unit/components/StatsPage.states.test.ts`,
+`tests/e2e/truthful-states.test.ts`.
+
 Règles complémentaires ([loading-states-system](https://designmotionhq.com/patterns/loading-states-system), [skeleton-loading](https://designmotionhq.com/patterns/skeleton-loading), [empty-states](https://designmotionhq.com/patterns/empty-states)) :
 
 - Rien sous 300 ms. Un squelette fidèle à la mise en page finale quand la forme est
@@ -415,6 +428,24 @@ Règles complémentaires ([loading-states-system](https://designmotionhq.com/pat
 - Un état vide a (**Cible** pour l'icône, absente aujourd'hui) une petite icône ou illustration, le ton de la marque et une action
   principale vers l'étape suivante. Quatre cas : premier lancement, aucun résultat,
   erreur, résultat filtré. Jamais « No data » nu ni un ton de journal technique.
+
+### Message d'erreur du serveur
+
+Une erreur serveur se lit comme une phrase pour une personne, pas comme une ligne de journal :
+elle dit que le problème est de notre côté ou que le service est indisponible, et de
+réessayer (« Un problème est survenu de notre côté. Réessayez dans un instant. »), sans
+« Internal server error » ni « Database unavailable ». Elle ne promet pas que la saisie est
+conservée, ce qui n'est pas vrai de toute action. Preuve : `tests/unit/i18n/failure-message.test.ts`.
+
+### Changement d'utilisateur
+
+Le formulaire de tâche appartient à l'utilisateur sélectionné : en changer le remet à zéro
+(`{#key}` dans `routes/+page.svelte`) ; erreur de champ, brouillon et édition en cours ne
+passent pas à l'autre utilisateur, sans quoi une tâche pourrait lui être attribuée. Le tri
+est global et survit au changement ; le focus reste sur la ligne choisie. Une tâche dont la
+création est en vol pendant le changement reste à l'utilisateur d'origine et n'entre pas dans
+la liste de l'autre (`TaskState.add`). Preuve : `tests/unit/components/HomePage.userSwitch.test.ts`,
+`tests/unit/stores/tasks-in-flight.test.ts`, `tests/e2e/truthful-states.test.ts`.
 
 ### Erreur avec référence
 

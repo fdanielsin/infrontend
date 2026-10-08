@@ -17,6 +17,13 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - A long name, e-mail, title or description without spaces no longer widens the page or
   overlaps the panels; the page background covers the whole page; on a narrow screen the task
   actions move under the text and the page margins shrink (infrontend#47).
+- The statistics page no longer shows "Loading…" forever during an outage: it says it waits for
+  the service, offers "Retry" after a failure and invites to create a user when there is
+  nothing to count.
+- A "Title is required" error, a draft or a task being edited no longer follows to another
+  selected user.
+- Server errors are worded for people ("Something went wrong on our side. Please try again in a
+  moment.") instead of "Internal server error" and "Database unavailable".
 
 ## [1.3.0] - 2026-10-08
 
