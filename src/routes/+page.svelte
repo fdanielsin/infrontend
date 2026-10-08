@@ -43,7 +43,10 @@
 				<UserForm />
 			</div>
 			<div class="min-w-0">
-				<TaskForm user={users.selected} />
+				<!-- A task form belongs to one user: another user starts it again from scratch. -->
+				{#key users.selected?.id}
+					<TaskForm user={users.selected} />
+				{/key}
 			</div>
 		</div>
 	</div>

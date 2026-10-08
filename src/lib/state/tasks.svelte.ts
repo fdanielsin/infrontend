@@ -15,6 +15,9 @@ export class TaskState {
 	readonly status: RequestStatus;
 
 	readonly #notifications: NotificationState;
+	// Whose tasks the list holds: a task created for someone else, whose answer comes late, is not
+	// added to it. Unknown (null) before the first load.
+	#listOwnerId: number | null = null;
 
 	constructor(notifications: NotificationState) {
 		this.#notifications = notifications;
@@ -23,6 +26,7 @@ export class TaskState {
 
 	clear() {
 		this.tasks = [];
+		this.#listOwnerId = null;
 	}
 
 	async load(userId: number, isCurrent: () => boolean) {
@@ -30,7 +34,10 @@ export class TaskState {
 			fallbackMessage: m.error_fetch_tasks,
 			isCurrent
 		});
-		if (result.success && isCurrent()) this.tasks = result.data;
+		if (result.success && isCurrent()) {
+			this.tasks = result.data;
+			this.#listOwnerId = userId;
+		}
 	}
 
 	async add(title: string, description: string, userId: number) {
@@ -39,7 +46,9 @@ export class TaskState {
 			{ fallbackMessage: m.error_create_task }
 		);
 		if (!result.success) return undefined;
-		this.tasks = [...this.tasks, result.data];
+		if (this.#listOwnerId === null || this.#listOwnerId === userId) {
+			this.tasks = [...this.tasks, result.data];
+		}
 		return result.data;
 	}
 
