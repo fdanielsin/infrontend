@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, waitFor, within } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import { AppState } from '$lib/state/app-state.svelte';
+import { ANNOUNCEMENT_LIFETIME } from '$lib/state/notification.svelte';
 import Notification from '$lib/ui/Notification.svelte';
 import { renderWithApp } from '../support/render-with-app';
 
@@ -230,6 +231,111 @@ describe('Notification component', () => {
 		expect(view.getByRole('status')).toBe(status);
 		expect(view.getByRole('alert')).toBe(alert);
 		expect(status.isConnected && alert.isConnected).toBe(true);
+	});
+
+	describe('announcements for screen readers', () => {
+		const announcementIn = (view: { container: HTMLElement }) =>
+			view.container.querySelector<HTMLElement>('[data-announcement]');
+
+		it('renders a polite, atomic, visually hidden live region, empty at first (happy path)', () => {
+			// GIVEN / WHEN: The notification area without anything to say.
+			const view = renderWithApp(app, Notification);
+
+			// THEN: The region exists already (a region added with its text is not announced).
+			const region = announcementIn(view);
+			expect(region).not.toBeNull();
+			expect(region?.getAttribute('aria-live')).toBe('polite');
+			expect(region?.getAttribute('aria-atomic')).toBe('true');
+			expect(region?.classList.contains('sr-only')).toBe(true);
+			expect(region?.textContent).toBe('');
+		});
+
+		it('writes the announcement in the region and shows no toast (happy path)', async () => {
+			// GIVEN: The notification area.
+			const view = renderWithApp(app, Notification);
+
+			// WHEN: A sort is announced.
+			app.notifications.announce('Tasks sorted by title');
+
+			// THEN: The hidden region holds it; no toast, no landmark, nothing reserved.
+			await waitFor(() => expect(announcementIn(view)?.textContent).toBe('Tasks sorted by title'));
+			expect(view.container.querySelector('[data-toast]')).toBeNull();
+			expect(view.queryByRole('region')).toBeNull();
+			expect(reservedHeight()).toBe('0px');
+		});
+
+		it('keeps the very same region from one announcement to the next (limit)', async () => {
+			// GIVEN: A region that has spoken once.
+			const view = renderWithApp(app, Notification);
+			const region = announcementIn(view);
+			app.notifications.announce('First');
+			await waitFor(() => expect(region?.textContent).toBe('First'));
+
+			// WHEN: Another message follows.
+			app.notifications.announce('Second');
+
+			// THEN: The same element carries it (a new element would not be announced).
+			await waitFor(() => expect(region?.textContent).toBe('Second'));
+			expect(announcementIn(view)).toBe(region);
+		});
+
+		it('renders a repeated message again, as new content (limit)', async () => {
+			// GIVEN: A message announced.
+			const view = renderWithApp(app, Notification);
+			app.notifications.announce('Same');
+			await waitFor(() => expect(announcementIn(view)?.textContent).toBe('Same'));
+			const firstText = announcementIn(view)?.firstChild;
+
+			// WHEN: The same text is announced again.
+			app.notifications.announce('Same');
+
+			// THEN: The text node was replaced, so the live region changed.
+			await waitFor(() => expect(announcementIn(view)?.firstChild).not.toBe(firstText));
+			expect(announcementIn(view)?.textContent).toBe('Same');
+		});
+
+		it('empties the region when the announcement is forgotten (boundary)', async () => {
+			// GIVEN: A message announced, and fake time.
+			vi.useFakeTimers();
+			const view = renderWithApp(app, Notification);
+			app.notifications.announce('Gone soon');
+			await tick();
+			expect(announcementIn(view)?.textContent).toBe('Gone soon');
+
+			// WHEN: Its lifetime ends.
+			vi.advanceTimersByTime(ANNOUNCEMENT_LIFETIME);
+			await tick();
+
+			// THEN: No stale sentence is left for a reader browsing the page.
+			expect(announcementIn(view)?.textContent).toBe('');
+		});
+
+		it('stays apart from the alert and status regions of the toasts (exception)', async () => {
+			// GIVEN: An error toast is shown.
+			app.notifications.add('Broken', 'error', 0);
+			const view = renderWithApp(app, Notification);
+
+			// WHEN: A sort is announced meanwhile.
+			app.notifications.announce('Sorted');
+
+			// THEN: The announcement is in none of the toast regions, which keep their one toast.
+			await waitFor(() => expect(announcementIn(view)?.textContent).toBe('Sorted'));
+			expect(view.getByRole('alert').contains(announcementIn(view))).toBe(false);
+			expect(view.getByRole('status').contains(announcementIn(view))).toBe(false);
+			expect(messagesIn(view.getByRole('alert'))).toEqual(['Broken']);
+			expect(view.getAllByRole('status')).toHaveLength(1);
+		});
+
+		it('can be destroyed while it holds a message (exception)', async () => {
+			// GIVEN: A region holding a message.
+			const view = renderWithApp(app, Notification);
+			app.notifications.announce('Sorted');
+			await waitFor(() => expect(announcementIn(view)?.textContent).toBe('Sorted'));
+
+			// WHEN / THEN: Destroying it, then announcing again, throws nothing.
+			expect(() => view.unmount()).not.toThrow();
+			expect(() => app.notifications.announce('Again')).not.toThrow();
+		});
 	});
 
 	it('pauses a notification while the keyboard focus is inside it (happy path)', async () => {

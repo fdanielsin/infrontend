@@ -80,6 +80,14 @@
 
 <svelte:window onfocusin={keepClearOfStack} />
 
+<!-- Low-severity news (sort order, a row that moved) is read, never shown. The region is always
+rendered, empty: a region that appears with its text is not announced. It is explicitly live, not
+role="status": the toasts own the page's single status region. The key renders a repeated
+sentence anew. -->
+<p data-announcement aria-live="polite" aria-atomic="true" class="sr-only">
+	{#key notifications.announcement?.id}{notifications.announcement?.message ?? ''}{/key}
+</p>
+
 <!-- The handler only records where focus came from; it adds no interaction. -->
 <div
 	bind:this={stack}

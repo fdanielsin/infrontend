@@ -12,6 +12,15 @@ export interface Notification {
 }
 
 export const ERROR_NOTIFICATION_DURATION = 6000;
+// Long enough for a screen reader to read it; short enough not to leave a stale sentence for a
+// reader browsing the page.
+export const ANNOUNCEMENT_LIFETIME = 10_000;
+
+// `id` changes with each announcement, so that the same text is rendered, and read, again.
+export interface Announcement {
+	id: number;
+	message: string;
+}
 
 interface DismissTimer {
 	timeout: ReturnType<typeof setTimeout> | null;
@@ -24,16 +33,28 @@ export class NotificationState {
 	alerts = $derived(this.items.filter((notification) => notification.type === 'error'));
 	statuses = $derived(this.items.filter((notification) => notification.type !== 'error'));
 
+	// Low-severity news with no surface: held for the live region of the notification area, which
+	// is hidden from sight. Nothing is shown, so nothing can cover a control.
+	announcement = $state.raw<Announcement | null>(null);
+
 	// Timers are never rendered: a plain Map is enough, reactivity would only add cost.
 	// eslint-disable-next-line svelte/prefer-svelte-reactivity
 	#timers = new Map<string, DismissTimer>();
 	#lastId = 0;
+	#lastAnnouncementId = 0;
+	#announcementTimeout: ReturnType<typeof setTimeout> | undefined;
 
 	add(message: string, type: NotificationType = 'info', duration = 3000, reference?: string) {
 		const id = `notif-${++this.#lastId}`;
 		this.items = [...this.items, { id, message, type, duration, ...(reference && { reference }) }];
 		if (duration) this.#startTimer(id, duration);
 		return id;
+	}
+
+	announce(message: string) {
+		clearTimeout(this.#announcementTimeout);
+		this.announcement = { id: ++this.#lastAnnouncementId, message };
+		this.#announcementTimeout = setTimeout(() => (this.announcement = null), ANNOUNCEMENT_LIFETIME);
 	}
 
 	notifyError(message: string, reference?: string) {

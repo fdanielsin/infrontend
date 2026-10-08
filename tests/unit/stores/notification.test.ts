@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ERROR_NOTIFICATION_DURATION, NotificationState } from '$lib/state/notification.svelte';
+import {
+	ANNOUNCEMENT_LIFETIME,
+	ERROR_NOTIFICATION_DURATION,
+	NotificationState
+} from '$lib/state/notification.svelte';
 
 describe('notification store', () => {
 	let notifications: NotificationState;
@@ -240,6 +244,89 @@ describe('notification store', () => {
 
 			// THEN: No timer is left behind.
 			expect(vi.getTimerCount()).toBe(0);
+		});
+	});
+
+	describe('announce (low severity, screen readers only)', () => {
+		it('keeps the message for the live region and shows no toast (happy path)', () => {
+			// GIVEN / WHEN: A sort is announced.
+			notifications.announce('Tasks sorted by title');
+
+			// THEN: The message is held for the live region; no toast, no timer of a toast.
+			expect(notifications.announcement?.message).toBe('Tasks sorted by title');
+			expect(notifications.items).toEqual([]);
+			expect(notifications.statuses).toEqual([]);
+		});
+
+		it('replaces the previous message (happy path)', () => {
+			// GIVEN: A first announcement.
+			notifications.announce('First');
+
+			// WHEN: A second one follows.
+			notifications.announce('Second');
+
+			// THEN: Only the latest is held.
+			expect(notifications.announcement?.message).toBe('Second');
+		});
+
+		it('gives a repeated message a new identity so that it is read again (limit)', () => {
+			// GIVEN: A message announced.
+			notifications.announce('Same');
+			const first = notifications.announcement;
+
+			// WHEN: The very same text is announced again.
+			notifications.announce('Same');
+
+			// THEN: The announcement is a new one, the live region can re-render it.
+			expect(notifications.announcement?.message).toBe('Same');
+			expect(notifications.announcement?.id).not.toBe(first?.id);
+		});
+
+		it('keeps an empty message empty, as a way to say nothing (boundary)', () => {
+			// GIVEN / WHEN: An empty message.
+			notifications.announce('');
+
+			// THEN: Nothing readable is held.
+			expect(notifications.announcement?.message ?? '').toBe('');
+		});
+
+		it('forgets the message after ANNOUNCEMENT_LIFETIME, not one ms before (boundary)', () => {
+			// GIVEN: An announcement.
+			notifications.announce('Gone soon');
+
+			// WHEN / THEN: Still held 1 ms before the deadline, forgotten at the deadline.
+			vi.advanceTimersByTime(ANNOUNCEMENT_LIFETIME - 1);
+			expect(notifications.announcement?.message).toBe('Gone soon');
+			vi.advanceTimersByTime(1);
+			expect(notifications.announcement).toBeNull();
+		});
+
+		it('restarts the lifetime with a newer message, leaving no second timer (exception)', () => {
+			// GIVEN: An announcement half-way through its life, then a newer one.
+			notifications.announce('Old');
+			vi.advanceTimersByTime(ANNOUNCEMENT_LIFETIME / 2);
+			notifications.announce('New');
+
+			// WHEN: The old deadline passes.
+			vi.advanceTimersByTime(ANNOUNCEMENT_LIFETIME / 2);
+
+			// THEN: The newer message is still there, and a single timer is pending.
+			expect(notifications.announcement?.message).toBe('New');
+			expect(vi.getTimerCount()).toBe(1);
+			vi.advanceTimersByTime(ANNOUNCEMENT_LIFETIME / 2);
+			expect(notifications.announcement).toBeNull();
+			expect(vi.getTimerCount()).toBe(0);
+		});
+
+		it('does not touch toasts already shown (limit)', () => {
+			// GIVEN: A persistent error toast.
+			const id = notifications.add('Broken', 'error', 0);
+
+			// WHEN: A message is announced.
+			notifications.announce('Sorted');
+
+			// THEN: The toast is untouched.
+			expect(notifications.items.map((toast) => toast.id)).toEqual([id]);
 		});
 	});
 });
