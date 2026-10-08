@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { resolve } from '$app/paths';
 	import { api, type Stats } from '$lib/api/client';
 	import { formatNumber } from '$lib/i18n/format';
@@ -8,6 +8,7 @@
 	import Alert from '$lib/ui/Alert.svelte';
 	import Button from '$lib/ui/Button.svelte';
 	import Card from '$lib/ui/Card.svelte';
+	import { ref } from '$lib/ui/attachments';
 	import { getAppState } from '$lib/state/app-state.svelte';
 	import { RequestStatus } from '$lib/state/request-status.svelte';
 
@@ -15,6 +16,7 @@
 	const status = new RequestStatus(notifications, true);
 	let stats = $state.raw<Stats | null>(null);
 	let main = $state<HTMLElement>();
+	const refs: { retry?: HTMLElement } = {};
 
 	async function load() {
 		const result = await status.run(() => api.getStats(), {
@@ -27,6 +29,11 @@
 	async function retry() {
 		main?.focus();
 		await load();
+		// The button came back after a failed retry: the keyboard user is where they were.
+		if (!stats) {
+			await tick();
+			refs.retry?.focus();
+		}
 	}
 
 	onMount(() => availability.runWhenAvailable(load));
@@ -109,7 +116,12 @@
 		{:else}
 			<Alert class="font-semibold">
 				<p>{m.stats_load_failed()}</p>
-				<Button variant="outline" class="mt-3" onclick={() => void retry()}>
+				<Button
+					variant="outline"
+					class="mt-3"
+					{@attach ref(refs, 'retry')}
+					onclick={() => void retry()}
+				>
 					{m.stats_retry()}
 				</Button>
 			</Alert>

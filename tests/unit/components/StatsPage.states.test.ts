@@ -118,6 +118,22 @@ describe('statistics page states', () => {
 		expect(document.activeElement?.tagName).toBe('MAIN');
 	});
 
+	it('gives the focus back to Retry when the retry fails and the button comes back (exception)', async () => {
+		// GIVEN: A failure state, the focus on "Retry".
+		vi.mocked(api.getStats).mockResolvedValueOnce({ success: false, error: 'HTTP 500' });
+		const { getByRole } = renderWithApp(app, StatsPage);
+		await vi.advanceTimersByTimeAsync(0);
+		getByRole('button', { name: 'Retry' }).focus();
+		vi.mocked(api.getStats).mockResolvedValueOnce({ success: false, error: 'HTTP 500' });
+
+		// WHEN: Retry is pressed and fails again.
+		await fireEvent.click(getByRole('button', { name: 'Retry' }));
+		await vi.advanceTimersByTimeAsync(0);
+
+		// THEN: The new button has the focus, not <main>.
+		expect(document.activeElement).toBe(getByRole('button', { name: 'Retry' }));
+	});
+
 	it('asks once for two clicks on Retry in a row (boundary)', async () => {
 		// GIVEN: A failure state.
 		vi.mocked(api.getStats).mockResolvedValueOnce({ success: false, error: 'HTTP 500' });
