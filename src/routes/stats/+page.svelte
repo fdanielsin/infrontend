@@ -6,6 +6,7 @@
 	import LanguageSwitcher from '$lib/ui/LanguageSwitcher.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import Alert from '$lib/ui/Alert.svelte';
+	import Button from '$lib/ui/Button.svelte';
 	import Card from '$lib/ui/Card.svelte';
 	import { getAppState } from '$lib/state/app-state.svelte';
 	import { RequestStatus } from '$lib/state/request-status.svelte';
@@ -13,12 +14,19 @@
 	const { availability, notifications } = getAppState();
 	const status = new RequestStatus(notifications, true);
 	let stats = $state.raw<Stats | null>(null);
+	let main = $state<HTMLElement>();
 
 	async function load() {
 		const result = await status.run(() => api.getStats(), {
 			fallbackMessage: m.error_fetch_stats
 		});
 		if (result.success) stats = result.data;
+	}
+
+	// The button is replaced by the loading state: the focus goes to the page first, never to <body>.
+	async function retry() {
+		main?.focus();
+		await load();
 	}
 
 	onMount(() => availability.runWhenAvailable(load));
@@ -28,7 +36,7 @@
 	<title>{m.stats_page_title()}</title>
 </svelte:head>
 
-<main tabindex="-1" class="min-h-screen p-4 focus:outline-none sm:p-8">
+<main bind:this={main} tabindex="-1" class="min-h-screen p-4 focus:outline-none sm:p-8">
 	<div class="mx-auto max-w-2xl">
 		<div class="mb-4 flex justify-end">
 			<LanguageSwitcher />
@@ -38,15 +46,18 @@
 			{m.stats_heading()}
 		</h1>
 
-		{#if status.loading}
+		<!-- Each state says what is true: figures, a wait for the service, a load in progress, a
+		     failure with its way out, or nothing to count. A toast carries the error detail. -->
+		{#if stats && stats.users === 0 && stats.tasks === 0}
 			<Card variant="flat" padding="lg" class="text-center">
-				<p class="text-muted">{m.stats_loading()}</p>
+				<p class="text-muted">{m.stats_empty()}</p>
+				<a
+					href={resolve('/')}
+					class="mt-2 inline-block text-action-strong underline hover:text-action-strong-hover"
+				>
+					{m.stats_empty_action()}
+				</a>
 			</Card>
-		{:else if status.error}
-			<Alert class="font-semibold">
-				<span aria-hidden="true">❌</span>
-				{m.stats_error({ message: status.error })}
-			</Alert>
 		{:else if stats}
 			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
 				<Card variant="raised">
@@ -87,6 +98,21 @@
 					</li>
 				</ul>
 			</Card>
+		{:else if availability.status === 'unavailable'}
+			<Card variant="flat" padding="lg" class="text-center">
+				<p class="text-muted">{m.stats_unavailable()}</p>
+			</Card>
+		{:else if status.loading}
+			<Card variant="flat" padding="lg" class="text-center">
+				<p class="text-muted">{m.stats_loading()}</p>
+			</Card>
+		{:else}
+			<Alert class="font-semibold">
+				<p>{m.stats_load_failed()}</p>
+				<Button variant="outline" class="mt-3" onclick={() => void retry()}>
+					{m.stats_retry()}
+				</Button>
+			</Alert>
 		{/if}
 
 		<div class="mt-8">

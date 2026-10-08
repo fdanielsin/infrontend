@@ -200,7 +200,7 @@ test.describe('Focus and errors (computed style, mocked API)', () => {
 		// WHEN: The statistics page fails to load.
 		api.failNext('GET /stats', { status: 500, error: 'Database unavailable' });
 		await page.goto('/stats');
-		const statsError = page.getByText(/Database unavailable/).first();
+		const statsError = page.getByText('Statistics could not be loaded.');
 		await expect(statsError).toBeVisible();
 		const statsColor = await measure(statsError, 'color');
 

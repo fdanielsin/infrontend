@@ -65,8 +65,8 @@ describe('stats page', () => {
 		// WHEN: The page is rendered.
 		const { findByText } = renderWithApp(app, StatsPage);
 
-		// THEN: The error is displayed.
-		expect(await findByText('Error: HTTP 500')).toBeTruthy();
+		// THEN: The page says the statistics could not be loaded (the toast carries the detail).
+		expect(await findByText('Statistics could not be loaded.')).toBeTruthy();
 	});
 
 	it('rounds a repeating average to 2 decimals (limit)', async () => {
@@ -88,8 +88,8 @@ describe('stats page', () => {
 		// WHEN: The page is rendered.
 		const { findByText } = renderWithApp(app, StatsPage);
 
-		// THEN: The error is displayed and notified.
-		await findByText('Error: HTTP 500');
+		// THEN: The page state is displayed and the error is notified.
+		await findByText('Statistics could not be loaded.');
 		expect(app.notifications.items).toEqual([
 			expect.objectContaining({ message: 'HTTP 500', type: 'error' })
 		]);
@@ -108,7 +108,7 @@ describe('stats page', () => {
 		// THEN: The loading message is shown, then replaced by the error.
 		expect(getByText('Loading statistics…')).toBeTruthy();
 		fail(new Error('Failed to fetch'));
-		expect(await findByText('Error: Failed to fetch')).toBeTruthy();
+		expect(await findByText('Statistics could not be loaded.')).toBeTruthy();
 		expect(queryByText('Loading statistics…')).toBeNull();
 	});
 

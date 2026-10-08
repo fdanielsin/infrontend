@@ -128,9 +128,9 @@ test.describe('Accessibility (axe, mocked API)', () => {
 
 		// WHEN: The statistics page is loaded.
 		await page.goto('/stats');
-		await expect(page.getByText('Error: Database unavailable')).toBeVisible();
+		await expect(page.getByText('Statistics could not be loaded.')).toBeVisible();
 
-		// THEN: The error banner and its toast have no violation.
+		// THEN: The failure state and its toast have no violation.
 		await expectNoViolations(page);
 	});
 });
