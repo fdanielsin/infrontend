@@ -89,7 +89,7 @@ describe('a task already deleted on the server (TASK_NOT_FOUND)', () => {
 		[
 			'a 500',
 			{ success: false, error: 'Internal server error', status: 500, code: 'INTERNAL_ERROR' },
-			'Internal server error'
+			'Something went wrong on our side. Please try again in a moment.'
 		]
 	] as const)(
 		'treats %s as an error and keeps the task (sad path)',

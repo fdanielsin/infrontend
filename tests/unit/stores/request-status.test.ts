@@ -100,9 +100,12 @@ describe('createRequestStatus with a handled failure', () => {
 		);
 
 		// THEN: It is shown and notified as an error.
-		expect(status.error).toBe('Internal server error');
+		expect(status.error).toBe('Something went wrong on our side. Please try again in a moment.');
 		expect(notifications.items).toEqual([
-			expect.objectContaining({ message: 'Internal server error', type: 'error' })
+			expect.objectContaining({
+				message: 'Something went wrong on our side. Please try again in a moment.',
+				type: 'error'
+			})
 		]);
 	});
 });

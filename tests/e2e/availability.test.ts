@@ -303,7 +303,11 @@ test.describe('Service availability (mocked API)', () => {
 			});
 			await page.getByRole('checkbox', { name: 'Review', exact: true }).focus();
 			await page.keyboard.press('Space');
-			await expect(page.getByRole('alert').getByText('Internal server error')).toBeVisible();
+			await expect(
+				page
+					.getByRole('alert')
+					.getByText('Something went wrong on our side. Please try again in a moment.')
+			).toBeVisible();
 		}
 
 		test('shows the reference, copies it and confirms in the status region (happy path)', async ({
@@ -386,7 +390,7 @@ test.describe('Service availability (mocked API)', () => {
 			// THEN: The toast waited for the keyboard user; Enter dismisses it and the focus returns.
 			const message = page
 				.getByRole('region', { name: 'Notifications' })
-				.getByText('Internal server error');
+				.getByText('Something went wrong on our side. Please try again in a moment.');
 			await expect(message).toBeVisible();
 			await dismiss.press('Enter');
 			await expect(message).toHaveCount(0);

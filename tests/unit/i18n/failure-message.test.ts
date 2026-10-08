@@ -117,4 +117,44 @@ describe('failureMessage', () => {
 		// WHEN / THEN: The code decides.
 		expect(failureMessage(failure, fallback)).toBe(translation('es', 'error_internal_error'));
 	});
+
+	// A server failure is worded for the person, never as a log line: it says it is on our side or
+	// that the service is down, and what to do next.
+	it.each([
+		['en', 'INTERNAL_ERROR', 'Something went wrong on our side. Please try again in a moment.'],
+		[
+			'en',
+			'DATABASE_UNAVAILABLE',
+			'The service is temporarily unavailable. Please try again in a moment.'
+		],
+		['fr', 'INTERNAL_ERROR', 'Un problème est survenu de notre côté. Réessayez dans un instant.'],
+		[
+			'fr',
+			'DATABASE_UNAVAILABLE',
+			'Le service est momentanément indisponible. Réessayez dans un instant.'
+		],
+		[
+			'de',
+			'INTERNAL_ERROR',
+			'Auf unserer Seite ist etwas schiefgelaufen. Bitte versuchen Sie es gleich noch einmal.'
+		],
+		[
+			'de',
+			'DATABASE_UNAVAILABLE',
+			'Der Dienst ist vorübergehend nicht verfügbar. Bitte versuchen Sie es gleich noch einmal.'
+		],
+		['es', 'INTERNAL_ERROR', 'Algo salió mal por nuestra parte. Inténtalo de nuevo en un momento.'],
+		[
+			'es',
+			'DATABASE_UNAVAILABLE',
+			'El servicio no está disponible temporalmente. Inténtalo de nuevo en un momento.'
+		]
+	] as const)('words %s %s for a person, with the next step (happy path)', (locale, code, text) => {
+		useLocale(locale);
+
+		const message = failureMessage({ success: false, error: 'Boom', status: 500, code }, fallback);
+
+		expect(message).toBe(text);
+		expect(message).not.toMatch(/internal|database|datenbank|base de (datos|données)|interne/i);
+	});
 });
