@@ -402,7 +402,12 @@ une sévérité basse, dont le résultat se voit déjà à l'écran, s'annonce d
 toast ne sert qu'à ce qui n'est pas visible ailleurs, ou à une erreur).
 `ToastItem` : fond par type (`success`, `error`, `info`, `warning`), texte blanc,
 `ReferenceLine` éventuelle, bouton de fermeture. Un toast se met en pause au survol
-et au focus (WCAG 2.2.1) et garde le temps restant ; durée 3 s, 6 s pour une erreur.
+et au focus (WCAG 2.2.1) et garde le temps restant ; durée 3 s, 6 s pour une erreur que
+l'utilisateur peut corriger (4xx). Une erreur qu'il ne peut pas corriger reste jusqu'à
+fermeture, pour qu'il ait le temps de copier la référence : pas de réponse (réseau, délai
+dépassé), 5xx ou réponse hors contrat (`isPersistentFailure`, qui reprend `isOutage` de la
+politique de disponibilité). Une même erreur persistante (message et référence identiques)
+n'est affichée qu'une fois à la fois ; deux 5xx de références différentes restent séparées.
 Fermeture d'un toast qui avait le focus : le focus va au bouton du toast voisin
 (suivant, sinon précédent), sinon à l'élément d'avant l'entrée dans les toasts,
 sinon à `main` ; fermé à la souris sans focus (Safari), le focus ne bouge pas. Un
@@ -434,8 +439,8 @@ Règles complémentaires ([notification-system](https://designmotionhq.com/patte
   s'affiche jamais au centre de l'écran. Les durées actuelles (3 s, 6 s) et la pile
   fixée en bas font autorité ; au-delà d'un petit nombre de toasts visibles, le
   surplus attend en file (**Cible**).
-- **Cible** : une erreur 5xx ou réseau reste jusqu'à fermeture ; les autres erreurs
-  durent 6 s.
+- Une erreur 5xx ou réseau reste jusqu'à fermeture ; les autres erreurs durent 6 s
+  (`tests/e2e/persistent-errors.test.ts`).
 
 ### ReferenceLine
 
@@ -777,7 +782,7 @@ est devenue la section 7.
 - [undo-ux](https://designmotionhq.com/patterns/undo-ux), [drag-and-drop](https://designmotionhq.com/patterns/drag-and-drop) et [bulk-actions](https://designmotionhq.com/patterns/bulk-actions) : fenêtre d'annulation
   unique de 6 s.
 - [toast-notifications](https://designmotionhq.com/patterns/toast-notifications) : durées de 3 s et 6 s conservées ; 5xx et erreur réseau
-  jusqu'à fermeture (**Cible**).
+  jusqu'à fermeture.
 - [disabled-buttons](https://designmotionhq.com/patterns/disabled-buttons) : pas de `disabled` pour la validation (**Cible**).
 - [easing-curves](https://designmotionhq.com/patterns/easing-curves), [shadow-elevation](https://designmotionhq.com/patterns/shadow-elevation) et [depth-layers](https://designmotionhq.com/patterns/depth-layers) : aucune valeur
   reprise, à définir (**Cible : jeton à créer**).
