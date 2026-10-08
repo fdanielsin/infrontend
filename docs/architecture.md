@@ -25,8 +25,8 @@ src/
 └── lib/
     ├── api/                # Client HTTP et types du contrat
     ├── features/           # Fonctionnalités orientées utilisateur
-    │   ├── users/
-    │   ├── tasks/
+    │   ├── users/          # UserForm (création) + UserList (liste, sélection)
+    │   ├── tasks/          # TaskForm (ajout, brouillon d'édition) + TaskList + TaskItem (une ligne)
     │   └── stats/
     ├── ui/                 # Composants visuels génériques et jetons de design (layout.css)
     ├── state/              # Classes d'état réactif ($state), fournies par contexte
@@ -134,7 +134,7 @@ ignorés, `ñ` après `n` en espagnol) ou état (à faire puis terminées). Tout
 départagée par l'id, donc l'ordre est stable. `TaskOrderState` (`lib/state/`) garde le choix
 dans `localStorage` sous la clé `indrive.task-order` : lu à la construction (jamais sur le
 serveur), valeur inconnue ou stockage absent, refusé ou qui lève = ordre de création, sans
-message ; écrit à chaque changement. `TaskForm` dérive la liste affichée
+message ; écrit à chaque changement. `TaskList` dérive la liste affichée
 (`$derived(sortTasks(...))`) : `tasks.tasks` n'est jamais réordonné, donc création,
 modification, suppression, changement d'utilisateur et de langue sont triés sans code en plus.
 Le sélecteur (`Select` natif, à partir de 2 tâches) annonce « Tâches triées par … » en
