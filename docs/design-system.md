@@ -315,6 +315,16 @@ est annoncée une seule fois, par son toast (voir [Motifs](#4-motifs)).
 `role="status"` (info, succès, avertissement) et `role="alert"` (erreur), qui
 restent rendues, vides, pour que l'annonce suivante soit lue. La pile n'est une
 région nommée (`notifications_region`) que tant qu'elle contient un toast.
+Une troisième région, `<p data-announcement aria-live="polite" aria-atomic="true"
+class="sr-only">`, porte les annonces sans surface (tri, déplacement d'une ligne,
+changement de langue : `NotificationState.announce`) : toujours rendue, vide, au même nœud
+d'une annonce à l'autre (une clé de rendu relit une phrase répétée), masquée par `sr-only`
+(jamais `display:none`, `hidden` ni `aria-hidden`, qui la rendraient muette), hors de la pile
+(aucune hauteur réservée) et vidée après 10 s pour ne pas laisser une phrase périmée en
+navigation. Elle n'a pas `role="status"` : la pile garde la seule région `status` de la
+page, que les tests interrogent par son rôle (deux régions la rendraient ambiguë). Règle :
+une sévérité basse, dont le résultat se voit déjà à l'écran, s'annonce dans cette région, sans toast (un
+toast ne sert qu'à ce qui n'est pas visible ailleurs, ou à une erreur).
 `ToastItem` : fond par type (`success`, `error`, `info`, `warning`), texte blanc,
 `ReferenceLine` éventuelle, bouton de fermeture. Un toast se met en pause au survol
 et au focus (WCAG 2.2.1) et garde le temps restant ; durée 3 s, 6 s pour une erreur.
@@ -348,8 +358,11 @@ où. Tons `inverse` (toast) et `danger` (bandeau). Nom accessible
 ### LanguageSwitcher
 
 `Select` des quatre langues, option « EN - English » dans sa propre langue
-(`lang` sur chaque option), en haut de chaque page. Annonce « Langue changée… »
-en toast d'info. Preuve : `tests/e2e/i18n.test.ts`.
+(`lang` sur chaque option), en haut de chaque page. Le changement est annoncé dans la
+nouvelle langue (« Langue modifiée : Français »), dans la région d'annonce (WCAG 4.1.3 : le
+focus reste sur le sélecteur), sans toast : la page vient de changer sous les yeux et un toast
+recouvrait les actions de la liste. Preuve : `tests/e2e/i18n.test.ts`,
+`tests/unit/components/LanguageSwitcher.test.ts`.
 
 ### AvailabilityBanner et ApiVersion
 
@@ -381,12 +394,13 @@ validation a lieu à la soumission.
 
 ### Toast, bandeau ou message en ligne
 
-| Besoin                                                                                              | Moyen                            | Pourquoi                                                            |
-| --------------------------------------------------------------------------------------------------- | -------------------------------- | ------------------------------------------------------------------- |
-| Erreur d'un champ                                                                                   | message sous le champ            | relié par `aria-describedby`                                        |
-| Erreur d'une requête (formulaire, liste)                                                            | `Alert` en ligne + toast `error` | l'alerte en ligne n'a pas de rôle : une seule annonce, par le toast |
-| Confirmation ou information passagère (langue, tri, déplacement, service rétabli, référence copiée) | toast `status`                   | annonce polie, disparaît seule                                      |
-| Service indisponible, durable                                                                       | bandeau `AvailabilityBanner`     | reste tant que l'incident dure, avec « Réessayer »                  |
+| Besoin                                                                                 | Moyen                            | Pourquoi                                                            |
+| -------------------------------------------------------------------------------------- | -------------------------------- | ------------------------------------------------------------------- |
+| Erreur d'un champ                                                                      | message sous le champ            | relié par `aria-describedby`                                        |
+| Erreur d'une requête (formulaire, liste)                                               | `Alert` en ligne + toast `error` | l'alerte en ligne n'a pas de rôle : une seule annonce, par le toast |
+| Information dont l'effet se voit déjà à l'écran (langue, tri, déplacement d'une ligne) | annonce `aria-live`, sans toast  | lue par les lecteurs d'écran, rien de visible à recouvrir           |
+| Confirmation passagère (service rétabli, référence copiée)                             | toast `status`                   | annonce polie, disparaît seule                                      |
+| Service indisponible, durable                                                          | bandeau `AvailabilityBanner`     | reste tant que l'incident dure, avec « Réessayer »                  |
 
 Un succès de création n'a pas de toast : le formulaire se vide et la liste change.
 
@@ -484,9 +498,9 @@ signal d'éditabilité au survol.
 ### Tri de la liste
 
 `Select` « Trier par » (à partir de 2 tâches), trois ordres. Le choix est annoncé
-une fois par changement (« Tâches triées par… », toast `status`), jamais au chargement.
-Quand une modification déplace une ligne, le focus reste sur le même contrôle et
-« titre : position N sur M » est annoncé. Règles de tri et stockage : voir
+une fois par changement (« Tâches triées par… », région d'annonce, sans toast), jamais au
+chargement. Quand une modification déplace une ligne, le focus reste sur le même contrôle et
+« titre : position N sur M » est annoncé de la même façon. Règles de tri et stockage : voir
 [architecture.md](./architecture.md#tri-des-tâches). Preuve :
 `tests/e2e/task-sorting.test.ts`, `tests/unit/components/TaskSorting.test.ts`.
 

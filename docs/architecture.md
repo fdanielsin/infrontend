@@ -137,10 +137,11 @@ serveur), valeur inconnue ou stockage absent, refusé ou qui lève = ordre de cr
 message ; écrit à chaque changement. `TaskList` dérive la liste affichée
 (`$derived(sortTasks(...))`) : `tasks.tasks` n'est jamais réordonné, donc création,
 modification, suppression, changement d'utilisateur et de langue sont triés sans code en plus.
-Le sélecteur (`Select` natif, à partir de 2 tâches) annonce « Tâches triées par … » en
-`status` une fois par changement de choix, jamais au chargement. Quand une modification
+Le sélecteur (`Select` natif, à partir de 2 tâches) annonce « Tâches triées par … »
+dans la région d'annonce de `Notification` (`NotificationState.announce`, `aria-live`, sans toast)
+une fois par changement de choix, jamais au chargement. Quand une modification
 (case à cocher, enregistrement d'une édition) déplace la ligne, le focus reste sur le même
-contrôle (restauré après `tick()`) et « titre : position N sur M » est annoncé en `status`.
+contrôle (restauré après `tick()`) et « titre : position N sur M » est annoncé de même.
 
 ## Évolution future
 

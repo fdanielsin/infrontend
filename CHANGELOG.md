@@ -24,6 +24,9 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   selected user (infrontend#50).
 - Server errors are worded for people ("Something went wrong on our side. Please try again in a
   moment.") instead of "Internal server error" and "Database unavailable" (infrontend#50).
+- Changing the sort order, moving a task row or changing the language no longer shows a toast
+  that covers the list actions; screen readers still get the news, in a hidden live region, and
+  the language announcement is written in the new language (visual review 28, 42).
 
 ## [1.3.0] - 2026-10-08
 
