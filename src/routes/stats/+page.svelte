@@ -57,7 +57,8 @@
 	     failure with its way out, or nothing to count. A toast carries the error detail. -->
 	{#if stats && stats.users === 0 && stats.tasks === 0}
 		<Card variant="flat" padding="lg" class="mx-auto max-w-2xl text-center">
-			<p class="text-muted">{m.stats_empty()}</p>
+			<Icon icon="graph-up" size={24} class="mx-auto text-subtle" />
+			<p class="mt-2 text-muted">{m.stats_empty()}</p>
 			<a
 				href={resolve('/')}
 				class="mt-2 inline-block text-action-strong underline hover:text-action-strong-hover"

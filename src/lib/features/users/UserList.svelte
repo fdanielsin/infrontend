@@ -51,8 +51,11 @@
 				<p class="text-subtle">{m.users_loading()}</p>
 			{/if}
 		{:else if users.users.length === 0}
-			<p class="text-subtle">{m.users_empty()}</p>
-			<p class="mt-1 text-sm text-subtle">{m.users_empty_hint()}</p>
+			<div class="py-4 text-center">
+				<Icon icon="group" size={24} class="mx-auto text-subtle" />
+				<p class="mt-2 text-subtle">{m.users_empty()}</p>
+				<p class="mt-1 text-sm text-subtle">{m.users_empty_hint()}</p>
+			</div>
 		{:else}
 			<ul class="space-y-2">
 				{#each users.users as user (user.id)}

@@ -156,11 +156,14 @@ describe('statistics page states', () => {
 		vi.mocked(api.getStats).mockResolvedValue({ success: true, data: { users: 0, tasks: 0 } });
 
 		// WHEN: The page is rendered.
-		const { getByText, getByRole, queryByText } = renderWithApp(app, StatsPage);
+		const { getByText, getByRole, queryByText, container } = renderWithApp(app, StatsPage);
 		await vi.advanceTimersByTimeAsync(0);
 
 		// THEN: An invitation with a link to the home page replaces the zero tiles and the summary.
 		expect(getByText('Nothing to count yet.')).toBeTruthy();
+		expect(container.querySelector('[data-icon="graph-up"]')?.getAttribute('aria-hidden')).toBe(
+			'true'
+		);
 		const link = getByRole('link', { name: 'Create the first user' });
 		expect(link.getAttribute('href')).toBe('/');
 		expect(queryByText('Average tasks per user')).toBeNull();

@@ -154,5 +154,8 @@ describe('UserList', () => {
 		// THEN: The existing text stays and tells the next step.
 		expect(view.getByText('No users yet')).toBeTruthy();
 		expect(view.getByText('Create the first one with the form above.')).toBeTruthy();
+		expect(view.container.querySelector('[data-icon="group"]')?.getAttribute('aria-hidden')).toBe(
+			'true'
+		);
 	});
 });
