@@ -109,7 +109,7 @@ entre lignes de liste, `gap-2` ou `gap-3` entre contrôles. Page : `main` en `p-
 largeur max 6xl (accueil) ou 2xl (statistiques), fond en dégradé
 (`page-from` vers `page-to`) porté par `html`. Rayons : `control` (0,25 rem) pour boutons, champs,
 lignes ; `card` (`rounded-lg`) pour cartes et toasts. Ombres : `card`,
-`card-raised`, `card-raised-hover` (carte « raised » au survol).
+`card-raised`.
 
 Règles complémentaires :
 
@@ -228,7 +228,7 @@ masqué au-dessus de la pile (WCAG 2.4.11). Preuve :
 
 Seule animation par keyframes : l'entrée des toasts (`slideIn`, 0,3 s), déclarée sous
 `@media (prefers-reduced-motion: no-preference)` dans `ToastItem.svelte`. Toute
-nouvelle animation suit la même règle (les transitions de survol existantes y échappent : voir les écarts). Preuve : `tests/e2e/availability.test.ts`
+nouvelle animation suit la même règle (aucune transition de survol n'existe plus : les cartes ne réagissent pas au pointeur). Preuve : `tests/e2e/availability.test.ts`
 (émulation `reducedMotion: 'reduce'`).
 
 Règles complémentaires :
@@ -279,13 +279,6 @@ Règles :
   statistiques (utilisateurs, tâches, moyenne par utilisateur) passent sur une colonne sous
   `md`, et leur chiffre est en `text-4xl` (`text-5xl` dès `sm`), en `text-heading` : la couleur
   d'un chiffre ne code rien.
-
-### Écarts constatés
-
-À corriger dans un lot séparé (changements visibles, non faits ici) :
-
-- La transition de survol de `Card` `raised` (`Card.svelte`, ligne 23) n'est pas
-  conditionnée par `prefers-reduced-motion`.
 
 ## 3. Composants
 
@@ -346,16 +339,16 @@ tâche ([hover-trap](https://designmotionhq.com/patterns/hover-trap)) ; preuve :
 ### Card
 
 Conteneur. Variantes : `outlined` (cadre `line`, ombre `card`), `raised` (ombre
-relevée, plus forte au survol, pour les chiffres des statistiques), `flat` (ombre
-relevée sans survol). Marge intérieure `md` (`p-4 sm:p-6`) ou `lg` (`p-6 sm:p-8`). Rôle
+relevée, pour les chiffres des statistiques), `flat` (ombre relevée). Aucune des deux ne
+réagit au pointeur : elles ne sont pas cliquables (preuve : `tests/e2e/single-accent.test.ts`). Marge intérieure `md` (`p-4 sm:p-6`) ou `lg` (`p-6 sm:p-8`). Rôle
 purement visuel : le titre de la carte est un `h2` posé par l'écran. Règles
 complémentaires ([perfect-card](https://designmotionhq.com/patterns/perfect-card)) : titre plus gras que la description, description
 atténuée (`text-muted`), marge intérieure généreuse, contenu jamais collé au bord. Le
 rayon reste `card` et la bordure `line` (rayon de 24 px de la fiche écarté, voir
-[le compte rendu](#9-compte-rendu-de-lintégration-des-fiches)). **Cible** : au survol de
-`raised`, ombre et élévation en environ 200 ms `ease-out` (aujourd'hui : la
-`transition` Tailwind par défaut, 150 ms, sur l'ombre seule) et un signal d'interactivité
-sur le bord d'une carte cliquable. Jamais de `scale` : voir [Mouvement](#mouvement).
+[le compte rendu](#9-compte-rendu-de-lintégration-des-fiches)). **Cible** : l'élévation au survol (ombre et
+décalage en environ 200 ms `ease-out`, sous `prefers-reduced-motion: no-preference`) est
+réservée à une carte interactive ; il n'y en a aucune aujourd'hui. Jamais de `scale` : voir
+[Mouvement](#mouvement).
 
 ### TextField
 
@@ -396,7 +389,9 @@ en cours de modification ne se coche ni ne se supprime. Les actions « Modifier 
 ont une cible de 44 px sur pointeur grossier (`pointer-coarse:min-h-11 pointer-coarse:min-w-11`,
 passés par `class`). La case à cocher reste de 16 px ; sur pointeur grossier, une zone vide de
 44 px autour d'elle (`data-touch-target`) renvoie le tap à la case, qui garde son nom et le
-clavier. « Modifier » porte l'icône `edit-pencil` et « Supprimer » la croix `xmark` (`TaskItem.svelte`).
+clavier. Sous un pointeur qui survole (`hover: hover`), la ligne prend le fond `surface-hover` et
+son bouton « Modifier » est souligné, sans rien déplacer ; rien sur écran tactile (preuve :
+`tests/e2e/readable-lists.test.ts`). « Modifier » porte l'icône `edit-pencil` et « Supprimer » la croix `xmark` (`TaskItem.svelte`).
 `ClampedText` limite la description à trois lignes (`line-clamp-3`) ; le bouton « Afficher
 plus / moins » n'existe que si le texte déborde (un pixel d'écart est un arrondi), reste
 disponible une fois déplié, et porte un nom propre à la ligne (« Afficher plus : {titre} »,
@@ -559,7 +554,7 @@ référence). La prévention (validation en ligne) vaut mieux que le message.
 
 ### États vides et chargement
 
-États vides en `text-subtle` (« Aucun utilisateur », « Aucune tâche »), suivis d'une ligne d'aide plus petite qui dit quoi faire (« Créez le premier avec le formulaire ci-dessus ») ; le panneau sans utilisateur choisi dit où choisir. Chargement :
+États vides centrés : une icône de 24 px puis un texte en `text-subtle` (« Aucun utilisateur », « Aucune tâche »), suivis d'une ligne d'aide plus petite qui dit quoi faire (« Créez le premier avec le formulaire ci-dessus ») ; le panneau sans utilisateur choisi dit où choisir. Chargement :
 l'état discriminé `RequestStatus` ; le texte du bouton change pendant l'envoi, la
 page statistiques affiche « Chargement… ». Aucune requête de liste n'est lancée
 tant que le service est indisponible (`runWhenAvailable`), pour éviter une cascade
@@ -587,7 +582,7 @@ Règles complémentaires ([loading-states-system](https://designmotionhq.com/pat
   connu. Pas de squelette pour une action de l'utilisateur (voir « Réponse
   optimiste ») ; pas de mélange squelette et spinner. Un shimmer ne tourne que sous
   `prefers-reduced-motion: no-preference`.
-- Un état vide a (**Cible** pour l'icône : seul l'état « aucun utilisateur choisi » l'a, `TaskForm.svelte` ; les listes vides d'utilisateurs et de tâches et la page statistiques vide n'en ont pas) une petite icône ou illustration, le ton de la marque et une action
+- Un état vide a une petite icône (24 px, `group`, `list` ou `graph-up`, cachée des lecteurs d'écran), le ton de la marque et une action
   principale vers l'étape suivante. Quatre cas : premier lancement, aucun résultat,
   erreur, résultat filtré. Jamais « No data » nu ni un ton de journal technique.
 
@@ -658,8 +653,16 @@ tâche, quel que soit son état ; pendant l'édition elle et la suppression de l
 
 Règles complémentaires ([inline-editing](https://designmotionhq.com/patterns/inline-editing)) : la bascule ne décale rien (même police, même
 taille, même marge) ; Entrée valide, Échap annule ; le départ du champ (blur) se
-comporte pareil partout ; en cas d'échec, le brouillon est conservé. **Cible** : un
-signal d'éditabilité au survol.
+comporte pareil partout ; en cas d'échec, le brouillon est conservé. Le titre n'est pas
+cliquable pour éditer : seul le bouton « Modifier » le fait, et le survol de la ligne le
+désigne (voir [TaskItem](#taskitem-et-clampedtext)).
+
+### Titre de la liste
+
+Le titre dit ce qui reste : « 4 à faire sur 12 », « Tout est fait » quand tout est coché,
+« Tâches » quand il n'y en a aucune (messages `tasks_progress`, `tasks_all_done`,
+`tasks_list_title`, invariables en nombre dans les quatre langues). C'est aussi le point de
+retour du focus après une suppression. Preuve : `tests/unit/components/TaskForm.test.ts`.
 
 ### Tri de la liste
 
@@ -744,9 +747,9 @@ de classes les fige : ne pas les remplacer par un jeton sans prévenir qa.
 ## 7. Cible
 
 Réalisé : `Icon` (voir [Icônes](#icônes)) accompagne les actions, les toasts et le bandeau, et
-remplace les émojis décoratifs. Non réalisé : les icônes des états vides (liste des
-utilisateurs, liste des tâches, statistiques sans données) ; l'unification des écarts listés en
-section 2.
+remplace les émojis décoratifs ; les états vides (utilisateurs, tâches, statistiques, aucun
+utilisateur choisi) ont leur icône. Non réalisé : l'élévation d'une carte interactive, faute de
+carte cliquable.
 
 ## 8. Motifs à venir
 
@@ -830,7 +833,7 @@ section 8. Les valeurs sans source claire n'ont pas été reprises (pourcentages
 d'engagement ou de daltonisme, usages attribués à d'autres produits).
 
 **Sections complétées** : Principes, Fondations (couleurs, typographie et espacements,
-focus, mouvement, 320 px, écarts constatés), Composants (`Button`, `IconButton`, `Card`,
+focus, mouvement, 320 px), Composants (`Button`, `IconButton`, `Card`,
 `TextField`, `Select`, `Notification`), Motifs (formulaires, erreurs, états vides et
 chargement, action destructive, édition en ligne, réponse optimiste, survol et
 tactile), Contenu, Gouvernance. Fiches : [design-tokens](https://designmotionhq.com/patterns/design-tokens), [color-accessibility](https://designmotionhq.com/patterns/color-accessibility), [visual-hierarchy](https://designmotionhq.com/patterns/visual-hierarchy), [proximity-rule](https://designmotionhq.com/patterns/proximity-rule), [border-radius](https://designmotionhq.com/patterns/border-radius), [icon-design-rules](https://designmotionhq.com/patterns/icon-design-rules), [animation-timing](https://designmotionhq.com/patterns/animation-timing), [easing-curves](https://designmotionhq.com/patterns/easing-curves), [error-states](https://designmotionhq.com/patterns/error-states), [loading-states-system](https://designmotionhq.com/patterns/loading-states-system), [notification-system](https://designmotionhq.com/patterns/notification-system), [toast-notifications](https://designmotionhq.com/patterns/toast-notifications), [optimistic-ui](https://designmotionhq.com/patterns/optimistic-ui), [doherty-threshold](https://designmotionhq.com/patterns/doherty-threshold), [undo-ux](https://designmotionhq.com/patterns/undo-ux), [form-field-states](https://designmotionhq.com/patterns/form-field-states), [form-validation-timing](https://designmotionhq.com/patterns/form-validation-timing), [disabled-buttons](https://designmotionhq.com/patterns/disabled-buttons), [inline-editing](https://designmotionhq.com/patterns/inline-editing), [destructive-actions](https://designmotionhq.com/patterns/destructive-actions), [dropdown-design](https://designmotionhq.com/patterns/dropdown-design), [hover-trap](https://designmotionhq.com/patterns/hover-trap), [focus-states](https://designmotionhq.com/patterns/focus-states), [empty-states](https://designmotionhq.com/patterns/empty-states), [microcopy](https://designmotionhq.com/patterns/microcopy), [von-restorff](https://designmotionhq.com/patterns/von-restorff), [skeleton-loading](https://designmotionhq.com/patterns/skeleton-loading), [behind-the-button](https://designmotionhq.com/patterns/behind-the-button), [shadow-elevation](https://designmotionhq.com/patterns/shadow-elevation), [depth-layers](https://designmotionhq.com/patterns/depth-layers), [golden-ratio](https://designmotionhq.com/patterns/golden-ratio), [perfect-card](https://designmotionhq.com/patterns/perfect-card), [card-hover-anatomy](https://designmotionhq.com/patterns/card-hover-anatomy).
