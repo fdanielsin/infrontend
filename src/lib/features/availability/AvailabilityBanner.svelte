@@ -28,7 +28,7 @@
 			{#key availability.retryFailures}
 				<p role="alert">{m.availability_unavailable()}</p>
 			{/key}
-			<Button variant="strong" onclick={() => void retry()}>
+			<Button variant="secondary" size="sm" tone="danger" onclick={() => void retry()}>
 				{availability.checking ? m.availability_checking() : m.availability_retry()}
 			</Button>
 			<!-- Outside the alert: a retry that fails again does not read the reference again. -->

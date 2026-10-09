@@ -18,7 +18,7 @@
 	let { id, label, value, options, onchange }: Props = $props();
 </script>
 
-<div class="flex flex-wrap items-center gap-2 text-sm text-gray-800">
+<div class="flex flex-wrap items-center gap-2 text-sm text-heading">
 	<label for={id}>{label}</label>
 	<select
 		{id}

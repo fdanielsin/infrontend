@@ -10,11 +10,15 @@ vi.mock('$lib/api/client', () => ({
 	api: { getStats: vi.fn(), ready: vi.fn() }
 }));
 
-function averageText(container: HTMLElement): string | undefined {
-	const item = Array.from(container.querySelectorAll('li')).find((li) =>
-		li.textContent?.includes('Average tasks per user')
+// The three tiles, in reading order: [users, tasks, average tasks per user].
+function tileValues(container: HTMLElement): (string | undefined)[] {
+	return Array.from(container.querySelectorAll('[data-stat]')).map((tile) =>
+		tile.querySelector('[data-stat-value]')?.textContent?.trim()
 	);
-	return item?.querySelector('strong')?.textContent ?? undefined;
+}
+
+function averageText(container: HTMLElement): string | undefined {
+	return tileValues(container)[2];
 }
 
 describe('stats page', () => {
@@ -41,9 +45,8 @@ describe('stats page', () => {
 		const { findByText, container } = renderWithApp(app, StatsPage);
 
 		// THEN: Both counters and 10 / 3 rounded are shown.
-		expect(await findByText('Summary')).toBeTruthy();
-		const strongs = Array.from(container.querySelectorAll('li strong')).map((s) => s.textContent);
-		expect(strongs).toEqual(['3', '10', '3.33']);
+		expect(await findByText('Average tasks per user')).toBeTruthy();
+		expect(tileValues(container)).toEqual(['3', '10', '3.33']);
 	});
 
 	it('shows 0 as the average when there is no user (boundary)', async () => {
@@ -54,7 +57,7 @@ describe('stats page', () => {
 		const { findByText, container } = renderWithApp(app, StatsPage);
 
 		// THEN: The average is 0, not NaN or Infinity.
-		await findByText('Summary');
+		await findByText('Average tasks per user');
 		expect(averageText(container)).toBe('0');
 	});
 
@@ -77,7 +80,7 @@ describe('stats page', () => {
 		const { findByText, container } = renderWithApp(app, StatsPage);
 
 		// THEN: 1 / 3 is shown as 0.33.
-		await findByText('Summary');
+		await findByText('Average tasks per user');
 		expect(averageText(container)).toBe('0.33');
 	});
 
@@ -113,12 +116,26 @@ describe('stats page', () => {
 	});
 
 	it.each([
-		['fr', 'Statistiques', '1\u202f234', '2\u202f468', '2,00'],
-		['de', 'Statistiken', '1.234', '2.468', '2,00'],
-		['es', 'Estadísticas', '1234', '2468', '2,00']
+		[
+			'fr',
+			'Statistiques',
+			'1\u202f234',
+			'2\u202f468',
+			'2,00',
+			'Nombre moyen de tâches par utilisateur'
+		],
+		[
+			'de',
+			'Statistiken',
+			'1.234',
+			'2.468',
+			'2,00',
+			'Durchschnittliche Anzahl an Aufgaben pro Benutzer'
+		],
+		['es', 'Estadísticas', '1234', '2468', '2,00', 'Media de tareas por usuario']
 	] as const)(
 		'follows the interface language %s for labels, counters and average (happy path)',
-		async (locale, heading, users, tasks, average) => {
+		async (locale, heading, users, tasks, average, averageLabel) => {
 			// GIVEN: The interface in that language, 1234 users and 2468 tasks.
 			app.locale.set(locale);
 			vi.mocked(api.getStats).mockResolvedValue({
@@ -127,15 +144,12 @@ describe('stats page', () => {
 			});
 
 			// WHEN: The page is rendered.
-			const { findByRole, container } = renderWithApp(app, StatsPage);
+			const { findByRole, findByText, container } = renderWithApp(app, StatsPage);
 
 			// THEN: Heading, counters and the 2-decimal average use the language conventions.
 			expect((await findByRole('heading', { level: 1 })).textContent).toContain(heading);
-			await findByRole('heading', { level: 2 });
-			const strongs = Array.from(container.querySelectorAll('li strong')).map((s) =>
-				s.textContent?.trim()
-			);
-			expect(strongs).toEqual([users, tasks, average]);
+			await findByText(averageLabel);
+			expect(tileValues(container)).toEqual([users, tasks, average]);
 		}
 	);
 });

@@ -96,7 +96,7 @@
 					/>
 				</div>
 
-				<Button variant="success" type="submit" disabled={status.loading}>
+				<Button type="submit" block disabled={status.loading}>
 					{status.loading ? m.tasks_adding() : m.tasks_add_button()}
 				</Button>
 			</form>

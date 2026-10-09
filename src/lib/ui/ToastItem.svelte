@@ -20,7 +20,7 @@
 	const TYPE_CLASSES = {
 		success: 'bg-success',
 		error: 'bg-danger',
-		info: 'bg-action-strong',
+		info: 'bg-info',
 		warning: 'bg-warning'
 	};
 </script>

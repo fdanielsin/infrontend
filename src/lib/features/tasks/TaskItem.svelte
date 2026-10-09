@@ -105,10 +105,10 @@
 				error={editErrors.description ? validationMessage(editErrors.description) : undefined}
 			/>
 			<div class="flex flex-wrap gap-2">
-				<Button variant="strong" type="submit" disabled={saving}>
+				<Button type="submit" disabled={saving}>
 					{m.tasks_save()}
 				</Button>
-				<Button variant="outline" onclick={oncancel}>
+				<Button variant="secondary" onclick={oncancel}>
 					{m.tasks_cancel()}
 				</Button>
 			</div>

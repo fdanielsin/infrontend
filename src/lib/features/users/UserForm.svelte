@@ -73,7 +73,7 @@
 				/>
 			</div>
 
-			<Button type="submit" disabled={status.loading}>
+			<Button type="submit" block disabled={status.loading}>
 				{status.loading ? m.users_creating() : m.users_create_button()}
 			</Button>
 		</form>

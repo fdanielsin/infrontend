@@ -62,7 +62,7 @@ describe('statistics page states', () => {
 
 		// THEN: The wait message gives way to the figures.
 		expect(queryByText('Statistics will show as soon as the service is back.')).toBeNull();
-		expect(getByText('Summary')).toBeTruthy();
+		expect(getByText('Average tasks per user')).toBeTruthy();
 		expect(api.getStats).toHaveBeenCalledTimes(1);
 	});
 
@@ -80,7 +80,7 @@ describe('statistics page states', () => {
 
 		// THEN: The figures replace the failure state.
 		expect(queryByText('Statistics could not be loaded.')).toBeNull();
-		expect(getByText('Summary')).toBeTruthy();
+		expect(getByText('Average tasks per user')).toBeTruthy();
 		expect(api.getStats).toHaveBeenCalledTimes(2);
 	});
 
@@ -163,7 +163,7 @@ describe('statistics page states', () => {
 		expect(getByText('Nothing to count yet.')).toBeTruthy();
 		const link = getByRole('link', { name: 'Create the first user' });
 		expect(link.getAttribute('href')).toBe('/');
-		expect(queryByText('Summary')).toBeNull();
+		expect(queryByText('Average tasks per user')).toBeNull();
 	});
 
 	it.each([
@@ -178,7 +178,7 @@ describe('statistics page states', () => {
 		await vi.advanceTimersByTimeAsync(0);
 
 		// THEN: The summary shows, with no invitation.
-		expect(getByText('Summary')).toBeTruthy();
+		expect(getByText('Average tasks per user')).toBeTruthy();
 		expect(queryByText('Nothing to count yet.')).toBeNull();
 	});
 
