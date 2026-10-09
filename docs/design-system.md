@@ -143,8 +143,8 @@ même trait sur tout le jeu, la même boîte englobante, des tailles prises dans
 | `size` | Classe   | Usage                                                                    |
 | ------ | -------- | ------------------------------------------------------------------------ |
 | 16     | `size-4` | À côté d'un texte `text-sm` (boutons `sm`, `link`), croix d'`IconButton` |
-| 20     | `size-5` | Défaut : texte courant, boutons `md`, icônes denses                      |
-| 24     | `size-6` | Titres, états vides                                                      |
+| 20     | `size-5` | Défaut : texte courant, boutons `md`, icônes denses (listes, tuiles)     |
+| 24     | `size-6` | Titres (`PageShell`), états vides                                        |
 
 - **Trait** : 1,5 px d'écran à toutes les tailles. Iconoir dessine à 1,5 sur une grille de
   24, ce qui ferait 1 px à 16 px (trop mince, surtout en blanc sur un toast) ; `Icon` applique
@@ -166,11 +166,22 @@ même trait sur tout le jeu, la même boîte englobante, des tailles prises dans
   `currentColor`).
 - **Usage** : `<Icon icon="xmark" size={16} />`, `size` vaut 20 par défaut. Le nom `icon` est
   une liste fermée (`IconName`) : une chaîne libre est une erreur de type.
-- **Ajouter une icône** : chercher son nom sur iconoir.com, l'importer dans `Icon.svelte`
+- **Ajouter une icône** : chercher son nom sur iconoir.com, l'importer dans `icons.ts`
   (`import Nom from '~icons/iconoir/<nom>'`), l'ajouter à la liste `ICONS` dans l'ordre
   alphabétique, puis l'utiliser. Un nom inconnu fait échouer le build ; on n'importe jamais la
   collection entière (`icon-bundle.test.ts` échoue si elle entre dans le code livré). Ne mettre
   dans la liste que les icônes utilisées.
+- **Où elles sont** : titre de page (`PageShell`, 24), actions (ajouter, modifier, réessayer,
+  copier, retour, lien vers les statistiques : icône décorative + texte visible ; supprimer
+  reste la croix d'`IconButton` ; Enregistrer et Annuler n'ont pas d'icône), libellé du tri,
+  tuiles de statistiques et rangées de `UserList` (20), un type par toast (`check-circle`,
+  `warning-circle`, `info-circle`, `warning-triangle`) et le bandeau d'indisponibilité. Un
+  bouton d'action de toast prend l'icône donnée par `ToastAction.icon`, si elle existe.
+- **Erreur de champ** : couleur, icône `warning-circle` (16) et message, jamais la couleur seule
+  (WCAG 1.4.1) ; l'icône est cachée, le message reste lié au champ (`aria-describedby`).
+  `Alert` met la même icône (20) devant son texte.
+- **Champ facultatif** : le libellé le dit (« Description (facultatif) »), pas d'astérisque sur
+  les champs obligatoires.
 - **À faire** : une icône à côté d'un texte visible ; la même icône pour la même action dans
   toute l'interface ; une taille de l'échelle.
 - **À éviter** : une icône seule sans `IconButton` ; une icône pour remplacer le texte d'une
@@ -634,7 +645,7 @@ changent que la couleur ou l'ombre).
   les mêmes clés et paramètres. Preuve : `tests/unit/i18n/messages.test.ts`.
 - **Toute chaîne visible est un message** (`m.<clé>()`) : textes, noms accessibles,
   titres de page, notifications. Les données saisies (titres, noms) ne sont jamais
-  traduites. Les émojis décoratifs (📋, 📊) sont `aria-hidden`.
+  traduites. Les icônes décoratives sont `aria-hidden` (voir [Icônes](#icônes)).
 - **Ton.** Court et direct : verbe à l'infinitif ou à l'impératif sur les
   boutons (« Add Task », « Retry »), états en `…` (« Creating… »), erreurs qui
   disent ce qui s'est passé sans jargon (« Failed to create task »). Le serveur

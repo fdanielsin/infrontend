@@ -23,7 +23,7 @@ L'interface utilise le jeu d'icônes [Iconoir](https://iconoir.com), chargé par
   résolvent pas `~icons/…`). Types : `import 'unplugin-icons/types/svelte'` dans `src/app.d.ts`.
   `autoInstall` reste désactivé (valeur par défaut) : le plugin ne lance jamais de
   gestionnaire de paquets.
-- Une icône ne s'utilise que par `src/lib/ui/Icon.svelte`, qui tient la liste fermée des
+- Une icône ne s'utilise que par `src/lib/ui/Icon.svelte`, qui lit la liste fermée (`src/lib/ui/icons.ts`) des
   icônes de l'interface (un `import` statique par icône). On n'importe jamais la collection
   entière (`@iconify-json/iconoir`) dans `src/`.
 - Le trait est un trait unique de 1,5 px quelle que soit la taille (`vector-effect:
@@ -70,7 +70,7 @@ non-scaling-stroke`), voir [design-system.md](../design-system.md#icônes).
 
 ## Conséquences
 
-- Ajouter une icône : l'importer dans `Icon.svelte` (`~icons/iconoir/<nom>`, nom cherché sur
+- Ajouter une icône : l'importer dans `icons.ts` (`~icons/iconoir/<nom>`, nom cherché sur
   iconoir.com ; un nom inconnu fait échouer le build) et la nommer dans la liste, par ordre
   alphabétique ; voir [design-system.md](../design-system.md#icônes).
 - Mettre à jour le jeu : `bun update @iconify-json/iconoir`, puis `bun run verify` (une
@@ -81,6 +81,6 @@ non-scaling-stroke`), voir [design-system.md](../design-system.md#icônes).
   build, `vite dev`, les tests et les E2E du lot l'ont vérifié) et `bun audit
 --audit-level=moderate`.
 - Retirer le plugin : retirer `Icons()` des deux configurations, l'import des types, les deux
-  dépendances, et remplacer les `import` d'`Icon.svelte` par des SVG locaux ; l'API du
+  dépendances, et remplacer les `import` d'`icons.ts` par des SVG locaux ; l'API du
   composant `Icon` ne change pas.
 - Les overrides de l'[ADR 0002](./0002-overrides-dependances-vulnerables.md) sont inchangés.

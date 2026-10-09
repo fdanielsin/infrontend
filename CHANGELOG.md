@@ -18,6 +18,9 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- Emoji are replaced by Iconoir icons; buttons and links get an icon beside their text, toasts
+  one per type, field errors an icon with the message, and the description field says it is
+  optional (infrontend#63).
 - The cross of the close and delete buttons is an Iconoir icon with a 1.5 px stroke
   (infrontend#53).
 - The user list is a card of its own; a whole row is clickable, shows a chevron, and the selected
