@@ -295,3 +295,59 @@ describe('UserForm', () => {
 		);
 	});
 });
+
+describe('UserForm validation when a field is left', () => {
+	beforeEach(() => {
+		vi.resetAllMocks();
+		app = new AppState();
+	});
+	afterEach(cleanup);
+
+	const check = (field: HTMLElement) =>
+		field.parentElement?.querySelector('svg[data-icon="check"]') ?? null;
+
+	it('links the message at blur and shows a hidden check once the field is fine (happy path)', async () => {
+		const { nameInput, emailInput, getByText } = renderForm();
+		await fireEvent.input(nameInput, { target: { value: 'Ada' } });
+		await fireEvent.blur(nameInput);
+		await fireEvent.input(emailInput, { target: { value: 'ada@' } });
+		await fireEvent.blur(emailInput);
+
+		const message = getByText('Invalid email address');
+		expect(emailInput.getAttribute('aria-describedby')).toBe(message.closest('p')?.id);
+		expect(check(nameInput)?.getAttribute('aria-hidden')).toBe('true');
+		expect(nameInput.hasAttribute('aria-describedby')).toBe(false);
+	});
+
+	it('puts a refused e-mail back in error, without a check (exception)', async () => {
+		vi.mocked(api.createUser).mockResolvedValue({
+			success: false,
+			error: 'x',
+			status: 409,
+			code: 'EMAIL_TAKEN'
+		});
+		const { submit, emailInput } = renderForm();
+
+		await submit('Ada', 'ada@example.com');
+
+		await waitFor(() => expect(emailInput.getAttribute('aria-invalid')).toBe('true'));
+		expect(check(emailInput)).toBeNull();
+	});
+
+	it('returns to neutral once the user is created (happy path)', async () => {
+		vi.mocked(api.createUser).mockResolvedValue({
+			success: true,
+			data: { id: 1, name: 'Ada', email: 'ada@example.com' }
+		});
+		const { submit, nameInput, emailInput } = renderForm();
+		await fireEvent.input(nameInput, { target: { value: 'Ada' } });
+		await fireEvent.blur(nameInput);
+		expect(check(nameInput)).not.toBeNull();
+
+		await submit('Ada', 'ada@example.com');
+
+		await waitFor(() => expect(nameInput.value).toBe(''));
+		expect(check(nameInput)).toBeNull();
+		expect(check(emailInput)).toBeNull();
+	});
+});

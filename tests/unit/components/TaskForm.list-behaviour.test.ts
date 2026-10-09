@@ -233,4 +233,25 @@ describe('TaskForm list and edit behaviour', () => {
 		expect(invalidWhenFocused).toBe('true');
 		expect(describedWhenFocused).toBe('title-error');
 	});
+
+	it('validates the edit fields when they are left, and leaves the edit open (happy path)', async () => {
+		// GIVEN: An edit in progress.
+		const view = renderWithApp(app, TaskForm, { user });
+		await fireEvent.click(view.getByRole('button', { name: 'Edit Review' }));
+		await tick();
+		const title = view.getAllByLabelText('Task Title')[1] as HTMLElement;
+		const description = view.getAllByLabelText('Description (optional)')[1] as HTMLTextAreaElement;
+
+		// WHEN: The title is emptied and left, the description changed and left.
+		await fireEvent.input(title, { target: { value: '' } });
+		await fireEvent.blur(title);
+		await fireEvent.input(description, { target: { value: 'Other' } });
+		await fireEvent.blur(description);
+
+		// THEN: The title shows its error, the description its success; nothing was saved or closed.
+		expect(title.getAttribute('aria-invalid')).toBe('true');
+		expect(description.parentElement?.querySelector('svg[data-icon="check"]')).not.toBeNull();
+		expect(api.updateTask).not.toHaveBeenCalled();
+		expect(view.getByRole('button', { name: 'Save' })).toBeTruthy();
+	});
 });

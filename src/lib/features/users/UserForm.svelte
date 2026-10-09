@@ -10,36 +10,46 @@
 	import { getAppState } from '$lib/state/app-state.svelte';
 	import { UserSchema, validationMessage } from '$lib/validation/schemas';
 	import { zodIssuesToFieldErrors } from '$lib/validation/field-errors';
+	import { createFieldValidation } from '$lib/validation/field-validation.svelte';
 	const { users } = getAppState();
 	const USER_FIELDS = ['name', 'email'] as const;
 	let submitting = $state(false);
 	let name = $state('');
 	let email = $state('');
-	let fieldErrors = $state.raw<{ name?: string; email?: string }>({});
-	// The server refused this email: said under the field until it is edited.
-	let emailTaken = $state(false);
+	const fields = createFieldValidation<(typeof USER_FIELDS)[number]>({
+		fields: USER_FIELDS,
+		values: () => ({ name, email }),
+		check: () => {
+			const result = UserSchema.safeParse({ name, email });
+			return result.success ? {} : zodIssuesToFieldErrors(result.error, USER_FIELDS);
+		}
+	});
+	// A server refusal is not a schema key: it has its own message.
+	const fieldError = (field: (typeof USER_FIELDS)[number]) => {
+		const key = fields.error(field);
+		if (!key) return undefined;
+		return key === 'error_email_taken' ? m.error_email_taken() : validationMessage(key);
+	};
 	const refs: Partial<Record<'nameInput' | 'emailInput', HTMLElement>> = {};
 
 	async function handleSubmit() {
 		if (submitting) return;
-		const result = UserSchema.safeParse({ name, email });
-		fieldErrors = {};
-		emailTaken = false;
-		if (!result.success) {
-			fieldErrors = zodIssuesToFieldErrors(result.error, USER_FIELDS);
+		const errors = fields.submit();
+		if (errors.name || errors.email) {
 			await tick();
-			(fieldErrors.name ? refs.nameInput : refs.emailInput)?.focus();
+			(errors.name ? refs.nameInput : refs.emailInput)?.focus();
 			return;
 		}
 		submitting = true;
-		const outcome = await users.add(result.data.name, result.data.email).finally(() => {
+		const outcome = await users.add(name.trim(), email.trim()).finally(() => {
 			submitting = false;
 		});
 		if (outcome.status === 'created') {
 			name = '';
 			email = '';
+			fields.reset();
 		} else if (outcome.status === 'email_taken') {
-			emailTaken = true;
+			fields.reject('email', 'error_email_taken');
 			await tick();
 			refs.emailInput?.focus();
 		}
@@ -65,7 +75,10 @@
 					bind:value={name}
 					{@attach ref(refs, 'nameInput')}
 					required
-					error={fieldErrors.name ? validationMessage(fieldErrors.name) : undefined}
+					error={fieldError('name')}
+					valid={fields.status('name') === 'valid'}
+					oninput={() => fields.input('name')}
+					onblur={() => fields.blur('name')}
 				/>
 			</div>
 
@@ -77,12 +90,10 @@
 					bind:value={email}
 					{@attach ref(refs, 'emailInput')}
 					required
-					oninput={() => (emailTaken = false)}
-					error={fieldErrors.email
-						? validationMessage(fieldErrors.email)
-						: emailTaken
-							? m.error_email_taken()
-							: undefined}
+					error={fieldError('email')}
+					valid={fields.status('email') === 'valid'}
+					oninput={() => fields.input('email')}
+					onblur={() => fields.blur('email')}
 				/>
 			</div>
 

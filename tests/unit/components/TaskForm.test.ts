@@ -380,4 +380,36 @@ describe('TaskForm', () => {
 			expect(queryByText('Task not found')).toBeNull();
 		});
 	});
+
+	describe('validation when a field is left', () => {
+		const check = (field: HTMLElement) =>
+			field.parentElement?.querySelector('svg[data-icon="check"]') ?? null;
+
+		it('links the title error at blur, gives an empty description no check, and returns to neutral once created (happy path, limit)', async () => {
+			vi.mocked(api.createTask).mockResolvedValue({
+				success: true,
+				data: { ...task, id: 12, title: 'Plan' }
+			});
+			const view = renderWithApp(app, TaskForm, { user });
+			const title = view.getAllByLabelText('Task Title')[0] as HTMLInputElement;
+			const description = view.getAllByLabelText(
+				'Description (optional)'
+			)[0] as HTMLTextAreaElement;
+
+			await fireEvent.input(title, { target: { value: ' ' } });
+			await fireEvent.blur(title);
+			await fireEvent.blur(description);
+			expect(title.getAttribute('aria-describedby')).toBe(
+				view.getByText('Title is required').closest('p')?.id
+			);
+			expect(check(description)).toBeNull();
+
+			await fireEvent.input(title, { target: { value: 'Plan' } });
+			expect(check(title)).not.toBeNull();
+			await fireEvent.submit(title.closest('form')!);
+
+			await waitFor(() => expect(title.value).toBe(''));
+			expect(check(title)).toBeNull();
+		});
+	});
 });

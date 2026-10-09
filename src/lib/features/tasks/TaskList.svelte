@@ -8,9 +8,8 @@
 	import { getAppState } from '$lib/state/app-state.svelte';
 	import type { User } from '$lib/api/client';
 	import { TaskSchema } from '$lib/validation/schemas';
-	import { zodIssuesToFieldErrors } from '$lib/validation/field-errors';
 	import { isTaskOrder, sortTasks, type TaskOrder } from './sort-tasks';
-	import { focusFirstInvalidField, TASK_FIELDS, type FieldErrors } from './task-fields';
+	import { focusFirstInvalidField, type TaskFieldValidation } from './task-fields';
 	import { revealTasks } from './reveal-tasks';
 	import TaskItem from './TaskItem.svelte';
 
@@ -21,13 +20,13 @@
 		editingTaskId = $bindable(),
 		editingTitle = $bindable(),
 		editingDescription = $bindable(),
-		editErrors = $bindable()
+		editFields
 	}: {
 		user: User;
 		editingTaskId: number | null;
 		editingTitle: string;
 		editingDescription: string;
-		editErrors: FieldErrors;
+		editFields: TaskFieldValidation;
 	} = $props();
 
 	const remaining = $derived(tasks.tasks.filter((task) => !task.completed).length);
@@ -95,14 +94,14 @@
 		editingTaskId = task.id;
 		editingTitle = task.title;
 		editingDescription = task.description;
-		editErrors = {};
+		editFields.reset();
 	}
 
 	function cancelEditing() {
 		editingTaskId = null;
 		editingTitle = '';
 		editingDescription = '';
-		editErrors = {};
+		editFields.reset();
 	}
 
 	function closeEditing(taskId: number) {
@@ -113,30 +112,27 @@
 	async function handleEditTask() {
 		if (editingTaskId === null || savingEdit) return;
 
-		editErrors = {};
-		const result = TaskSchema.safeParse({
-			title: editingTitle,
-			description: editingDescription,
-			user_id: user.id,
-			completed: false
-		});
-		if (!result.success) {
-			editErrors = zodIssuesToFieldErrors(result.error, TASK_FIELDS);
-			void focusFirstInvalidField(editErrors, {
+		const errors = editFields.submit();
+		if (errors.title || errors.description) {
+			void focusFirstInvalidField(errors, {
 				title: refs.editTitleInput,
 				description: refs.editDescriptionInput
 			});
 			return;
 		}
+		const result = TaskSchema.parse({
+			title: editingTitle,
+			description: editingDescription,
+			user_id: user.id,
+			completed: false
+		});
 
 		const editedId = editingTaskId;
 		const positionBefore = positionOf(editedId);
 		savingEdit = true;
-		const updated = await tasks
-			.edit(editedId, result.data.title, result.data.description)
-			.finally(() => {
-				savingEdit = false;
-			});
+		const updated = await tasks.edit(editedId, result.title, result.description).finally(() => {
+			savingEdit = false;
+		});
 		const stillListed = tasks.tasks.some((task) => task.id === editedId);
 		if (updated || !stillListed) closeEditing(editedId);
 		if (updated) announceMove(editedId, positionBefore);
@@ -242,7 +238,7 @@
 					saving={savingEdit}
 					bind:editingTitle
 					bind:editingDescription
-					{editErrors}
+					{editFields}
 					{refs}
 					{registerEditButton}
 					ontoggle={(checkbox: HTMLInputElement) => void handleToggleTask(checkbox, task.id)}

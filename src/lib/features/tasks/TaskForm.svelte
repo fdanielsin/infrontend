@@ -8,8 +8,8 @@
 	import { getAppState } from '$lib/state/app-state.svelte';
 	import type { User } from '$lib/api/client';
 	import { TaskSchema, validationMessage } from '$lib/validation/schemas';
-	import { zodIssuesToFieldErrors } from '$lib/validation/field-errors';
-	import { focusFirstInvalidField, TASK_FIELDS, type FieldErrors } from './task-fields';
+	import { createFieldValidation } from '$lib/validation/field-validation.svelte';
+	import { focusFirstInvalidField, taskFieldValidation } from './task-fields';
 	import TaskList from './TaskList.svelte';
 
 	const { tasks } = getAppState();
@@ -18,40 +18,48 @@
 	let submitting = $state(false);
 	let taskTitle = $state('');
 	let taskDescription = $state('');
-	let fieldErrors = $state.raw<FieldErrors>({});
 	let editingTaskId = $state<number | null>(null);
 	let editingTitle = $state('');
 	let editingDescription = $state('');
-	let editErrors = $state.raw<FieldErrors>({});
+	// `user` is never null where the forms are rendered (the template checks it first).
+	const userId = () => user?.id ?? 0;
+	const addFields = createFieldValidation(
+		taskFieldValidation(() => ({ title: taskTitle, description: taskDescription }), userId)
+	);
+	const editFields = createFieldValidation(
+		taskFieldValidation(() => ({ title: editingTitle, description: editingDescription }), userId)
+	);
+	const errorOf = (fields: typeof addFields, field: 'title' | 'description') => {
+		const key = fields.error(field);
+		return key ? validationMessage(key) : undefined;
+	};
 
 	const refs: Partial<Record<'titleInput' | 'descriptionInput', HTMLElement>> = {};
 
 	async function handleAddTask() {
 		if (user && !submitting) {
-			fieldErrors = {};
-			const result = TaskSchema.safeParse({
-				title: taskTitle,
-				description: taskDescription,
-				user_id: user.id,
-				completed: false
-			});
-			if (!result.success) {
-				fieldErrors = zodIssuesToFieldErrors(result.error, TASK_FIELDS);
-				void focusFirstInvalidField(fieldErrors, {
+			const errors = addFields.submit();
+			if (errors.title || errors.description) {
+				void focusFirstInvalidField(errors, {
 					title: refs.titleInput,
 					description: refs.descriptionInput
 				});
 				return;
 			}
+			const result = TaskSchema.parse({
+				title: taskTitle,
+				description: taskDescription,
+				user_id: user.id,
+				completed: false
+			});
 			submitting = true;
-			const created = await tasks
-				.add(result.data.title, result.data.description, user.id)
-				.finally(() => {
-					submitting = false;
-				});
+			const created = await tasks.add(result.title, result.description, user.id).finally(() => {
+				submitting = false;
+			});
 			if (created) {
 				taskTitle = '';
 				taskDescription = '';
+				addFields.reset();
 			}
 		}
 	}
@@ -83,7 +91,10 @@
 						bind:value={taskTitle}
 						{@attach ref(refs, 'titleInput')}
 						required
-						error={fieldErrors.title ? validationMessage(fieldErrors.title) : undefined}
+						error={errorOf(addFields, 'title')}
+						valid={addFields.status('title') === 'valid'}
+						oninput={() => addFields.input('title')}
+						onblur={() => addFields.blur('title')}
 					/>
 				</div>
 
@@ -95,7 +106,10 @@
 						label={m.tasks_description_label()}
 						bind:value={taskDescription}
 						{@attach ref(refs, 'descriptionInput')}
-						error={fieldErrors.description ? validationMessage(fieldErrors.description) : undefined}
+						error={errorOf(addFields, 'description')}
+						valid={addFields.status('description') === 'valid'}
+						oninput={() => addFields.input('description')}
+						onblur={() => addFields.blur('description')}
 					/>
 				</div>
 
@@ -105,13 +119,7 @@
 				</Button>
 			</form>
 
-			<TaskList
-				{user}
-				bind:editingTaskId
-				bind:editingTitle
-				bind:editingDescription
-				bind:editErrors
-			/>
+			<TaskList {user} bind:editingTaskId bind:editingTitle bind:editingDescription {editFields} />
 		</Card>
 	</div>
 {/if}

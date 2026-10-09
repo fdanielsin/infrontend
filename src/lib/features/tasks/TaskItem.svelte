@@ -8,7 +8,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import type { Task } from '$lib/api/client';
 	import { validationMessage } from '$lib/validation/schemas';
-	import type { FieldErrors } from './task-fields';
+	import type { TaskFieldValidation } from './task-fields';
 	import ClampedText from './ClampedText.svelte';
 	import { oneLine, submitOnEnter } from './title-field';
 
@@ -22,7 +22,7 @@
 		saving,
 		editingTitle = $bindable(),
 		editingDescription = $bindable(),
-		editErrors,
+		editFields,
 		refs,
 		registerEditButton,
 		ontoggle,
@@ -36,7 +36,7 @@
 		saving: boolean;
 		editingTitle: string;
 		editingDescription: string;
-		editErrors: FieldErrors;
+		editFields: TaskFieldValidation;
 		refs: EditRefs;
 		registerEditButton: (taskId: number) => Attachment<HTMLElement>;
 		ontoggle: (checkbox: HTMLInputElement) => void;
@@ -45,6 +45,11 @@
 		onsave: () => void;
 		oncancel: () => void;
 	} = $props();
+
+	const errorOf = (field: 'title' | 'description') => {
+		const key = editFields.error(field);
+		return key ? validationMessage(key) : undefined;
+	};
 
 	function tapCheckbox(event: MouseEvent & { currentTarget: HTMLElement }) {
 		if (event.target instanceof HTMLInputElement) return;
@@ -107,10 +112,13 @@
 					const title = oneLine(field.value);
 					if (title !== field.value) field.value = title;
 					editingTitle = title;
+					editFields.input('title');
 				}}
 				{@attach focusOnMount}
 				{@attach ref(refs, 'editTitleInput')}
-				error={editErrors.title ? validationMessage(editErrors.title) : undefined}
+				error={errorOf('title')}
+				valid={editFields.status('title') === 'valid'}
+				onblur={() => editFields.blur('title')}
 			/>
 			<TextField
 				compact
@@ -122,7 +130,10 @@
 				label={m.tasks_description_label()}
 				bind:value={editingDescription}
 				{@attach ref(refs, 'editDescriptionInput')}
-				error={editErrors.description ? validationMessage(editErrors.description) : undefined}
+				error={errorOf('description')}
+				valid={editFields.status('description') === 'valid'}
+				oninput={() => editFields.input('description')}
+				onblur={() => editFields.blur('description')}
 			/>
 			<div class="flex flex-wrap gap-2">
 				<Button type="submit" aria-busy={saving ? 'true' : undefined}>
