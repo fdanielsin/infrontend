@@ -1,3 +1,4 @@
+import { AxeBuilder } from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { nextFocusKey } from './support/keyboard';
 import { ada, adaTasks, grace, mockApi, openHomeWithUser } from './support/mock-api';
@@ -86,8 +87,10 @@ test.describe('Undoable task deletion (mocked API)', () => {
 		await openHomeWithUser(page);
 		await page.getByRole('button', { name: 'Delete Review', exact: true }).click();
 
-		// WHEN: The pointer is away from the toast (hovering it pauses the timer), and the time runs out.
+		// WHEN: Neither the pointer nor the focus is on the toast (either pauses its timer), and the
+		// time runs out.
 		await page.mouse.move(0, 0);
+		await page.evaluate(() => (document.activeElement as HTMLElement).blur());
 		await page.clock.runFor(6100);
 
 		// THEN: One DELETE was sent, the toast is gone and the task is gone on the server.
@@ -200,7 +203,7 @@ test.describe('Undoable task deletion (mocked API)', () => {
 		await openHomeWithUser(page);
 		await page.getByRole('button', { name: 'Delete Review 2' }).focus();
 		await page.keyboard.press('Enter');
-		await expect(page.getByRole('heading', { name: 'Tasks (1)' })).toBeFocused();
+		await expect(undoButton(page)).toBeFocused();
 		const lastControl = page.getByRole('button', { name: 'Delete Review', exact: true });
 		await lastControl.focus();
 
@@ -213,5 +216,26 @@ test.describe('Undoable task deletion (mocked API)', () => {
 		await expect(undoButton(page)).toBeVisible();
 		await page.keyboard.press('Enter');
 		await expect(page.getByRole('checkbox', { name: 'Review 2', exact: true })).toBeFocused();
+	});
+
+	test('the deletion waits as long as the keyboard stays on Undo, and axe finds nothing (limit, WCAG 2.2.1)', async ({
+		page
+	}) => {
+		// GIVEN: A task deleted from the keyboard; the clock is ours.
+		await page.clock.install();
+		const api = await mockApi(page, { users: [ada], tasks: adaTasks });
+		await openHomeWithUser(page);
+		await page.getByRole('button', { name: 'Delete Review', exact: true }).focus();
+		await page.keyboard.press('Enter');
+		await expect(undoButton(page)).toBeFocused();
+
+		// WHEN: A minute passes with the focus on Undo.
+		await page.clock.runFor(60_000);
+
+		// THEN: The toast is still there, nothing was sent, and the page has no violation.
+		await expect(undoButton(page)).toBeVisible();
+		expect(deletes(api.calls)).toHaveLength(0);
+		const { violations } = await new AxeBuilder({ page }).analyze();
+		expect(violations.map((violation) => violation.id)).toEqual([]);
 	});
 });

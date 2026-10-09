@@ -146,9 +146,26 @@
 		document.getElementById(`task-${taskId}`)?.focus();
 	}
 
+	// The row that had the focus is gone: the focus goes to the Undo button of its toast, which
+	// pauses the timer while it stays there (WCAG 2.2.1). The newest toast is the last one.
+	async function focusUndoButton() {
+		await tick();
+		const buttons = document.querySelectorAll<HTMLElement>('[data-toast-action]');
+		(buttons[buttons.length - 1] ?? refs.tasksHeading)?.focus();
+	}
+
+	// The toast leaves with the focus on it: back to the list heading, not to <body>. A focus that
+	// went elsewhere in the meantime stays where it is.
+	function focusHeadingIfInToast() {
+		const active = document.activeElement;
+		if (!active || active === document.body || active.closest('[data-toast]')) {
+			refs.tasksHeading?.focus();
+		}
+	}
+
 	async function handleRemoveTask(taskId: number) {
-		tasks.remove(taskId, { onundo: focusRestoredRow });
-		await focusHeadingIfRowRemoved(taskId);
+		tasks.remove(taskId, { onundo: focusRestoredRow, onleave: focusHeadingIfInToast });
+		await focusUndoButton();
 	}
 
 	async function handleToggleTask(checkbox: HTMLInputElement, taskId: number) {

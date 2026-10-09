@@ -103,7 +103,10 @@ export class TaskState {
 
 	// The task leaves the list at once and its deletion waits for the end of the toast: Undo puts
 	// it back without any request. `onundo` lets the caller place the focus once it is back.
-	remove(id: number, { onundo }: { onundo?: (id: number) => void } = {}) {
+	remove(
+		id: number,
+		{ onundo, onleave }: { onundo?: (id: number) => void; onleave?: () => void } = {}
+	) {
 		const index = this.tasks.findIndex((task) => task.id === id);
 		const task = this.tasks[index];
 		if (!task || this.#pendingDeletes.has(id)) return;
@@ -120,7 +123,9 @@ export class TaskState {
 					}
 				},
 				onclose: (reason) => {
-					if (reason !== 'action') void this.#commit(id);
+					if (reason === 'action') return;
+					onleave?.();
+					void this.#commit(id);
 				}
 			}
 		);

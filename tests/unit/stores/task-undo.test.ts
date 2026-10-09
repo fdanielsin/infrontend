@@ -158,6 +158,34 @@ describe('undoable task deletion', () => {
 		});
 	});
 
+	describe('leaving without undo', () => {
+		it.each(['expired', 'dismissed'] as const)(
+			'tells the caller once, before the request, when the toast is %s (happy path)',
+			(reason) => {
+				// GIVEN: A removal with a callback that notes whether the request had left.
+				const requestSent: boolean[] = [];
+				const left = vi.fn(() => requestSent.push(vi.mocked(api.deleteTask).mock.calls.length > 0));
+				app.tasks.remove(second.id, { onleave: left });
+
+				// WHEN: The toast leaves.
+				app.notifications.remove(toast()!.id, reason);
+
+				// THEN: Called once, ahead of the DELETE.
+				expect(left).toHaveBeenCalledTimes(1);
+				expect(requestSent).toEqual([false]);
+			}
+		);
+
+		it('is not called when the deletion is undone (boundary)', () => {
+			const left = vi.fn();
+			app.tasks.remove(second.id, { onleave: left });
+
+			app.notifications.runAction(toast()!.id);
+
+			expect(left).not.toHaveBeenCalled();
+		});
+	});
+
 	describe('committing', () => {
 		it.each([
 			['expired', 'expired'],
@@ -346,6 +374,26 @@ describe('undoable task deletion', () => {
 
 			// THEN: The task is listed again.
 			await vi.waitFor(() => expect(app.tasks.tasks).toEqual([first, second, third]));
+		});
+	});
+
+	describe('after a refused deletion', () => {
+		it('lets a reloaded list show the restored task (exception)', async () => {
+			// GIVEN: A deletion the server refused: the row is back.
+			vi.mocked(api.getUserTasks).mockResolvedValue({
+				success: true,
+				data: [first, second, third]
+			});
+			vi.mocked(api.deleteTask).mockResolvedValue({ success: false, error: 'HTTP 500' });
+			app.tasks.remove(second.id);
+			await app.tasks.commitPending();
+			expect(app.tasks.tasks).toEqual([first, second, third]);
+
+			// WHEN: The list is loaded again and the server still lists the task.
+			await app.tasks.load(1, () => true);
+
+			// THEN: The task stays displayed: a finished request no longer hides it.
+			expect(app.tasks.tasks).toEqual([first, second, third]);
 		});
 	});
 

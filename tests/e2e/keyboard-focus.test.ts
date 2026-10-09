@@ -109,9 +109,23 @@ test.describe('Keyboard and focus (mocked API)', () => {
 			await expect(page.getByRole('button', { name: 'Edit Review', exact: true })).toBeFocused();
 		});
 
-		test('deleting a task moves the focus to the list heading (happy path)', async ({ page }) => {
+		test('deleting a task moves the focus to its Undo button, then to the list heading when the toast is closed (happy path)', async ({
+			page,
+			browserName
+		}) => {
 			// WHEN: The first task is deleted from the keyboard.
 			await press(page.getByRole('button', { name: 'Delete Review', exact: true }));
+
+			// THEN: The Undo button of the toast has the focus.
+			const undo = page.getByRole('status').getByRole('button', { name: 'Undo' });
+			await expect(undo).toBeFocused();
+
+			// WHEN: The toast is closed from the keyboard.
+			await page.keyboard.press(nextFocusKey(browserName));
+			await expect(
+				page.getByRole('status').getByRole('button', { name: 'Dismiss notification' })
+			).toBeFocused();
+			await page.keyboard.press('Enter');
 
 			// THEN: The heading with the new count has the focus.
 			await expect(page.getByRole('heading', { name: 'Tasks (1)' })).toBeFocused();
