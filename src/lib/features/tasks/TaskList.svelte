@@ -154,7 +154,7 @@
 		const undo = buttons[buttons.length - 1];
 		// Firefox shows no focus ring on a button focused by script after the focused control went
 		// away; `focusVisible` asks for it (ignored where unsupported).
-		if (undo) undo.focus({ focusVisible: true } as FocusOptions);
+		if (undo) undo.focus({ focusVisible: true });
 		else refs.tasksHeading?.focus();
 	}
 
