@@ -129,7 +129,8 @@ test.describe('Error toast duration (mocked API)', () => {
 		await expect(alertToasts(page)).toHaveCount(1);
 		await page.clock.runFor(TEN_MINUTES);
 
-		// THEN: No horizontal scroll, no accessibility violation.
+		// THEN: No horizontal scroll, no accessibility violation (axe needs the real clock to run).
+		await page.clock.resume();
 		expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
 		const { violations } = await new AxeBuilder({ page }).analyze();
 		expect(violations.map((violation) => violation.id)).toEqual([]);
