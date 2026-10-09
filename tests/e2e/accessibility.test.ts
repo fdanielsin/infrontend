@@ -113,7 +113,7 @@ test.describe('Accessibility (axe, mocked API)', () => {
 
 		// WHEN: The statistics page is loaded.
 		await page.goto('/stats');
-		await expect(page.getByText('Summary')).toBeVisible();
+		await expect(page.getByText('Average tasks per user')).toBeVisible();
 
 		// THEN: It has a title, the page language on <html>, and no violation.
 		await expect(page).toHaveTitle(/\S/);

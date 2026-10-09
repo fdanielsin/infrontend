@@ -51,7 +51,7 @@ test.describe('Statistics page states (mocked API)', () => {
 		await page.clock.runFor(6_000);
 
 		// THEN: The figures replace the wait.
-		await expect(page.getByText('Summary')).toBeVisible();
+		await expect(page.getByText('Average tasks per user')).toBeVisible();
 		await expect(
 			page.getByText('Statistics will show as soon as the service is back.')
 		).toHaveCount(0);
@@ -68,7 +68,7 @@ test.describe('Statistics page states (mocked API)', () => {
 		await page.getByRole('button', { name: 'Retry' }).click();
 
 		// THEN: The figures show and the failure state is gone.
-		await expect(page.getByText('Summary')).toBeVisible();
+		await expect(page.getByText('Average tasks per user')).toBeVisible();
 		await expect(page.getByText('Statistics could not be loaded.')).toHaveCount(0);
 		expect(api.calls.filter((call) => call === 'GET /stats')).toHaveLength(2);
 	});
@@ -112,7 +112,7 @@ test.describe('Statistics page states (mocked API)', () => {
 
 		// THEN: An invitation replaces the zero tiles; its link leads to the home page.
 		await expect(page.getByText('Nothing to count yet.')).toBeVisible();
-		await expect(page.getByText('Summary')).toHaveCount(0);
+		await expect(page.getByText('Average tasks per user')).toHaveCount(0);
 		await page.getByRole('link', { name: 'Create the first user' }).click();
 		await expect(page).toHaveURL(/\/$/);
 	});
@@ -125,7 +125,7 @@ test.describe('Statistics page states (mocked API)', () => {
 		await page.goto('/stats');
 
 		// THEN: The figures show, with no invitation.
-		await expect(page.getByText('Summary')).toBeVisible();
+		await expect(page.getByText('Average tasks per user')).toBeVisible();
 		await expect(page.getByText('Nothing to count yet.')).toHaveCount(0);
 	});
 
@@ -159,7 +159,7 @@ test.describe('Statistics page states (mocked API)', () => {
 
 		// WHEN: Enter is pressed and the figures replace the state.
 		await retry.press('Enter');
-		await expect(page.getByText('Summary')).toBeVisible();
+		await expect(page.getByText('Average tasks per user')).toBeVisible();
 
 		// THEN: The focus is on the page (<main>), not on <body>.
 		await expect(page.locator('main')).toBeFocused();
@@ -175,7 +175,7 @@ test.describe('Statistics page states (mocked API)', () => {
 
 		// WHEN: It is double-clicked.
 		await retry.dblclick({ noWaitAfter: true }).catch(() => {});
-		await expect(page.getByText('Summary')).toBeVisible();
+		await expect(page.getByText('Average tasks per user')).toBeVisible();
 
 		// THEN: The statistics were asked twice in all: the first load and one retry.
 		expect(api.calls.filter((call) => call === 'GET /stats')).toHaveLength(2);

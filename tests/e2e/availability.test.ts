@@ -136,7 +136,7 @@ test.describe('Service availability (mocked API)', () => {
 			await page.clock.runFor(6_000);
 
 			// THEN: The statistics load.
-			await expect(page.getByRole('heading', { name: 'Summary' })).toBeVisible();
+			await expect(page.getByText('Average tasks per user')).toBeVisible();
 			expect(api.calls).toEqual(['GET /stats']);
 		});
 
