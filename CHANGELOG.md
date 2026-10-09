@@ -51,7 +51,7 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - The Create User, Add Task and Save buttons are no longer disabled while a request runs: they
   stay focused and marked busy, a second press is ignored, and a list loading no longer greys
   them out. An empty required field now shows the interface's message in the chosen language
-  instead of the browser's own bubble.
+  instead of the browser's own bubble (infrontend#65).
 - A long name, e-mail, title or description without spaces no longer widens the page or
   overlaps the panels; the page background covers the whole page; on a narrow screen the task
   actions move under the text and the page margins shrink (infrontend#47).
