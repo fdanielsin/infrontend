@@ -1,5 +1,5 @@
 import { AxeBuilder } from '@axe-core/playwright';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { mockApi, type MockTask, type MockUser } from './support/mock-api';
 import { contrast, measure, worstContrast } from './support/contrast';
 import { nextFocusKey } from './support/keyboard';
@@ -148,7 +148,7 @@ test.describe('Showing the tasks after a selection', () => {
 			await page.getByRole('button', { name: /User 3\b/ }).click();
 
 			// THEN: The tasks heading is in the window and focused.
-			const heading = page.getByRole('heading', { name: /^Tasks \(/ });
+			const heading = page.getByRole('heading', { name: 'Tasks', exact: true });
 			await expect(heading).toBeFocused();
 			await expect(heading).toBeInViewport();
 		});
@@ -161,7 +161,7 @@ test.describe('Showing the tasks after a selection', () => {
 		const row = page.getByRole('button', { name: /Ada Lovelace/ });
 		await row.focus();
 		await page.keyboard.press('Enter');
-		await expect(page.getByRole('heading', { name: /^Tasks \(/ })).toBeVisible();
+		await expect(page.getByRole('heading', { name: '1 to do of 1' })).toBeVisible();
 		await expect(row).toBeFocused();
 	});
 
@@ -174,14 +174,14 @@ test.describe('Showing the tasks after a selection', () => {
 		const row = page.getByRole('button', { name: /Ada Lovelace/ });
 		await row.focus();
 		await page.keyboard.press('Enter');
-		await expect(page.getByRole('heading', { name: /^Tasks \(/ })).toBeVisible();
+		await expect(page.getByRole('heading', { name: '1 to do of 1' })).toBeVisible();
 		await expect(row).toBeFocused();
 
 		await page.setViewportSize({ width: 767, height: 800 });
 		await page.goto('/');
 		await page.getByRole('button', { name: /Ada Lovelace/ }).focus();
 		await page.keyboard.press('Enter');
-		await expect(page.getByRole('heading', { name: /^Tasks \(/ })).toBeFocused();
+		await expect(page.getByRole('heading', { name: '1 to do of 1' })).toBeFocused();
 	});
 });
 
@@ -221,6 +221,115 @@ test.describe('No user selected', () => {
 		expect((await page.getByRole('heading', { name: 'Create User' }).boundingBox())!.y).toBe(
 			createUserY
 		);
+	});
+});
+
+test.describe('Empty lists', () => {
+	test('each shows a 24 px icon centered above its text (happy path)', async ({ page }) => {
+		// GIVEN: No user, then a user without task, on a wide screen.
+		await mockApi(page, { users: [], tasks: [] });
+		await page.setViewportSize({ width: 1280, height: 800 });
+		await page.goto('/');
+
+		// THEN: The users' empty state has an icon of 24 px, centered over its text.
+		const usersText = page.getByText('No users yet');
+		await expect(usersText).toBeVisible();
+		// The icon of the empty state itself (the page title has its own icon).
+		const usersIcon = usersText.locator('xpath=..').locator('[data-icon="group"]');
+		await expect(usersIcon).toHaveCount(1);
+		const iconBox = (await usersIcon.boundingBox())!;
+		const textBox = (await usersText.boundingBox())!;
+		expect([iconBox.width, iconBox.height]).toEqual([24, 24]);
+		expect(iconBox.y + iconBox.height).toBeLessThanOrEqual(textBox.y);
+		const textCenter = await page.getByText('No users yet').evaluate((element) => {
+			const box = element.parentElement!.getBoundingClientRect();
+			return box.x + box.width / 2;
+		});
+		expect(iconBox.x + iconBox.width / 2).toBeCloseTo(textCenter, 0);
+	});
+
+	test('the empty task list has the same icon motif (happy path)', async ({ page }) => {
+		await mockApi(page, { users: [ADA], tasks: [] });
+		await page.setViewportSize({ width: 1280, height: 800 });
+		await page.goto('/');
+		await page.getByRole('button', { name: /Ada Lovelace/ }).click();
+
+		const text = page.getByText('No tasks yet');
+		await expect(text).toBeVisible();
+		const icon = text.locator('xpath=..').locator('[data-icon="list"]');
+		await expect(icon).toHaveCount(1);
+		const box = (await icon.boundingBox())!;
+		expect([box.width, box.height]).toEqual([24, 24]);
+		await expect(icon).toHaveAttribute('aria-hidden', 'true');
+	});
+});
+
+test.describe('Task rows under the pointer', () => {
+	async function openOneTask(page: Page) {
+		await mockApi(page, { users: [ADA], tasks: [task(10)] });
+		await page.setViewportSize({ width: 1280, height: 800 });
+		await page.goto('/');
+		await page.getByRole('button', { name: /Ada Lovelace/ }).click();
+		const edit = page.getByRole('button', { name: 'Edit Task 10' });
+		const row = page.locator('li', { has: edit });
+		return { edit, row };
+	}
+	const look = (locator: Locator) =>
+		locator.evaluate((element) => {
+			const style = getComputedStyle(element);
+			return { background: style.backgroundColor, decoration: style.textDecorationLine };
+		});
+
+	test('a hovered row gets a stronger fill and its Edit is underlined, nothing moves (happy path)', async ({
+		page
+	}) => {
+		// GIVEN: A task row at rest.
+		const { edit, row } = await openOneTask(page);
+		const [rowBefore, editBefore] = [(await row.boundingBox())!, (await edit.boundingBox())!];
+		const [rowLook, editLook] = [await look(row), await look(edit)];
+		expect(editLook.decoration).toBe('none');
+
+		// WHEN: The pointer is over the row, away from the button.
+		await row.hover({ position: { x: 4, y: 4 } });
+
+		// THEN: Fill and underline appear, the boxes are the same, the text still reads.
+		expect((await look(row)).background).not.toBe(rowLook.background);
+		expect((await look(edit)).decoration).toBe('underline');
+		expect(await row.boundingBox()).toEqual(rowBefore);
+		expect(await edit.boundingBox()).toEqual(editBefore);
+		expect(worstContrast(await measure(edit, 'color'))).toBeGreaterThanOrEqual(4.5);
+		expect(
+			worstContrast(await measure(page.getByText('Task 10', { exact: true }), 'color'))
+		).toBeGreaterThanOrEqual(4.5);
+
+		// WHEN: The pointer leaves.
+		await page.mouse.move(2, 2);
+
+		// THEN: The row is back to rest.
+		expect(await look(row)).toEqual(rowLook);
+		expect((await look(edit)).decoration).toBe('none');
+	});
+
+	test('a touch screen shows no hover signal (limit)', async ({ browser, browserName }) => {
+		test.skip(browserName === 'firefox', 'Firefox has no touch emulation (isMobile)');
+		const context = await browser.newContext({
+			viewport: { width: 375, height: 800 },
+			hasTouch: true,
+			isMobile: true
+		});
+		const page = await context.newPage();
+		await mockApi(page, { users: [ADA], tasks: [task(10)] });
+		await page.goto('/');
+		await page.getByRole('button', { name: /Ada Lovelace/ }).tap();
+		const edit = page.getByRole('button', { name: 'Edit Task 10' });
+		const row = page.locator('li', { has: edit });
+		const before = await look(row);
+
+		await row.tap({ position: { x: 4, y: 4 } });
+
+		expect(await look(row)).toEqual(before);
+		expect((await look(edit)).decoration).toBe('none');
+		await context.close();
 	});
 });
 

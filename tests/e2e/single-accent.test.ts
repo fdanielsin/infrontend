@@ -405,6 +405,43 @@ test.describe('Statistics tiles (mocked API)', () => {
 		});
 	}
 
+	test('a tile does not react to the pointer: nothing there is a button (limit)', async ({
+		page
+	}) => {
+		await mockApi(page, { users: [ada], tasks: adaTasks, stats: { users: 5, tasks: 12 } });
+		await page.goto('/stats');
+		const tile = page.locator('[data-stat]').first();
+		const read = () =>
+			tile.evaluate((element) => {
+				const style = getComputedStyle(element);
+				return {
+					shadow: style.boxShadow,
+					transform: style.transform,
+					transition: style.transitionDuration
+				};
+			});
+		const before = await read();
+
+		await tile.hover();
+
+		const after = await read();
+		expect(after).toEqual(before);
+		expect(after.transform).toBe('none');
+		expect(after.transition).toBe('0s');
+	});
+
+	test('the empty statistics invitation has a 24 px icon (happy path)', async ({ page }) => {
+		await mockApi(page, { users: [], stats: { users: 0, tasks: 0 } });
+		await page.goto('/stats');
+
+		const text = page.getByText('Nothing to count yet.');
+		await expect(text).toBeVisible();
+		const icon = text.locator('xpath=..').locator('[data-icon="graph-up"]');
+		await expect(icon).toHaveCount(1);
+		const box = (await icon.boundingBox())!;
+		expect([box.width, box.height]).toEqual([24, 24]);
+	});
+
 	test('the figures share one neutral color: no meaning in blue versus indigo (happy path)', async ({
 		page
 	}) => {
