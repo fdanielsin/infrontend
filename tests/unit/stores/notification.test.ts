@@ -374,6 +374,45 @@ describe('notification store', () => {
 			expect(vi.getTimerCount()).toBe(0);
 		});
 
+		it('keeps a paused notification paused when another toast arrives (boundary)', () => {
+			// GIVEN: A 1 s notification paused after 400 ms, the pointer being on it.
+			const paused = notifications.add('Read me', 'info', { duration: 1000 });
+			vi.advanceTimersByTime(400);
+			notifications.pause(paused);
+
+			// WHEN: Another toast arrives, and much more than the duration elapses.
+			notifications.add('Other', 'info', { duration: 0 });
+			vi.advanceTimersByTime(5000);
+
+			// THEN: The paused one is still there and leaves 600 ms after the resume, not before.
+			expect(ids()).toContain(paused);
+			notifications.resume(paused);
+			vi.advanceTimersByTime(599);
+			expect(ids()).toContain(paused);
+			vi.advanceTimersByTime(1);
+			expect(ids()).not.toContain(paused);
+		});
+
+		it('keeps a paused notification paused when another toast leaves (boundary)', () => {
+			// GIVEN: A 1 s notification paused after 400 ms, next to another toast.
+			const paused = notifications.add('Read me', 'info', { duration: 1000 });
+			const other = notifications.add('Other', 'info', { duration: 0 });
+			vi.advanceTimersByTime(400);
+			notifications.pause(paused);
+
+			// WHEN: The other toast leaves, and much more than the duration elapses.
+			notifications.remove(other);
+			vi.advanceTimersByTime(5000);
+
+			// THEN: The paused one is still there and leaves 600 ms after the resume, not before.
+			expect(ids()).toEqual([paused]);
+			notifications.resume(paused);
+			vi.advanceTimersByTime(599);
+			expect(ids()).toEqual([paused]);
+			vi.advanceTimersByTime(1);
+			expect(ids()).toEqual([]);
+		});
+
 		it('does not bring back a notification dismissed while paused (exception)', () => {
 			// GIVEN: A paused notification.
 			const id = notifications.add('Saved', 'success', { duration: 1000 });
