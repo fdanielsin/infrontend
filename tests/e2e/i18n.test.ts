@@ -237,6 +237,35 @@ test.describe('Language switcher', () => {
 		await expect(name).toHaveAttribute('aria-invalid', 'true');
 	});
 
+	test('translates an error shown when a field is left, and keeps a success without text (limit)', async ({
+		page
+	}) => {
+		// GIVEN: An invalid e-mail left, and a valid name left, in English.
+		await mockApi(page);
+		const usersLoaded = page.waitForResponse((response) =>
+			response.url().endsWith('/api/v1/users')
+		);
+		await page.goto('/');
+		await usersLoaded;
+		const email = page.getByLabel(t('en', 'users_email_label'), { exact: true });
+		const nameEn = page.getByLabel(t('en', 'users_name_label'), { exact: true });
+		await nameEn.fill('Ada');
+		await email.fill('ada@');
+		await email.blur();
+		await expect(page.getByText(t('en', 'validation_email_invalid'))).toBeVisible();
+
+		// WHEN: French is chosen.
+		await page.getByRole('combobox', { name: t('en', 'language_label') }).selectOption('fr');
+
+		// THEN: The e-mail error is in French, still linked; the name keeps its check, with no text.
+		await expect(
+			page.getByLabel(t('fr', 'users_email_label'), { exact: true })
+		).toHaveAccessibleDescription(t('fr', 'validation_email_invalid'));
+		const name = page.getByLabel(t('fr', 'users_name_label'), { exact: true });
+		await expect(name).not.toHaveAttribute('aria-describedby', /.+/);
+		await expect(name.locator('xpath=..').locator('svg[data-icon="check"]')).toBeVisible();
+	});
+
 	test('stores no language cookie on a first visit without choice (limit)', async ({
 		page,
 		context

@@ -82,6 +82,25 @@ test.describe('Accessibility (axe, mocked API)', () => {
 		await expectNoViolations(page);
 	});
 
+	test('fields in error and in success after leaving them have no violation (happy path)', async ({
+		page
+	}) => {
+		// GIVEN: A selected user.
+		await mockApi(page, { users: [ada], tasks: adaTasks });
+		await openHomeWithUser(page);
+
+		// WHEN: A valid name and an invalid e-mail are left.
+		await page.getByLabel('Name', { exact: true }).fill('Grace');
+		await page.getByLabel('Name', { exact: true }).blur();
+		await page.getByLabel('Email', { exact: true }).fill('grace@');
+		await page.getByLabel('Email', { exact: true }).blur();
+		await expect(page.getByText('Invalid email address')).toBeVisible();
+		await expect(page.locator('svg[data-icon="check"]').first()).toBeVisible();
+
+		// THEN: No violation.
+		await expectNoViolations(page);
+	});
+
 	test('error and information toasts with the error banner have no violation (exception)', async ({
 		page
 	}) => {

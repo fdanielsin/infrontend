@@ -50,4 +50,34 @@ test.describe('Field borders (computed style, mocked API)', () => {
 			}
 		});
 	}
+
+	test('the border of a field in success is visible at 3:1 or more (happy path)', async ({
+		page
+	}) => {
+		// GIVEN: A valid name, left.
+		await mockApi(page, { users: [ada], tasks: adaTasks });
+		await openHomeWithUser(page);
+		const name = page.getByLabel('Name', { exact: true });
+		await name.fill('Grace');
+		await name.blur();
+		await expect(name.locator('xpath=..').locator('svg[data-icon="check"]')).toBeVisible();
+
+		// WHEN / THEN: Its border is the success color, not the neutral one, and readable on both sides.
+		const colorOf = (locator: Locator, token: string | null) =>
+			locator.evaluate((element, variable) => {
+				const probe = element.ownerDocument.createElement('div');
+				probe.style.cssText = `border:1px solid ${variable ? `var(${variable})` : ''}`;
+				if (variable) element.parentElement!.append(probe);
+				const color = getComputedStyle(variable ? probe : element).borderTopColor;
+				probe.remove();
+				return color;
+			}, token);
+		const actual = await colorOf(name, null);
+		expect(actual).toBe(await colorOf(name, '--color-success'));
+		expect(actual).not.toBe(await colorOf(page.getByLabel('Email', { exact: true }), null));
+		const outside = await measure(name, 'borderTopColor', 'parent');
+		const inside = await measure(name, 'borderTopColor', 'self');
+		expect(worstContrast(outside)).toBeGreaterThanOrEqual(MINIMUM_CONTRAST);
+		expect(worstContrast(inside)).toBeGreaterThanOrEqual(MINIMUM_CONTRAST);
+	});
 });
