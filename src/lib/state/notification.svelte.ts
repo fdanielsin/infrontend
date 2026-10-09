@@ -106,6 +106,12 @@ export class NotificationState {
 		this.#announcementTimeout = setTimeout(() => (this.announcement = null), ANNOUNCEMENT_LIFETIME);
 	}
 
+	// The area that reads the announcement is leaving: its timer must not write later.
+	clearAnnouncement() {
+		clearTimeout(this.#announcementTimeout);
+		this.announcement = null;
+	}
+
 	// A persistent error has no end of its own. The same one is not shown twice at once (a list that
 	// retries would pile them up); two answers with different references stay apart.
 	notifyError(message: string, { reference, persistent = false }: ErrorOptions = {}) {

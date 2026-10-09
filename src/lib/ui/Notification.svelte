@@ -19,6 +19,8 @@
 		return () => root.style.removeProperty('--toast-stack-height');
 	});
 
+	$effect(() => () => notifications.clearAnnouncement());
+
 	// A close button reached by Tab must be wholly inside the stack, which scrolls when it is tall.
 	// Firefox on Linux leaves a button clipped by a few pixels where it is (its outline with it);
 	// "nearest" scrolls the stack by the missing distance, and by nothing when it already shows.

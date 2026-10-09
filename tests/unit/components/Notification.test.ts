@@ -582,6 +582,23 @@ describe('Notification component', () => {
 			expect(announcementIn(view)?.textContent).toBe('');
 		});
 
+		it('forgets the announcement and its timer when the area is removed (exception)', async () => {
+			// GIVEN: A message announced, its timer running, and fake time.
+			vi.useFakeTimers();
+			const view = renderWithApp(app, Notification);
+			app.notifications.announce('Left behind');
+			await tick();
+			expect(vi.getTimerCount()).toBe(1);
+
+			// WHEN: The area leaves the page.
+			view.unmount();
+
+			// THEN: No timer is left to write into the state later, and no sentence waits for the
+			// next area to read it.
+			expect(vi.getTimerCount()).toBe(0);
+			expect(app.notifications.announcement).toBeNull();
+		});
+
 		it('stays apart from the alert and status regions of the toasts (exception)', async () => {
 			// GIVEN: An error toast is shown.
 			app.notifications.add('Broken', 'error', { duration: 0 });
