@@ -38,7 +38,8 @@
 			{:else if users.loadState === 'failed'}
 				<p class="text-subtle">{m.users_load_failed()}</p>
 				<Button
-					variant="outline"
+					variant="secondary"
+					size="sm"
 					class="mt-3"
 					{@attach ref(refs, 'retry')}
 					onclick={() => void retry()}

@@ -103,6 +103,24 @@ describe('user list states', () => {
 		expect(document.activeElement).not.toBe(document.body);
 	});
 
+	it('gives the focus back to Retry after a second failure (limit)', async () => {
+		// GIVEN: A failed load, and a retry that fails again.
+		vi.mocked(api.getUsers).mockResolvedValue(FAILURE);
+		const view = renderWithApp(app, UserForm);
+		await app.users.fetch();
+		const retry = await view.findByRole('button', { name: 'Retry' });
+		retry.focus();
+
+		// WHEN: Retry is pressed and the answer is a failure again.
+		await fireEvent.click(retry);
+
+		// THEN: The button that came back has the focus, not the page.
+		await waitFor(() => {
+			const again = view.getByRole('button', { name: 'Retry' });
+			expect(document.activeElement).toBe(again);
+		});
+	});
+
 	it('during an outage (banner shown), says the list waits, with no second Retry (exception)', async () => {
 		// GIVEN: The service is down, as the banner says, and the fetch failed.
 		app.availability.status = 'unavailable';
