@@ -32,6 +32,13 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   until it is closed, so that its reference can be copied; the same error is shown once; other
   errors still leave after 6 s (infrontend#57).
 
+### Changed
+
+- One accent color: "Add Task" and "Save" are blue like "Create User"; secondary actions
+  ("Cancel", "Retry", "Copy") share one outlined style; the information toast is neutral grey.
+- The statistics page uses the layout of the home page (left-aligned title, same language
+  switcher and link row), the totals of the summary are gone and the average is a third tile.
+
 ### Fixed
 
 - A long name, e-mail, title or description without spaces no longer widens the page or

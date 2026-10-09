@@ -51,6 +51,7 @@ commentaire du jeton. Ratios mesurés (WCAG 1.4.3 texte 4,5:1, 1.4.11 non-texte 
 | Jeton                               | Teinte               | Usage                                      | Contraste (source : commentaires de `layout.css`)                                                                                                                  |
 | ----------------------------------- | -------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `surface`, `surface-muted`          | blanc, gray-100      | carte, ligne de liste                      |                                                                                                                                                                    |
+| `heading`                           | gray-900             | titres et chiffres                         | 17,9:1 sur blanc                                                                                                                                                   |
 | `surface-hover`, `surface-selected` | gray-200, blue-100   | ligne sous le pointeur, ligne sélectionnée | mesurés (`readable-lists.test.ts`) : nom 16,96 / 17,21, e-mail 6,10 / 6,19 (survol / sélectionnée) ; barre `primary` 4,30:1 et coche 6,19:1 sur `surface-selected` |
 | `label`, `muted`, `subtle`          | gray-700, 600, 500   | libellé, texte secondaire, état vide       | muted 7,56:1 ; subtle 4,84:1 sur blanc                                                                                                                             |
 | `field-border`                      | gray-500             | bordure des champs                         | 4,84 blanc, 4,39 gray-100, 3,93 au pire sur le dégradé (extrémité indigo-100 ; 4,44 sur blue-50 ; 3:1 requis)                                                      |
@@ -58,9 +59,10 @@ commentaire du jeton. Ratios mesurés (WCAG 1.4.3 texte 4,5:1, 1.4.11 non-texte 
 | `line`                              | gray-300             | cadre de carte, séparateur                 | décoratif, pas pour un champ                                                                                                                                       |
 | `disabled`                          | gray-400             | fond d'un bouton désactivé                 |                                                                                                                                                                    |
 | `primary` / `-hover`                | blue-600 / 700       | action principale                          | texte blanc 4,5:1 ou plus                                                                                                                                          |
-| `action-strong` / `-hover`          | blue-700 / 900       | petite action, lien, toast d'info          | aussi texte sur gris : 4,5:1 ou plus                                                                                                                               |
-| `success`, `warning`                | green-700, amber-700 | action de succès, toast de succès, alerte  | texte blanc 4,5:1 ou plus                                                                                                                                          |
+| `action-strong` / `-hover`          | blue-700 / 900       | bouton secondaire, lien                    | aussi texte sur gris : 4,5:1 ou plus                                                                                                                               |
+| `success`, `warning`                | green-700, amber-700 | toast de succès, alerte                    | texte blanc 4,5:1 ou plus                                                                                                                                          |
 | `danger` / `-hover`, `danger-soft`  | red-700 / 900, 100   | l'unique couleur d'erreur, fond d'erreur   | 5,21:1 ou plus sur blanc, gray-100, red-100, dégradé                                                                                                               |
+| `info`                              | gray-800             | fond du toast d'information                | blanc dessus 14,7:1 ; jamais la couleur d'une action                                                                                                               |
 | `focus`, `focus-inverse`            | blue-700, blanc      | contour de focus                           | 6,83 blanc, 5,55 indigo-100 ; inverse 4,95 ou plus sur les toasts (succès 4,95, avertissement 5,03, erreur 6,42, info 6,83)                                        |
 
 Preuves : `tests/e2e/focus-and-errors.test.ts` (même contour de focus à 4,5:1, même
@@ -138,11 +140,11 @@ l'[ADR 0003](./decisions/0003-icones-iconoir-unplugin-icons.md). Règles de dess
 [icon-design-rules](https://designmotionhq.com/patterns/icon-design-rules) : un seul style, le
 même trait sur tout le jeu, la même boîte englobante, des tailles prises dans l'échelle.
 
-| `size` | Classe   | Usage                                                                                   |
-| ------ | -------- | --------------------------------------------------------------------------------------- |
-| 16     | `size-4` | À côté d'un texte `text-sm` (boutons `strong`, `outline`, `link`), croix d'`IconButton` |
-| 20     | `size-5` | Défaut : texte courant, boutons `primary` et `success`, icônes denses                   |
-| 24     | `size-6` | Titres, états vides                                                                     |
+| `size` | Classe   | Usage                                                                    |
+| ------ | -------- | ------------------------------------------------------------------------ |
+| 16     | `size-4` | À côté d'un texte `text-sm` (boutons `sm`, `link`), croix d'`IconButton` |
+| 20     | `size-5` | Défaut : texte courant, boutons `md`, icônes denses                      |
+| 24     | `size-6` | Titres, états vides                                                      |
 
 - **Trait** : 1,5 px d'écran à toutes les tailles. Iconoir dessine à 1,5 sur une grille de
   24, ce qui ferait 1 px à 16 px (trop mince, surtout en blanc sur un toast) ; `Icon` applique
@@ -225,6 +227,14 @@ Règles complémentaires :
 - **Survol d'une carte** : jamais de `scale` sur la carte entière. On anime le
   contenu (ombre, élévation) ; la grille ne bouge pas ([card-hover-anatomy](https://designmotionhq.com/patterns/card-hover-anatomy) ; pour une carte, les rayons et ombres de la section Composants).
 
+### Cadre de page
+
+`ui/PageShell.svelte` est le cadre des deux pages : `<main>` (tabindex -1), conteneur
+`max-w-6xl`, sélecteur de langue en haut à droite, titre `h1` aligné à gauche
+(`text-heading`), sous-titre, puis une rangée d'actions qui porte le lien vers l'autre page
+(`ButtonLink`). Le contenu de la page statistiques reste étroit (`max-w-2xl`) sous ce
+titre. Preuve : `tests/unit/components/PageShell.test.ts`, `tests/e2e/single-accent.test.ts`.
+
 ### 320 px
 
 Aucun défilement horizontal à 320 px ni à 200 % de zoom (WCAG 1.4.10). Les titres
@@ -247,21 +257,17 @@ Règles :
   passent sous le texte quand la colonne mesure moins de 28 rem (container query
   `@md`), à côté sinon. `wrap-anywhere` ne coupe un mot que s'il ne tient pas seul sur
   une ligne.
-- Marge de page `p-4` sous `sm`, deux colonnes dès `md` (768 px). Les tuiles de statistiques
-  passent sur une colonne sous `sm`, et leur chiffre est en `text-4xl` (`text-5xl` dès `sm`).
+- Marge de page `p-4` sous `sm`, deux colonnes dès `md` (768 px). Les trois tuiles de
+  statistiques (utilisateurs, tâches, moyenne par utilisateur) passent sur une colonne sous
+  `md`, et leur chiffre est en `text-4xl` (`text-5xl` dès `sm`), en `text-heading` : la couleur
+  d'un chiffre ne code rien.
 
 ### Écarts constatés
 
 À corriger dans un lot séparé (changements visibles, non faits ici) :
 
-- Des écrans écrivent des teintes brutes au lieu de jetons : lien « Statistiques »
-  de l'accueil (`bg-indigo-600`, `rounded-lg`) face au lien de retour de la page
-  statistiques (`bg-primary`, `rounded-card`) ; `text-gray-900`, `text-gray-800`,
-  `text-blue-600`, `text-indigo-600` sur les titres et chiffres ; `Select` utilise
-  `text-gray-800`.
-- Trois transitions de survol ne sont pas conditionnées par `prefers-reduced-motion` : `Card` `raised` (`Card.svelte`, ligne 23), le lien « Statistiques » (`routes/+page.svelte`, ligne 36) et le lien de retour (`routes/stats/+page.svelte`, ligne 94).
-- Les variantes `strong`, `outline` et `link` de `Button` n'ont pas de style
-  `disabled`.
+- La transition de survol de `Card` `raised` (`Card.svelte`, ligne 23) n'est pas
+  conditionnée par `prefers-reduced-motion`.
 - Le bouton d'envoi est `disabled` pendant la requête, ce qui fait perdre le focus à
   qui valide au bouton. Non corrigé volontairement (les tests s'appuient sur
   `disabled`, gain faible). Voir la règle de [Button](#button).
@@ -274,13 +280,20 @@ Tous dans `src/lib/ui/`, sauf indication. Les libellés arrivent traduits en pro
 
 ### Button
 
-Action à texte visible. Variantes : `primary` (pleine largeur, `bg-primary`),
-`success` (pleine largeur, ajout), `strong` (petite, action de confirmation),
-`outline` (petite, secondaire), `link` (action en ligne, ex. « Modifier »).
-États : survol (`primary`, `success`, `link`), focus global, désactivé
-(`bg-disabled` sur `primary` et `success`), chargement (le texte change, ex.
-« Création… », et le bouton est `disabled`). Cible minimale `min-h-6` pour les
-petites variantes. À faire : un verbe court, décrit par le texte ; un
+Action à texte visible, une seule couleur d'accent (`primary`). Variantes : `primary`
+(plein, l'action de la vue : bouton d'envoi d'un formulaire, « Add Task », « Save »),
+`secondary` (contour, l'autre choix : « Cancel », « Retry », « Copy »), `link` (action
+en ligne, ex. « Modifier »). Tailles : `md` (celle du bouton d'envoi) et `sm` (compacte,
+cible minimale `min-h-6`). `tone` (`default`, `danger`, `inverse`) ne concerne que
+`secondary` et suit la surface : `danger` sur un bandeau ou un encadré d'erreur,
+`inverse` sur un toast. `block` donne la pleine largeur (bouton d'envoi). Le vert, le
+rouge et l'ambre disent un état, jamais une action. `ButtonLink` est un lien vers une
+autre page avec le look `secondary` : l'aller (« View Statistics ») et le retour
+(« Back to home ») sont identiques, sous le titre. Les classes viennent de
+`ui/button-styles.ts`. États : survol, focus global, désactivé (`bg-disabled` sur
+`primary`, bordure et texte `disabled` sur `secondary` et `link`), chargement (le texte
+change, ex. « Création… », et le bouton est `disabled`). Preuve :
+`tests/unit/components/Button.test.ts`, `tests/e2e/single-accent.test.ts`. À faire : un verbe court, décrit par le texte ; un
 `aria-label` plus précis seulement s'il ajoute le sujet (« Modifier {titre} »,
 `messages/*.json` `tasks_edit_named`). À éviter : un bouton sans texte (utiliser
 `IconButton`), un `aria-label` qui contredit le texte visible.
@@ -416,8 +429,7 @@ bouton de fermeture atteint par Tab est ramené entièrement dans la pile
 `tests/e2e/keyboard-focus.test.ts`.
 
 Un toast peut porter une **action** : `notifications.add(message, type, { duration, reference,
-action: { label, run }, onclose })`. Le bouton (même style que « Copier », en attendant
-l'harmonisation des boutons) vient après le message et la référence, avant la fermeture ;
+action: { label, run }, onclose })`. Le bouton (même apparence que « Copier » ; c'est encore un `<button>` écrit dans `ToastItem`, pas un `Button` `secondary` `sm` de ton `inverse` : **à migrer**) vient après le message et la référence, avant la fermeture ;
 son libellé arrive traduit et se coupe n'importe où. Activé, il retire le toast puis lance
 `run` une fois (un second appui, ou un appui après l'expiration, ne fait rien) ; si `run`
 lève, le toast part quand même et l'erreur remonte. `onclose(raison)` est appelé une seule
@@ -446,7 +458,8 @@ Règles complémentaires ([notification-system](https://designmotionhq.com/patte
 
 Ligne « Référence : … » avec bouton « Copier » : la référence serveur
 (`X-Request-Id`) est sélectionnable en entier (`select-all`) et se coupe n'importe
-où. Tons `inverse` (toast) et `danger` (bandeau). Nom accessible
+où. Le bouton « Copier » est un `Button` `secondary` `sm`, de ton `inverse` (toast) ou
+`danger` (bandeau), comme « Réessayer » du bandeau. Nom accessible
 « Copier la référence {référence} ». Preuve :
 `tests/unit/components/NotificationReference.test.ts`.
 
