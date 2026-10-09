@@ -326,7 +326,7 @@ describe('TaskForm accessibility', () => {
 
 			// THEN: The line is gone and the focus is on the list heading.
 			expect(view.queryByRole('checkbox', { name: 'Review' })).toBeNull();
-			expect(document.activeElement).toBe(view.getByRole('heading', { name: 'Tasks (1)' }));
+			expect(document.activeElement).toBe(view.getByRole('heading', { name: 'All done' }));
 		});
 	});
 
@@ -343,7 +343,7 @@ describe('TaskForm accessibility', () => {
 			await settle();
 
 			// THEN: The focus is on the list heading, with the new count.
-			expect(document.activeElement).toBe(view.getByRole('heading', { name: 'Tasks (1)' }));
+			expect(document.activeElement).toBe(view.getByRole('heading', { name: 'All done' }));
 		});
 
 		it('moves the focus to the heading of an empty list after deleting the only task (boundary)', async () => {
@@ -358,8 +358,8 @@ describe('TaskForm accessibility', () => {
 			await fireEvent.click(deleteButton);
 			await settle();
 
-			// THEN: The focus is on "Tasks (0)".
-			expect(document.activeElement).toBe(view.getByRole('heading', { name: 'Tasks (0)' }));
+			// THEN: The focus is on the plain "Tasks" title.
+			expect(document.activeElement).toBe(view.getByRole('heading', { name: 'Tasks' }));
 			expect(view.getByText('No tasks yet')).toBeTruthy();
 		});
 
@@ -391,7 +391,7 @@ describe('TaskForm accessibility', () => {
 				// WHEN: Delete is pressed and the Undo time runs out.
 				await fireEvent.click(deleteButton);
 				await settle();
-				const heading = view.getByRole('heading', { name: 'Tasks (1)' });
+				const heading = view.getByRole('heading', { name: 'All done' });
 				await app.tasks.commitPending();
 				await settle();
 
@@ -435,7 +435,7 @@ describe('TaskForm accessibility', () => {
 			await settle();
 
 			// THEN: The focus is on the list heading, never on the body.
-			expect(document.activeElement).toBe(view.getByRole('heading', { name: 'Tasks (1)' }));
+			expect(document.activeElement).toBe(view.getByRole('heading', { name: 'All done' }));
 		});
 	});
 

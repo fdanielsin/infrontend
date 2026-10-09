@@ -339,7 +339,7 @@ describe('TaskList readable rows', () => {
 			const view = renderWithApp(app, TaskForm, { user });
 
 			// THEN: The heading is in view and focused.
-			const heading = view.getByRole('heading', { name: 'Tasks (2)' });
+			const heading = view.getByRole('heading', { name: '2 to do of 2' });
 			await waitFor(() => expect(document.activeElement).toBe(heading));
 			expect(scroll).toHaveBeenCalled();
 		});

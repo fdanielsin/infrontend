@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, waitFor } from '@testing-library/svelte';
 import { api } from '$lib/api/client';
+import { overwriteGetLocale } from '$lib/paraglide/runtime';
 import { AppState } from '$lib/state/app-state.svelte';
 import TaskForm from '$lib/features/tasks/TaskForm.svelte';
 import { lastToast } from '../support/last-toast';
@@ -53,6 +54,8 @@ describe('TaskForm', () => {
 
 	afterEach(() => {
 		cleanup();
+		document.cookie = 'PARAGLIDE_LOCALE=; path=/; max-age=0';
+		overwriteGetLocale(() => 'en');
 	});
 
 	it('reverts the checkbox to the real state when the API rejects the toggle (sad path)', async () => {
@@ -244,11 +247,44 @@ describe('TaskForm', () => {
 	it('shows "No tasks yet" for an empty list (limit)', () => {
 		// GIVEN / WHEN: The user has no task.
 		app.tasks.tasks = [];
-		const { getByText } = renderWithApp(app, TaskForm, { user });
+		const { getByText, getByRole, container } = renderWithApp(app, TaskForm, { user });
 
-		// THEN: The empty state and a zero count are shown.
+		// THEN: The empty state and the plain title are shown, with an icon.
 		expect(getByText('No tasks yet')).toBeTruthy();
-		expect(getByText('Tasks (0)')).toBeTruthy();
+		expect(getByRole('heading', { name: 'Tasks' })).toBeTruthy();
+		expect(container.querySelector('[data-icon="list"]')?.getAttribute('aria-hidden')).toBe('true');
+	});
+
+	describe('list title says what is left', () => {
+		const open = (id: number) => ({ ...task, id, title: `Open ${id}`, completed: false });
+		const done = (id: number) => ({ ...task, id, title: `Done ${id}`, completed: true });
+		const tasksOf = (opened: number, closed: number) => [
+			...Array.from({ length: opened }, (_, index) => open(index + 1)),
+			...Array.from({ length: closed }, (_, index) => done(100 + index))
+		];
+
+		it.each([
+			['en', 'Tasks', '1 to do of 1', '12 to do of 12', '4 to do of 12', 'All done'],
+			['fr', 'Tâches', '1 à faire sur 1', '12 à faire sur 12', '4 à faire sur 12', 'Tout est fait'],
+			['de', 'Aufgaben', '1 von 1 offen', '12 von 12 offen', '4 von 12 offen', 'Alles erledigt'],
+			['es', 'Tareas', '1 por hacer de 1', '12 por hacer de 12', '4 por hacer de 12', 'Todo hecho']
+		] as const)(
+			'is worded in %s for none, 1, 12, 4 of 12 and all done (happy path)',
+			(locale, none, one, twelve, fourOfTwelve, allDone) => {
+				app.locale.set(locale);
+				const headingFor = (tasks: (typeof task)[]) => {
+					cleanup();
+					app.tasks.tasks = tasks;
+					return renderWithApp(app, TaskForm, { user }).container.querySelector('h3')?.textContent;
+				};
+
+				expect(headingFor([])?.trim()).toBe(none);
+				expect(headingFor(tasksOf(1, 0))?.trim()).toBe(one);
+				expect(headingFor(tasksOf(12, 0))?.trim()).toBe(twelve);
+				expect(headingFor(tasksOf(4, 8))?.trim()).toBe(fourOfTwelve);
+				expect(headingFor(tasksOf(0, 2))?.trim()).toBe(allDone);
+			}
+		);
 	});
 
 	it('renders titles with markup as plain text (limit)', () => {

@@ -2,6 +2,7 @@
 	import { flushSync, tick } from 'svelte';
 	import type { Attachment } from 'svelte/attachments';
 	import { ref } from '$lib/ui/attachments';
+	import Icon from '$lib/ui/Icon.svelte';
 	import Select from '$lib/ui/Select.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { getAppState } from '$lib/state/app-state.svelte';
@@ -30,6 +31,14 @@
 	} = $props();
 
 	// Derived: the list of the server is never reordered in place.
+	const remaining = $derived(tasks.tasks.filter((task) => !task.completed).length);
+	const heading = $derived(
+		tasks.tasks.length === 0
+			? m.tasks_list_title()
+			: remaining === 0
+				? m.tasks_all_done()
+				: m.tasks_progress({ remaining, total: tasks.tasks.length })
+	);
 	const sortedTasks = $derived(sortTasks(tasks.tasks, taskOrder.current, locale.current));
 	const orderOptions = $derived([
 		{ value: 'created', label: m.tasks_order_created() },
@@ -204,11 +213,14 @@
 		tabindex="-1"
 		class="mb-3 font-semibold"
 	>
-		{m.tasks_list_heading({ count: tasks.tasks.length })}
+		{heading}
 	</h3>
 	{#if tasks.tasks.length === 0}
-		<p class="text-subtle">{m.tasks_empty()}</p>
-		<p class="mt-1 text-sm text-subtle">{m.tasks_empty_hint()}</p>
+		<div class="py-4 text-center">
+			<Icon icon="list" size={24} class="mx-auto text-subtle" />
+			<p class="mt-2 text-subtle">{m.tasks_empty()}</p>
+			<p class="mt-1 text-sm text-subtle">{m.tasks_empty_hint()}</p>
+		</div>
 	{:else}
 		{#if tasks.tasks.length > 1}
 			<div class="mb-3">

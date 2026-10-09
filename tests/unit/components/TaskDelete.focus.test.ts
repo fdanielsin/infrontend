@@ -88,7 +88,7 @@ describe('focus around the Undo toast', () => {
 		await fireEvent.click(view.getByRole('button', { name: 'Dismiss notification' }));
 		await settle();
 
-		expect(document.activeElement).toBe(view.getByRole('heading', { name: 'Tasks (1)' }));
+		expect(document.activeElement).toBe(view.getByRole('heading', { name: 'All done' }));
 		expect(api.deleteTask).toHaveBeenCalledTimes(1);
 	});
 
@@ -99,7 +99,7 @@ describe('focus around the Undo toast', () => {
 		await fireEvent.click(view.getByRole('button', { name: 'Dismiss notification' }));
 		await settle();
 
-		expect(document.activeElement).toBe(view.getByRole('heading', { name: 'Tasks (2)' }));
+		expect(document.activeElement).toBe(view.getByRole('heading', { name: '1 to do of 2' }));
 	});
 
 	it('puts the focus on the restored checkbox after Undo (happy path)', async () => {
@@ -119,7 +119,7 @@ describe('focus around the Undo toast', () => {
 		app.notifications.remove(app.notifications.items[0]!.id, 'expired');
 		await settle();
 
-		expect(document.activeElement).toBe(view.getByRole('heading', { name: 'Tasks (1)' }));
+		expect(document.activeElement).toBe(view.getByRole('heading', { name: 'All done' }));
 	});
 
 	it('does not take the focus back when it has moved elsewhere before the toast ends (limit)', async () => {

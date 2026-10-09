@@ -129,7 +129,7 @@ test.describe('Keyboard and focus (mocked API)', () => {
 			await page.keyboard.press('Enter');
 
 			// THEN: The heading with the new count has the focus.
-			await expect(page.getByRole('heading', { name: 'Tasks (1)' })).toBeFocused();
+			await expect(page.getByRole('heading', { name: 'All done' })).toBeFocused();
 		});
 
 		test('checking a task already deleted on the server moves the focus to the list heading (limit)', async ({
@@ -154,7 +154,7 @@ test.describe('Keyboard and focus (mocked API)', () => {
 
 			// THEN: The line is gone and the heading has the focus.
 			await expect(checkbox).toHaveCount(0);
-			await expect(page.getByRole('heading', { name: 'Tasks (1)' })).toBeFocused();
+			await expect(page.getByRole('heading', { name: 'All done' })).toBeFocused();
 		});
 	});
 

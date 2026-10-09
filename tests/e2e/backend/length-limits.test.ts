@@ -128,7 +128,7 @@ test.describe('Length limits, client and server together', () => {
 		await page.getByRole('button', { name: 'Add Task' }).click();
 
 		// THEN: The server stored both, unchanged.
-		await expect(page.getByRole('heading', { name: /Tasks \(1\)/ })).toBeVisible();
+		await expect(page.getByRole('heading', { name: '1 to do of 1' })).toBeVisible();
 		const [task] = await tasksOf(request, stored!.id);
 		expect([task?.title, task?.description]).toEqual([title, description]);
 	});
