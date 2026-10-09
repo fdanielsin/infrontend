@@ -50,7 +50,7 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Without a selected user, the task panel is an empty state (icon, title, instruction); the
   statistics tiles use the width of the page content; a task checkbox has a 44 px touch target on
-  touch screens (visual review 5, 13, 30).
+  touch screens (visual review 5, 13, 30) (infrontend#66).
 - The Create User, Add Task and Save buttons are no longer disabled while a request runs: they
   stay focused and marked busy, a second press is ignored, and a list loading no longer greys
   them out. An empty required field now shows the interface's message in the chosen language
