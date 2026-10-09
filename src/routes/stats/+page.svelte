@@ -53,77 +53,75 @@
 		</ButtonLink>
 	{/snippet}
 
-	<div>
-		<!-- Each state says what is true: figures, a wait for the service, a load in progress, a
-		     failure with its way out, or nothing to count. A toast carries the error detail. -->
-		{#if stats && stats.users === 0 && stats.tasks === 0}
-			<Card variant="flat" padding="lg" class="mx-auto max-w-2xl text-center">
-				<p class="text-muted">{m.stats_empty()}</p>
-				<a
-					href={resolve('/')}
-					class="mt-2 inline-block text-action-strong underline hover:text-action-strong-hover"
-				>
-					{m.stats_empty_action()}
-				</a>
+	<!-- Each state says what is true: figures, a wait for the service, a load in progress, a
+	     failure with its way out, or nothing to count. A toast carries the error detail. -->
+	{#if stats && stats.users === 0 && stats.tasks === 0}
+		<Card variant="flat" padding="lg" class="mx-auto max-w-2xl text-center">
+			<p class="text-muted">{m.stats_empty()}</p>
+			<a
+				href={resolve('/')}
+				class="mt-2 inline-block text-action-strong underline hover:text-action-strong-hover"
+			>
+				{m.stats_empty_action()}
+			</a>
+		</Card>
+	{:else if stats}
+		<div class="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-3">
+			<Card variant="raised" data-stat>
+				<div data-stat-value class="text-4xl font-bold wrap-anywhere text-heading sm:text-5xl">
+					{formatNumber(stats.users)}
+				</div>
+				<p class="mt-2 text-lg wrap-anywhere text-muted">
+					<Icon icon="group" class="mr-1 inline align-text-bottom" />
+					{m.stats_users()}
+				</p>
 			</Card>
-		{:else if stats}
-			<div class="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-3">
-				<Card variant="raised" data-stat>
-					<div data-stat-value class="text-4xl font-bold wrap-anywhere text-heading sm:text-5xl">
-						{formatNumber(stats.users)}
-					</div>
-					<p class="mt-2 text-lg wrap-anywhere text-muted">
-						<Icon icon="group" class="mr-1 inline align-text-bottom" />
-						{m.stats_users()}
-					</p>
-				</Card>
-				<Card variant="raised" data-stat>
-					<div data-stat-value class="text-4xl font-bold wrap-anywhere text-heading sm:text-5xl">
-						{formatNumber(stats.tasks)}
-					</div>
-					<p class="mt-2 text-lg wrap-anywhere text-muted">
-						<Icon icon="check-circle" class="mr-1 inline align-text-bottom" />
-						{m.stats_tasks()}
-					</p>
-				</Card>
-				<Card variant="raised" data-stat>
-					<div data-stat-value class="text-4xl font-bold wrap-anywhere text-heading sm:text-5xl">
-						{stats.users > 0
-							? formatNumber(stats.tasks / stats.users, {
-									minimumFractionDigits: 2,
-									maximumFractionDigits: 2
-								})
-							: formatNumber(0)}
-					</div>
-					<p class="mt-2 text-lg wrap-anywhere text-muted">
-						<Icon icon="graph-up" class="mr-1 inline align-text-bottom" />
-						{m.stats_average()}
-					</p>
-				</Card>
-			</div>
-		{:else if availability.status === 'unavailable'}
-			<Card variant="flat" padding="lg" class="mx-auto max-w-2xl text-center">
-				<p class="text-muted">{m.stats_unavailable()}</p>
+			<Card variant="raised" data-stat>
+				<div data-stat-value class="text-4xl font-bold wrap-anywhere text-heading sm:text-5xl">
+					{formatNumber(stats.tasks)}
+				</div>
+				<p class="mt-2 text-lg wrap-anywhere text-muted">
+					<Icon icon="check-circle" class="mr-1 inline align-text-bottom" />
+					{m.stats_tasks()}
+				</p>
 			</Card>
-		{:else if status.loading}
-			<Card variant="flat" padding="lg" class="mx-auto max-w-2xl text-center">
-				<p class="text-muted">{m.stats_loading()}</p>
+			<Card variant="raised" data-stat>
+				<div data-stat-value class="text-4xl font-bold wrap-anywhere text-heading sm:text-5xl">
+					{stats.users > 0
+						? formatNumber(stats.tasks / stats.users, {
+								minimumFractionDigits: 2,
+								maximumFractionDigits: 2
+							})
+						: formatNumber(0)}
+				</div>
+				<p class="mt-2 text-lg wrap-anywhere text-muted">
+					<Icon icon="graph-up" class="mr-1 inline align-text-bottom" />
+					{m.stats_average()}
+				</p>
 			</Card>
-		{:else}
-			<Alert class="mx-auto max-w-2xl font-semibold">
-				<p>{m.stats_load_failed()}</p>
-				<Button
-					variant="secondary"
-					size="sm"
-					tone="danger"
-					class="mt-3"
-					{@attach ref(refs, 'retry')}
-					onclick={() => void retry()}
-				>
-					<Icon icon="refresh" size={16} class="mr-1 inline align-text-bottom" />
-					{m.stats_retry()}
-				</Button>
-			</Alert>
-		{/if}
-	</div>
+		</div>
+	{:else if availability.status === 'unavailable'}
+		<Card variant="flat" padding="lg" class="mx-auto max-w-2xl text-center">
+			<p class="text-muted">{m.stats_unavailable()}</p>
+		</Card>
+	{:else if status.loading}
+		<Card variant="flat" padding="lg" class="mx-auto max-w-2xl text-center">
+			<p class="text-muted">{m.stats_loading()}</p>
+		</Card>
+	{:else}
+		<Alert class="mx-auto max-w-2xl font-semibold">
+			<p>{m.stats_load_failed()}</p>
+			<Button
+				variant="secondary"
+				size="sm"
+				tone="danger"
+				class="mt-3"
+				{@attach ref(refs, 'retry')}
+				onclick={() => void retry()}
+			>
+				<Icon icon="refresh" size={16} class="mr-1 inline align-text-bottom" />
+				{m.stats_retry()}
+			</Button>
+		</Alert>
+	{/if}
 </PageShell>
