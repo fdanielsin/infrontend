@@ -157,9 +157,10 @@ premier rendu serveur) n'est pas observable sous jsdom : à couvrir par un E2E.
 
 ## Lot « tâche introuvable » (branche `fix/frontend-task-not-found`)
 
-Supprimer, cocher ou éditer une tâche qui n'existe plus côté serveur
+Cocher ou éditer une tâche qui n'existe plus côté serveur
 (`error_code` `TASK_NOT_FOUND`) la retire de la liste et affiche la notification
-info « Task already deleted » : ce n'est pas une erreur (`isHandled` de
+info « Task already deleted » (une suppression, elle, est silencieuse : voir « Action
+destructive » du design system) : ce n'est pas une erreur (`isHandled` de
 `RequestStatus.run`, `TaskState` dans `lib/state/tasks.svelte.ts`). Le retrait et la
 notification n'ont lieu que si la tâche est encore dans la liste courante
 (double action, changement d'utilisateur pendant la requête : rien). Les autres

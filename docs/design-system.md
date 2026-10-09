@@ -37,8 +37,8 @@ parle à l'API) restent dans [architecture.md](./architecture.md) et
 5. **Un seul élément mis en avant par vue** (échelle, couleur, élévation) ; les voisins
    restent calmes ([von-restorff](https://designmotionhq.com/patterns/von-restorff)).
 6. **Agir puis permettre d'annuler**, plutôt que demander confirmation ; la friction
-   forte est réservée à l'irréversible ([undo-ux](https://designmotionhq.com/patterns/undo-ux)). **Cible** : l'annulation
-   n'existe pas encore (voir [Action destructive](#action-destructive)).
+   forte est réservée à l'irréversible ([undo-ux](https://designmotionhq.com/patterns/undo-ux)).
+   Voir [Action destructive](#action-destructive).
 
 ## 2. Fondations
 
@@ -588,14 +588,30 @@ d'avertissement le dit et la référence reste sélectionnable.
 
 ### Action destructive
 
-Supprimer une tâche est immédiat, sans confirmation (`IconButton` rouge, nom
-« Supprimer {titre} »). L'élément focalisé disparaît : le focus va au titre de la
-liste (`tabindex="-1"`). Une tâche déjà supprimée sur le serveur est retirée avec
-l'info « Tâche déjà supprimée ». Preuve : `tests/unit/components/TaskForm.a11y.test.ts`,
-`tests/unit/stores/task-not-found.test.ts`. Règle décidée, pas encore réalisée
-(**Cible**) : pas de « Êtes-vous sûr ? ». La tâche disparaît aussitôt et un toast
-« Tâche supprimée » offre « Annuler » pendant 6 s (pause au survol et au focus,
-comme tout toast). La requête `DELETE` part à la fin du délai ou au départ de la page.
+Supprimer une tâche n'ouvre aucune confirmation (`IconButton` rouge, nom
+« Supprimer {titre} »). La ligne sort aussitôt de la liste et un toast « Tâche
+supprimée : {titre} » offre « Annuler » pendant 6 s (pause au survol et au focus,
+comme tout toast). L'élément focalisé disparaît : le focus va au titre de la liste
+(`tabindex="-1"`).
+
+- **Annuler** remet la tâche à sa place, sans aucun appel réseau, et donne le focus à
+  sa case à cocher (le focus posé par l'action n'est pas repris par le toast).
+- La requête `DELETE` part quand le toast se ferme (fin du délai ou croix), quand un autre
+  utilisateur est sélectionné, et quand la page devient masquée (`visibilitychange`
+  hidden) ou est quittée (`pagehide`, filet) ; un seul envoi par tâche, avec `keepalive`.
+  Le `DELETE` n'ajoute aucun en-tête (un en-tête personnalisé demanderait une autorisation
+  CORS de plus).
+- 404 `TASK_NOT_FOUND` à l'envoi : succès silencieux (la tâche est déjà partie). Tout autre
+  échec : la ligne est remise à sa place et l'erreur habituelle s'affiche.
+- Risque résiduel : le `DELETE` cross-origin est précédé d'un préflight (le backend ne pose pas
+  `Access-Control-Max-Age`, et le cache de préflight est par URL, donc inutile pour un id neuf).
+  Envoyé à `hidden`, la page est encore vivante et le préflight aboutit ; un onglet tué sans
+  passer par `hidden` perd la suppression : la tâche réapparaît au rechargement, sans perte de
+  données.
+
+Preuves : `tests/unit/stores/task-undo.test.ts`, `tests/unit/components/TaskForm.a11y.test.ts`,
+`tests/e2e/undo-delete.test.ts`, `tests/e2e/focus-and-errors.test.ts` (anneau du bouton),
+`tests/e2e/accessibility.test.ts` (axe, 320 px).
 Règles complémentaires ([destructive-actions](https://designmotionhq.com/patterns/destructive-actions), [undo-ux](https://designmotionhq.com/patterns/undo-ux)) : le bouton nomme l'action
 (« Supprimer la tâche ») ; le rouge est réservé à la destruction ; une action
 irréversible demande une friction forte (saisie du nom, maintien appuyé) et n'occupe
