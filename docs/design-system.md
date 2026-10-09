@@ -244,8 +244,9 @@ Règles complémentaires :
 `ui/PageShell.svelte` est le cadre des deux pages : `<main>` (tabindex -1), conteneur
 `max-w-6xl`, sélecteur de langue en haut à droite, titre `h1` aligné à gauche
 (`text-heading`), sous-titre, puis une rangée d'actions qui porte le lien vers l'autre page
-(`ButtonLink`). Le contenu de la page statistiques reste étroit (`max-w-2xl`) sous ce
-titre. Preuve : `tests/unit/components/PageShell.test.ts`, `tests/e2e/single-accent.test.ts`.
+(`ButtonLink`). Sur la page statistiques, les trois tuiles ont la largeur du
+contenu (comme l'accueil) ; les cartes d'état (attente, échec, rien à compter) restent
+étroites et centrées (`max-w-2xl`) pour la longueur de ligne. Preuve : `tests/unit/components/PageShell.test.ts`, `tests/e2e/single-accent.test.ts`.
 
 ### 320 px
 
@@ -387,7 +388,9 @@ ni défilement interne pour l'instant (voir « Motifs à venir »). Les icônes 
 la ligne éditée sont `disabled` (restent dans l'arbre d'accessibilité avec leur nom) : une tâche
 en cours de modification ne se coche ni ne se supprime. Les actions « Modifier » et « Supprimer »
 ont une cible de 44 px sur pointeur grossier (`pointer-coarse:min-h-11 pointer-coarse:min-w-11`,
-passés par `class`). **Cible** : mêmes icônes pour les deux actions (lot Iconoir).
+passés par `class`). La case à cocher reste de 16 px ; sur pointeur grossier, une zone vide de
+44 px autour d'elle (`data-touch-target`) renvoie le tap à la case, qui garde son nom et le
+clavier. **Cible** : mêmes icônes pour les deux actions (lot Iconoir).
 `ClampedText` limite la description à trois lignes (`line-clamp-3`) ; le bouton « Afficher
 plus / moins » n'existe que si le texte déborde (un pixel d'écart est un arrondi), reste
 disponible une fois déplié, et porte un nom propre à la ligne (« Afficher plus : {titre} »,
