@@ -16,7 +16,8 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - A toast can carry an action button and a close callback (pressed, dismissed or expired), for
   an "Undo" on a deletion; no visible change yet (infrontend#54).
 - Deleting a task is now undoable: the row leaves at once, a toast offers "Undo" for 6 seconds,
-  and the deletion is sent when it ends, when another user is selected or when the page is left.
+  and the deletion is sent when it ends, when another user is selected or when the page is left
+  (infrontend#58).
 
 ### Changed
 
@@ -43,7 +44,7 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   switcher and link row), the totals of the summary are gone and the average is a third
   tile (infrontend#61).
 - A deletion that finds the task already gone on the server no longer shows "Task already
-  deleted" (the task is out of the list, as the user asked).
+  deleted" (the task is out of the list, as the user asked) (infrontend#58).
 
 ### Fixed
 
