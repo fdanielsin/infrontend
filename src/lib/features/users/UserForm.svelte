@@ -11,8 +11,8 @@
 	import { UserSchema, validationMessage } from '$lib/validation/schemas';
 	import { zodIssuesToFieldErrors } from '$lib/validation/field-errors';
 	const { users } = getAppState();
-	const status = users.status;
 	const USER_FIELDS = ['name', 'email'] as const;
+	let submitting = $state(false);
 	let name = $state('');
 	let email = $state('');
 	let fieldErrors = $state.raw<{ name?: string; email?: string }>({});
@@ -21,6 +21,7 @@
 	const refs: Partial<Record<'nameInput' | 'emailInput', HTMLElement>> = {};
 
 	async function handleSubmit() {
+		if (submitting) return;
 		const result = UserSchema.safeParse({ name, email });
 		fieldErrors = {};
 		emailTaken = false;
@@ -30,7 +31,10 @@
 			(fieldErrors.name ? refs.nameInput : refs.emailInput)?.focus();
 			return;
 		}
-		const outcome = await users.add(result.data.name, result.data.email);
+		submitting = true;
+		const outcome = await users.add(result.data.name, result.data.email).finally(() => {
+			submitting = false;
+		});
 		if (outcome.status === 'created') {
 			name = '';
 			email = '';
@@ -47,6 +51,7 @@
 		<h2 class="mb-4 text-xl font-bold">{m.users_create_heading()}</h2>
 
 		<form
+			novalidate
 			onsubmit={(e) => {
 				e.preventDefault();
 				void handleSubmit();
@@ -81,9 +86,9 @@
 				/>
 			</div>
 
-			<Button type="submit" block disabled={status.loading}>
+			<Button type="submit" block aria-busy={submitting ? 'true' : undefined}>
 				<Icon icon="plus" class="mr-1 inline align-text-bottom" />
-				{status.loading ? m.users_creating() : m.users_create_button()}
+				{submitting ? m.users_creating() : m.users_create_button()}
 			</Button>
 		</form>
 	</Card>

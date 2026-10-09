@@ -36,7 +36,7 @@ describe('createRequestStatus', () => {
 			tracksLoading: false
 		});
 
-		// THEN: The form stays disabled until the tracked request answers.
+		// THEN: `loading` stays true until the tracked request answers.
 		expect(status.loading).toBe(true);
 		answer({ success: true, data: 2 });
 		await tracked;

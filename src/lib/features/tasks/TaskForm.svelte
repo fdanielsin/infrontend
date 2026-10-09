@@ -16,6 +16,7 @@
 	const status = tasks.status;
 	let { user = null }: { user: User | null } = $props();
 
+	let submitting = $state(false);
 	let taskTitle = $state('');
 	let taskDescription = $state('');
 	let fieldErrors = $state.raw<FieldErrors>({});
@@ -27,7 +28,7 @@
 	const refs: Partial<Record<'titleInput' | 'descriptionInput', HTMLElement>> = {};
 
 	async function handleAddTask() {
-		if (user) {
+		if (user && !submitting) {
 			fieldErrors = {};
 			const result = TaskSchema.safeParse({
 				title: taskTitle,
@@ -43,7 +44,12 @@
 				});
 				return;
 			}
-			const created = await tasks.add(result.data.title, result.data.description, user.id);
+			submitting = true;
+			const created = await tasks
+				.add(result.data.title, result.data.description, user.id)
+				.finally(() => {
+					submitting = false;
+				});
 			if (created) {
 				taskTitle = '';
 				taskDescription = '';
@@ -63,6 +69,7 @@
 			<h2 class="mb-4 text-xl font-bold wrap-anywhere">{m.tasks_for_user({ name: user.name })}</h2>
 
 			<form
+				novalidate
 				onsubmit={(e) => {
 					e.preventDefault();
 					void handleAddTask();
@@ -92,9 +99,9 @@
 					/>
 				</div>
 
-				<Button type="submit" block disabled={status.loading}>
+				<Button type="submit" block aria-busy={submitting ? 'true' : undefined}>
 					<Icon icon="plus" class="mr-1 inline align-text-bottom" />
-					{status.loading ? m.tasks_adding() : m.tasks_add_button()}
+					{submitting ? m.tasks_adding() : m.tasks_add_button()}
 				</Button>
 			</form>
 

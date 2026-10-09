@@ -66,6 +66,7 @@
 		<form
 			{@attach ref(refs, 'editForm')}
 			class="min-w-0 space-y-2"
+			novalidate
 			onsubmit={(e) => {
 				e.preventDefault();
 				onsave();
@@ -106,7 +107,7 @@
 				error={editErrors.description ? validationMessage(editErrors.description) : undefined}
 			/>
 			<div class="flex flex-wrap gap-2">
-				<Button type="submit" disabled={saving}>
+				<Button type="submit" aria-busy={saving ? 'true' : undefined}>
 					{m.tasks_save()}
 				</Button>
 				<Button variant="secondary" onclick={oncancel}>

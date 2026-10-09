@@ -138,23 +138,20 @@ describe('TaskForm list and edit behaviour', () => {
 		[1, 2, 3].forEach((id, index) => expect(checkbox(id)).toBe(before[index]));
 	});
 
-	it('disables Save while a request is pending and enables it again afterwards (exception)', async () => {
+	it('keeps Save enabled while the list loads, and busy only for its own request (exception)', async () => {
 		// GIVEN: An edit in progress.
 		const view = renderWithApp(app, TaskForm, { user });
 		await fireEvent.click(view.getByRole('button', { name: 'Edit Review' }));
 		await tick();
 		const save = view.getByRole('button', { name: 'Save' }) as HTMLButtonElement;
-		expect(save.disabled).toBe(false);
 
-		// WHEN: A request is pending.
+		// WHEN: Another request of the domain is pending.
 		app.tasks.status.loading = true;
 		await tick();
 
-		// THEN: Save cannot be pressed a second time; it is available again once the request ends.
-		expect(save.disabled).toBe(true);
-		app.tasks.status.loading = false;
-		await tick();
+		// THEN: Save is neither disabled nor busy (see SubmitButtons.test.ts for its own request).
 		expect(save.disabled).toBe(false);
+		expect(save.getAttribute('aria-busy')).toBeNull();
 	});
 
 	it('focuses the description of an edit when only the description is invalid (sad path)', async () => {

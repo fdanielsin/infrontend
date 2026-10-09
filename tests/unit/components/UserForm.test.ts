@@ -124,7 +124,7 @@ describe('UserForm', () => {
 		expect(container.querySelector('li b')).toBeNull();
 	});
 
-	it('disables the submit button while the request is pending (exception)', async () => {
+	it('keeps the submit button enabled but busy while the request is pending (exception)', async () => {
 		// GIVEN: An API call that has not answered yet.
 		let answer!: (value: ApiResult<User>) => void;
 		vi.mocked(api.createUser).mockReturnValue(new Promise((resolve) => (answer = resolve)));
@@ -133,14 +133,13 @@ describe('UserForm', () => {
 		// WHEN: The form is submitted.
 		await submit('Ada', 'ada@example.com');
 
-		// THEN: The button is disabled until the answer arrives.
+		// THEN: The button is not disabled (it keeps the focus) but busy until the answer arrives.
 		const button = getByRole('button', { name: 'Creating…' }) as HTMLButtonElement;
-		expect(button.disabled).toBe(true);
+		expect(button.disabled).toBe(false);
+		expect(button.getAttribute('aria-busy')).toBe('true');
 		answer({ success: true, data: { id: 1, name: 'Ada', email: 'ada@example.com' } });
 		await waitFor(() =>
-			expect((getByRole('button', { name: 'Create User' }) as HTMLButtonElement).disabled).toBe(
-				false
-			)
+			expect(getByRole('button', { name: 'Create User' }).getAttribute('aria-busy')).toBeNull()
 		);
 	});
 

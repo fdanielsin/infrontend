@@ -40,7 +40,8 @@ export function buttonClasses({
 	tone = 'default',
 	block = false
 }: Options = {}): string {
-	const classes = [VARIANT_CLASSES[variant]];
+	// Busy: the label and `aria-busy` say it; the pointer shows it. No opacity, which would lower the contrast.
+	const classes = [VARIANT_CLASSES[variant], 'aria-busy:cursor-progress'];
 	if (variant !== 'link') classes.push('rounded-control', SIZE_CLASSES[size]);
 	if (variant === 'secondary') classes.push(SECONDARY_TONE_CLASSES[tone]);
 	if (block) classes.push('w-full');

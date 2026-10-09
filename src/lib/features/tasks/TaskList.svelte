@@ -14,7 +14,6 @@
 	import TaskItem from './TaskItem.svelte';
 
 	const { tasks, taskOrder, locale, notifications } = getAppState();
-	const status = tasks.status;
 	// The edit draft is owned by TaskForm: this list is unmounted whenever the selected user is null.
 	let {
 		user,
@@ -38,6 +37,8 @@
 		{ value: 'status', label: m.tasks_order_status() }
 	]);
 	const positionOf = (taskId: number) => sortedTasks.findIndex((task) => task.id === taskId) + 1;
+
+	let savingEdit = $state(false);
 
 	const refs: Partial<
 		Record<'tasksHeading' | 'editForm' | 'editTitleInput' | 'editDescriptionInput', HTMLElement>
@@ -101,7 +102,7 @@
 	}
 
 	async function handleEditTask() {
-		if (editingTaskId === null || status.loading) return;
+		if (editingTaskId === null || savingEdit) return;
 
 		editErrors = {};
 		const result = TaskSchema.safeParse({
@@ -121,7 +122,12 @@
 
 		const editedId = editingTaskId;
 		const positionBefore = positionOf(editedId);
-		const updated = await tasks.edit(editedId, result.data.title, result.data.description);
+		savingEdit = true;
+		const updated = await tasks
+			.edit(editedId, result.data.title, result.data.description)
+			.finally(() => {
+				savingEdit = false;
+			});
 		const stillListed = tasks.tasks.some((task) => task.id === editedId);
 		if (updated || !stillListed) closeEditing(editedId);
 		if (updated) announceMove(editedId, positionBefore);
@@ -221,7 +227,7 @@
 				<TaskItem
 					{task}
 					editing={editingTaskId === task.id}
-					saving={status.loading}
+					saving={savingEdit}
 					bind:editingTitle
 					bind:editingDescription
 					{editErrors}
