@@ -39,7 +39,7 @@ test.describe('User rows', () => {
 
 		// THEN: The user is selected, with a check and without any ring.
 		await expect(row).toHaveAttribute('aria-pressed', 'true');
-		await expect(row.locator('[data-row-icon="check"]')).toBeVisible();
+		await expect(row.locator('[data-icon="check"]')).toBeVisible();
 		expect(await row.evaluate((element) => getComputedStyle(element).boxShadow)).toBe('none');
 		expect(box.height).toBeGreaterThanOrEqual(44);
 	});
@@ -121,7 +121,7 @@ test.describe('User rows', () => {
 		await page.goto('/');
 		const selected = page.getByRole('button', { name: /Ada Lovelace/ });
 		await selected.click();
-		await expect(selected.locator('[data-row-icon="check"]')).toBeVisible();
+		await expect(selected.locator('[data-icon="check"]')).toBeVisible();
 		expect(await selected.evaluate((element) => getComputedStyle(element).borderLeftWidth)).toBe(
 			'4px'
 		);

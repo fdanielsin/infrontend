@@ -70,18 +70,16 @@ describe('UserList', () => {
 		const adaButton = view.getByRole('button', { name: /Ada/ });
 		const graceButton = view.getByRole('button', { name: /Grace/ });
 		const icon = (button: HTMLElement) =>
-			[...button.querySelectorAll('svg[data-row-icon]')].map((svg) =>
-				svg.getAttribute('data-row-icon')
-			);
-		expect(icon(adaButton)).toEqual(['chevron']);
-		expect(icon(graceButton)).toEqual(['chevron']);
+			[...button.querySelectorAll('svg[data-icon]')].map((svg) => svg.getAttribute('data-icon'));
+		expect(icon(adaButton)).toEqual(['nav-arrow-right']);
+		expect(icon(graceButton)).toEqual(['nav-arrow-right']);
 
 		// WHEN: Ada is selected.
 		await fireEvent.click(adaButton);
 
 		// THEN: Her row shows the check, the other keeps the chevron; icons are hidden from the tree.
 		await waitFor(() => expect(icon(adaButton)).toEqual(['check']));
-		expect(icon(graceButton)).toEqual(['chevron']);
+		expect(icon(graceButton)).toEqual(['nav-arrow-right']);
 		expect(adaButton.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
 	});
 
@@ -112,7 +110,7 @@ describe('UserList', () => {
 		// THEN: Nothing is marked as selected.
 		await waitFor(() => expect(api.getUser).toHaveBeenCalled());
 		expect(button.getAttribute('aria-pressed')).toBe('false');
-		expect(button.querySelector('[data-row-icon="check"]')).toBeNull();
+		expect(button.querySelector('[data-icon="check"]')).toBeNull();
 	});
 
 	it('puts the list in its own card, apart from the form (happy path)', () => {

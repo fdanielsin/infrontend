@@ -34,11 +34,7 @@
 							<span class="block font-medium wrap-anywhere">{user.name}</span>
 							<span class="block text-sm wrap-anywhere text-muted">{user.email}</span>
 						</span>
-						<Icon
-							icon={selected ? 'check' : 'nav-arrow-right'}
-							data-row-icon={selected ? 'check' : 'chevron'}
-							class="text-muted"
-						/>
+						<Icon icon={selected ? 'check' : 'nav-arrow-right'} class="text-muted" />
 					</button>
 				</li>
 			{/each}

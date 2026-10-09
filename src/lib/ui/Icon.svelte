@@ -36,4 +36,5 @@
 	class={[SIZE_CLASSES[size], 'shrink-0 [&_*]:[vector-effect:non-scaling-stroke]', className]}
 	aria-hidden="true"
 	focusable="false"
+	data-icon={icon}
 />

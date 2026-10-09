@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, waitFor } from '@testing-library/svelte';
 import { createRawSnippet } from 'svelte';
+import collection from '@iconify-json/iconoir/icons.json';
 import { api } from '$lib/api/client';
 import { overwriteGetLocale } from '$lib/paraglide/runtime';
 import { AppState } from '$lib/state/app-state.svelte';
@@ -37,6 +38,10 @@ const ada = { id: 1, name: 'Ada', email: 'ada@example.com' };
 const grace = { id: 2, name: 'Grace', email: 'grace@example.com' };
 const review = { id: 10, title: 'Review', description: 'Code', user_id: 1, completed: false };
 const snippet = (html: string) => createRawSnippet(() => ({ render: () => html }));
+// The first drawing of an Iconoir icon, read from the set itself, not from the component.
+const drawingOf = (name: string): string | undefined =>
+	/ d="([^"]+)"/.exec(collection.icons[name as keyof typeof collection.icons].body)?.[1];
+const drawn = (node: Element | null) => node?.querySelector('path')?.getAttribute('d');
 const draw = (node: Element | null) => node?.querySelector('svg') ?? null;
 const sizeOf = (svg: Element | null) => svg?.getAttribute('class') ?? '';
 
@@ -68,7 +73,9 @@ describe('icon list', () => {
 	for (const icon of USED_ICONS) {
 		it(`draws ${icon} (happy path)`, () => {
 			const { container } = render(Icon, { props: { icon } });
-			expect(container.querySelector('svg path')?.getAttribute('d')).toBeTruthy();
+			expect(drawn(container)).toBe(drawingOf(icon));
+			expect(drawn(container)).toBeTruthy();
+			expect(container.querySelector('svg')?.getAttribute('data-icon')).toBe(icon);
 		});
 	}
 });
@@ -162,6 +169,8 @@ describe('toasts', () => {
 			const lead = container.querySelector('[data-toast-icon]');
 			expect(lead?.querySelector('path')?.getAttribute('d')).toBe(expected);
 			expect(lead?.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
+			expect(lead?.querySelector('svg')?.getAttribute('data-icon')).toBe(icon);
+			expect(lead?.querySelector('svg')?.classList.contains('size-5')).toBe(true);
 			expect(container.querySelector('[data-toast] > p')?.textContent?.trim()).toBe('Hello');
 		});
 	}
@@ -267,22 +276,25 @@ describe('headings and rows', () => {
 		expect(draw(container.querySelector('h1'))).toBeNull();
 	});
 
-	it('user rows end with a 20 px chevron, or a check when selected, from Icon (happy path)', async () => {
+	it('user rows end with a 20 px chevron, or a check when selected, drawn from the set (happy path)', async () => {
 		vi.resetAllMocks();
 		vi.mocked(api.getUser).mockResolvedValue({ success: true, data: ada });
 		vi.mocked(api.getUserTasks).mockResolvedValue({ success: true, data: [] });
 		const app = new AppState();
 		app.users.users = [ada, grace];
 		const { container } = renderWithApp(app, UserList);
+		const rowIcon = (index: number) =>
+			container.querySelectorAll('li')[index]!.querySelector('svg');
 
-		const chevron = container.querySelector('[data-row-icon="chevron"]');
-		expect(chevron?.classList.contains('size-5')).toBe(true);
-		expect(chevron?.querySelector('path')?.getAttribute('stroke-width')).toBe('1.5');
+		expect(rowIcon(0)?.getAttribute('data-icon')).toBe('nav-arrow-right');
+		expect(drawn(rowIcon(0)?.parentElement ?? null)).toBe(drawingOf('nav-arrow-right'));
+		expect(rowIcon(0)?.classList.contains('size-5')).toBe(true);
+		expect(rowIcon(0)?.querySelector('path')?.getAttribute('stroke-width')).toBe('1.5');
 
 		await fireEvent.click(container.querySelectorAll('button')[0]!);
-		await waitFor(() => expect(container.querySelector('[data-row-icon="check"]')).not.toBeNull());
-		expect(container.querySelector('[data-row-icon="check"]')?.classList.contains('size-5')).toBe(
-			true
-		);
+		await waitFor(() => expect(rowIcon(0)?.getAttribute('data-icon')).toBe('check'));
+		expect(drawn(rowIcon(0)?.parentElement ?? null)).toBe(drawingOf('check'));
+		expect(rowIcon(0)?.classList.contains('size-5')).toBe(true);
+		expect(drawn(rowIcon(1)?.parentElement ?? null)).toBe(drawingOf('nav-arrow-right'));
 	});
 });
