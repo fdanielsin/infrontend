@@ -34,6 +34,28 @@ describe('first language detection', () => {
 		expect(document.cookie).not.toContain('PARAGLIDE_LOCALE');
 	});
 
+	it('keeps the language already chosen over the browser language (happy path)', async () => {
+		// GIVEN: A returning visitor who chose French, in a browser set to English.
+		vi.spyOn(navigator, 'languages', 'get').mockReturnValue(['en-US']);
+		document.cookie = 'PARAGLIDE_LOCALE=fr; path=/';
+
+		// WHEN: The application state is built during hydration.
+		const app = await freshAppState();
+
+		// THEN: The remembered choice wins.
+		expect(app.locale.current).toBe('fr');
+	});
+
+	it('ignores a remembered language that is not offered (boundary)', async () => {
+		// GIVEN: A cookie holding a language the interface does not have, in a French browser.
+		vi.spyOn(navigator, 'languages', 'get').mockReturnValue(['fr-FR']);
+		document.cookie = 'PARAGLIDE_LOCALE=xx; path=/';
+
+		// WHEN / THEN: The browser language is used.
+		const app = await freshAppState();
+		expect(app.locale.current).toBe('fr');
+	});
+
 	it('builds the state when the browser refuses cookies (sad path)', async () => {
 		// GIVEN: A browser where writing document.cookie throws.
 		Object.defineProperty(document, 'cookie', {
