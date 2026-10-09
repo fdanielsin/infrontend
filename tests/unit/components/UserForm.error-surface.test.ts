@@ -57,7 +57,10 @@ describe('user form: where a request error is shown', () => {
 		const message = await findByText('Email already in use');
 		expect(emailInput.getAttribute('aria-invalid')).toBe('true');
 		const describedBy = emailInput.getAttribute('aria-describedby') ?? '';
-		expect(describedBy.split(' ')).toContain(message.id);
+		// The text sits in a span of the error paragraph, which carries the id.
+		const errorId = message.closest('p')?.id;
+		expect(errorId).toBe('email-error');
+		expect(describedBy.split(' ')).toContain(errorId);
 		expect(document.activeElement).toBe(emailInput);
 		expect(emailInput.value).toBe('ada@example.com');
 		expect(app.notifications.items).toEqual([]);
