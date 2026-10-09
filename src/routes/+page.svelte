@@ -2,6 +2,7 @@
 	import UserForm from '$lib/features/users/UserForm.svelte';
 	import TaskForm from '$lib/features/tasks/TaskForm.svelte';
 	import ButtonLink from '$lib/ui/ButtonLink.svelte';
+	import Icon from '$lib/ui/Icon.svelte';
 	import PageShell from '$lib/ui/PageShell.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { getAppState } from '$lib/state/app-state.svelte';
@@ -17,10 +18,10 @@
 	<title>{m.home_page_title()}</title>
 </svelte:head>
 
-<PageShell heading={m.home_heading()} icon="📋" subtitle={m.home_subtitle()}>
+<PageShell heading={m.home_heading()} icon="list" subtitle={m.home_subtitle()}>
 	{#snippet actions()}
 		<ButtonLink href={resolve('/stats')}>
-			<span aria-hidden="true">📊</span>
+			<Icon icon="stats-report" class="mr-1 inline align-text-bottom" />
 			{m.home_view_stats()}
 		</ButtonLink>
 	{/snippet}

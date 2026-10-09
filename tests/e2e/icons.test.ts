@@ -185,4 +185,51 @@ test.describe('Icons (computed style, mocked API)', () => {
 		expect(drawn.stroke).not.toBe('none');
 		expect(drawn.stroke).not.toBe(drawn.background);
 	});
+
+	test('actions and page titles carry a hidden icon beside their visible text (happy path)', async ({
+		page
+	}) => {
+		// GIVEN: The home page.
+		await mockApi(page, { users: [ada], tasks: adaTasks });
+		await openHomeWithUser(page);
+
+		// THEN: Each action keeps its text as its name and holds one hidden 20 px or 16 px icon.
+		const link = page.getByRole('link', { name: 'View Statistics', exact: true });
+		await expect(link.locator('svg')).toHaveAttribute('aria-hidden', 'true');
+		expect((await link.locator('svg').boundingBox())?.width).toBe(20);
+		await expect(
+			page.getByRole('button', { name: 'Add Task', exact: true }).locator('svg')
+		).toHaveCount(1);
+		await expect(
+			page.getByRole('button', { name: 'Create User', exact: true }).locator('svg')
+		).toHaveCount(1);
+		const title = page.getByRole('heading', { level: 1 });
+		expect((await title.locator('svg').boundingBox())?.width).toBe(24);
+	});
+
+	test('a field error is color, a 16 px icon and the message, the field named by the message (error)', async ({
+		page
+	}) => {
+		// GIVEN: The home page and an empty user form.
+		await mockApi(page, { users: [] });
+		await page.goto('/');
+		await page.getByLabel('Name', { exact: true }).fill('   ');
+		await page.getByLabel('Email', { exact: true }).fill('ada@example.com');
+		await page.getByRole('button', { name: 'Create User' }).click();
+
+		// THEN: The error holds a hidden 16 px icon in the error color, before the message text.
+		const error = page.locator('#name-error');
+		await expect(error).toBeVisible();
+		const icon = error.locator('svg');
+		await expect(icon).toHaveAttribute('aria-hidden', 'true');
+		expect((await icon.boundingBox())?.width).toBe(16);
+		const colors = await error.evaluate((node) => ({
+			text: getComputedStyle(node).color,
+			stroke: getComputedStyle(node.querySelector('path')!).stroke
+		}));
+		expect(colors.stroke).toBe(colors.text);
+		await expect(page.getByLabel('Name', { exact: true })).toHaveAccessibleDescription(
+			(await error.innerText()).trim()
+		);
+	});
 });

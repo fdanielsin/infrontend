@@ -1,4 +1,7 @@
 <script lang="ts">
+	import Icon from '$lib/ui/Icon.svelte';
+	import type { IconName } from '$lib/ui/icons';
+
 	interface Option {
 		value: string;
 		label: string;
@@ -13,13 +16,18 @@
 		value: string;
 		options: readonly Option[];
 		onchange: (value: string) => void;
+		// A decorative icon before the label.
+		icon?: IconName;
 	}
 
-	let { id, label, value, options, onchange }: Props = $props();
+	let { id, label, value, options, onchange, icon }: Props = $props();
 </script>
 
 <div class="flex flex-wrap items-center gap-2 text-sm text-heading">
-	<label for={id}>{label}</label>
+	<label for={id} class="flex items-center gap-1">
+		{#if icon}<Icon {icon} size={16} />{/if}
+		{label}
+	</label>
 	<select
 		{id}
 		{value}

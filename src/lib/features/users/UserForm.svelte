@@ -4,6 +4,7 @@
 	import Alert from '$lib/ui/Alert.svelte';
 	import Button from '$lib/ui/Button.svelte';
 	import Card from '$lib/ui/Card.svelte';
+	import Icon from '$lib/ui/Icon.svelte';
 	import TextField from '$lib/ui/TextField.svelte';
 	import UserList from './UserList.svelte';
 	import { m } from '$lib/paraglide/messages';
@@ -74,6 +75,7 @@
 			</div>
 
 			<Button type="submit" block disabled={status.loading}>
+				<Icon icon="plus" class="mr-1 inline align-text-bottom" />
 				{status.loading ? m.users_creating() : m.users_create_button()}
 			</Button>
 		</form>

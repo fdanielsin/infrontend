@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Card from '$lib/ui/Card.svelte';
+	import Icon from '$lib/ui/Icon.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { getAppState } from '$lib/state/app-state.svelte';
 
@@ -33,24 +34,11 @@
 							<span class="block font-medium wrap-anywhere">{user.name}</span>
 							<span class="block text-sm wrap-anywhere text-muted">{user.email}</span>
 						</span>
-						<!-- Temporary inline icons: to be replaced by ui/Icon. -->
-						<svg
-							aria-hidden="true"
+						<Icon
+							icon={selected ? 'check' : 'nav-arrow-right'}
 							data-row-icon={selected ? 'check' : 'chevron'}
-							viewBox="0 0 20 20"
-							class="h-5 w-5 shrink-0 text-muted"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-						>
-							{#if selected}
-								<path d="M4 10.5l4 4 8-9" />
-							{:else}
-								<path d="M7.5 4l6 6-6 6" />
-							{/if}
-						</svg>
+							class="text-muted"
+						/>
 					</button>
 				</li>
 			{/each}

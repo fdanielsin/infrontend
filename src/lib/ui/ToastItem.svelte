@@ -1,7 +1,10 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import type { Notification } from '$lib/state/notification.svelte';
+	import type { Notification, NotificationType } from '$lib/state/notification.svelte';
 	import ReferenceLine from '$lib/ui/ReferenceLine.svelte';
+	import Button from '$lib/ui/Button.svelte';
+	import Icon from '$lib/ui/Icon.svelte';
+	import type { IconName } from '$lib/ui/icons';
 	import IconButton from '$lib/ui/IconButton.svelte';
 	import { TOAST_BACKGROUNDS } from '$lib/ui/toast-styles';
 
@@ -14,6 +17,13 @@
 		onaction: (actionButton: HTMLElement) => void;
 		oncopyreference: (reference: string) => void;
 	}
+
+	const TOAST_ICONS: Record<NotificationType, IconName> = {
+		success: 'check-circle',
+		error: 'warning-circle',
+		info: 'info-circle',
+		warning: 'warning-triangle'
+	};
 
 	let { toast, onpause, onresume, ondismiss, onaction, oncopyreference }: Props = $props();
 </script>
@@ -35,20 +45,30 @@
 		if (!event.currentTarget.matches(':hover')) onresume();
 	}}
 >
-	<p class="min-w-0 wrap-anywhere">{toast.message}</p>
+	<p class="min-w-0 wrap-anywhere">
+		<span data-toast-icon
+			><Icon icon={TOAST_ICONS[toast.type]} class="mr-2 inline align-text-bottom" /></span
+		>{toast.message}
+	</p>
 	{#if toast.reference}
 		<!-- Under the message, before the close button in the reading order. -->
 		<ReferenceLine reference={toast.reference} oncopy={oncopyreference} class="col-start-1 mt-1" />
 	{/if}
 	{#if toast.action}
-		<button
-			type="button"
-			class="col-start-1 mt-2 min-h-6 max-w-full justify-self-start rounded-control border border-white px-2 text-left text-sm wrap-anywhere hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-inverse"
+		<Button
+			variant="secondary"
+			size="sm"
+			tone="inverse"
+			class="col-start-1 mt-2 max-w-full justify-self-start text-left wrap-anywhere"
 			data-toast-action
-			onclick={(event) => onaction(event.currentTarget)}
+			onclick={(event: MouseEvent & { currentTarget: HTMLButtonElement }) =>
+				onaction(event.currentTarget)}
 		>
+			{#if toast.action.icon}
+				<Icon icon={toast.action.icon} size={16} class="mr-1 inline align-text-bottom" />
+			{/if}
 			{toast.action.label}
-		</button>
+		</Button>
 	{/if}
 	<IconButton
 		tone="inverse"

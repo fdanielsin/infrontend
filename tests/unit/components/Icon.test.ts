@@ -83,7 +83,7 @@ describe('Icon component', () => {
 		// @ts-expect-error 18 px is not on the scale
 		render(Icon, { props: { icon: 'xmark', size: 18 } });
 		// @ts-expect-error this icon is not listed in Icon.svelte
-		render(Icon, { props: { icon: 'plus' } });
+		render(Icon, { props: { icon: 'trash' } });
 		cleanup();
 
 		// WHEN: A caller forces them anyway (a cast, a spread of untyped props).
@@ -156,7 +156,7 @@ describe('Icon component', () => {
 	});
 
 	it('draws nothing, and does not throw, for an icon that is not listed at run time (exception)', () => {
-		const unlisted = 'plus' as never;
+		const unlisted = 'trash' as never;
 
 		const { container } = render(Icon, { props: { icon: unlisted } });
 

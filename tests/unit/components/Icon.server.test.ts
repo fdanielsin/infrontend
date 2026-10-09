@@ -18,7 +18,7 @@ describe('Icon rendered on the server', () => {
 	});
 
 	it('prints nothing for an icon that is not listed, and does not throw (exception)', () => {
-		const { body } = render(Icon, { props: { icon: 'plus' as 'xmark' } });
+		const { body } = render(Icon, { props: { icon: 'trash' as 'xmark' } });
 
 		expect(body).not.toContain('<svg');
 	});

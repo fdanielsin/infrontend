@@ -3,6 +3,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import { getAppState } from '$lib/state/app-state.svelte';
 	import ReferenceLine from '$lib/ui/ReferenceLine.svelte';
+	import Icon from '$lib/ui/Icon.svelte';
 	import Button from '$lib/ui/Button.svelte';
 
 	const { availability, notifications } = getAppState();
@@ -26,9 +27,13 @@
 			class="flex flex-wrap items-center justify-start gap-3 bg-danger-soft px-4 py-3 text-left text-danger sm:justify-center sm:text-center"
 		>
 			{#key availability.retryFailures}
-				<p role="alert">{m.availability_unavailable()}</p>
+				<p role="alert" class="flex items-center gap-2">
+					<Icon icon="warning-triangle" />
+					{m.availability_unavailable()}
+				</p>
 			{/key}
 			<Button variant="secondary" size="sm" tone="danger" onclick={() => void retry()}>
+				<Icon icon="refresh" size={16} class="mr-1 inline align-text-bottom" />
 				{availability.checking ? m.availability_checking() : m.availability_retry()}
 			</Button>
 			<!-- Outside the alert: a retry that fails again does not read the reference again. -->

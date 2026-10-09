@@ -157,7 +157,7 @@ test.describe('Focus and errors (computed style, mocked API)', () => {
 			await form('title').press('Enter');
 			await page
 				.locator('li button[type="button"]')
-				.filter({ hasText: /^(Edit|Modifier|Bearbeiten|Editar)$/ })
+				.filter({ hasText: /^\s*(Edit|Modifier|Bearbeiten|Editar)\s*$/ })
 				.first()
 				.click();
 			await page.locator('#edit-title-10').fill('');

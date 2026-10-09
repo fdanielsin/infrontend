@@ -1,27 +1,7 @@
-<script module lang="ts">
-	import type { Component } from 'svelte';
-	import type { ClassValue, SvelteHTMLElements } from 'svelte/elements';
-	import Xmark from '~icons/iconoir/xmark';
-
-	// The icons of the interface, alphabetical. One static import per icon: the bundle holds
-	// the icons listed here and no others. To add one, import it and name it (design-system.md).
-	const ICONS = {
-		xmark: Xmark
-	} satisfies Record<string, Component<SvelteHTMLElements['svg']>>;
-
-	export type IconName = keyof typeof ICONS;
-	// 16 px next to small text, 20 px by default, 24 px for headings and empty states.
-	export type IconSize = 16 | 20 | 24;
-
-	// Whole class names, so Tailwind finds them.
-	const SIZE_CLASSES: Record<IconSize, string> = {
-		16: 'size-4',
-		20: 'size-5',
-		24: 'size-6'
-	};
-</script>
-
 <script lang="ts">
+	import type { ClassValue, SvelteHTMLElements } from 'svelte/elements';
+	import { ICONS, SIZE_CLASSES, type IconName, type IconSize } from './icons';
+
 	// An icon is decorative: its meaning is always carried by a visible text or by the accessible
 	// name of the control around it, so there is no way to name it here.
 	interface Props extends Omit<

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { HTMLAttributes } from 'svelte/elements';
+	import Icon from '$lib/ui/Icon.svelte';
 
 	interface Props extends HTMLAttributes<HTMLElement> {
 		id: string;
@@ -42,7 +43,10 @@
 	const CONTROL_CLASSES =
 		'w-full rounded-control border border-field-border aria-invalid:border-danger';
 	const SIZE_CLASSES = { default: 'mt-1 px-3 py-2', compact: 'px-2 py-1' };
-	const ERROR_CLASSES = { default: 'mt-1 text-sm text-danger', compact: 'text-sm text-danger' };
+	const ERROR_CLASSES = {
+		default: 'mt-1 flex items-start gap-1 text-sm text-danger',
+		compact: 'flex items-start gap-1 text-sm text-danger'
+	};
 	const size = $derived(compact ? 'compact' : 'default');
 
 	// The height follows the content: typed, pasted, or reflowed by a new column width. Only a width
@@ -111,5 +115,8 @@
 	/>
 {/if}
 {#if error}
-	<p id={errorId} class={ERROR_CLASSES[size]}>{error}</p>
+	<p id={errorId} class={ERROR_CLASSES[size]}>
+		<Icon icon="warning-circle" size={16} class="mt-0.5" />
+		<span class="min-w-0 wrap-anywhere">{error}</span>
+	</p>
 {/if}

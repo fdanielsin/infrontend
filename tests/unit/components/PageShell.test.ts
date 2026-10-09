@@ -60,13 +60,15 @@ describe('PageShell', () => {
 	});
 
 	it('hides a decorative icon from assistive technology (limit)', () => {
-		const { getByText } = renderWithApp(new AppState(), PageShell, {
+		const { getByRole } = renderWithApp(new AppState(), PageShell, {
 			heading: 'Tasks',
-			icon: '📋',
+			icon: 'list' as const,
 			children: snippet('<span></span>')
 		});
 
-		expect(getByText('📋').getAttribute('aria-hidden')).toBe('true');
+		expect(
+			getByRole('heading', { level: 1 }).querySelector('svg')?.getAttribute('aria-hidden')
+		).toBe('true');
 	});
 
 	it('wraps a long heading made of one unbroken word (limit)', () => {

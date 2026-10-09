@@ -3,6 +3,7 @@
 	import Alert from '$lib/ui/Alert.svelte';
 	import Button from '$lib/ui/Button.svelte';
 	import Card from '$lib/ui/Card.svelte';
+	import Icon from '$lib/ui/Icon.svelte';
 	import TextField from '$lib/ui/TextField.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { getAppState } from '$lib/state/app-state.svelte';
@@ -97,6 +98,7 @@
 				</div>
 
 				<Button type="submit" block disabled={status.loading}>
+					<Icon icon="plus" class="mr-1 inline align-text-bottom" />
 					{status.loading ? m.tasks_adding() : m.tasks_add_button()}
 				</Button>
 			</form>

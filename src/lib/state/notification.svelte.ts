@@ -1,3 +1,4 @@
+import type { IconName } from '$lib/ui/icons';
 import { m } from '$lib/paraglide/messages';
 
 export type NotificationType = 'success' | 'error' | 'info' | 'warning';
@@ -8,6 +9,8 @@ export type CloseReason = 'action' | 'dismissed' | 'expired';
 // A button in the toast. The label arrives translated, like every text shown.
 export interface ToastAction {
 	label: string;
+	// A decorative icon before the label, which stays visible.
+	icon?: IconName;
 	run: () => void;
 }
 

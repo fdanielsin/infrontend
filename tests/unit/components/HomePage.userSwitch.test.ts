@@ -78,14 +78,16 @@ describe('home page: changing the selected user', () => {
 		const { view, select } = open();
 		await select('Ada Lovelace');
 		await fireEvent.input(view.getByLabelText('Task Title'), { target: { value: 'Draft' } });
-		await fireEvent.input(view.getByLabelText('Description'), { target: { value: 'Notes' } });
+		await fireEvent.input(view.getByLabelText('Description (optional)'), {
+			target: { value: 'Notes' }
+		});
 
 		// WHEN: Another user is selected.
 		await select('Nora Stone');
 
 		// THEN: The form is empty, so nothing typed for Ada can be created for Nora.
 		expect((view.getByLabelText('Task Title') as HTMLInputElement).value).toBe('');
-		expect((view.getByLabelText('Description') as HTMLTextAreaElement).value).toBe('');
+		expect((view.getByLabelText('Description (optional)') as HTMLTextAreaElement).value).toBe('');
 	});
 
 	it('closes a task edition in progress when another user is selected (limit)', async () => {

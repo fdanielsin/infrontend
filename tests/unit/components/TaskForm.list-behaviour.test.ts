@@ -82,14 +82,14 @@ describe('TaskForm list and edit behaviour', () => {
 		const view = renderWithApp(app, TaskForm, { user });
 		await fireEvent.click(view.getByRole('button', { name: 'Edit Review' }));
 		await tick();
-		const description = view.getAllByLabelText('Description')[1] as HTMLTextAreaElement;
+		const description = view.getAllByLabelText('Description (optional)')[1] as HTMLTextAreaElement;
 
 		// WHEN: A character is typed there.
 		await fireEvent.keyDown(description, { key: 'x' });
 		await tick();
 
 		// THEN: The edit is still open.
-		expect(view.getAllByLabelText('Description')).toHaveLength(2);
+		expect(view.getAllByLabelText('Description (optional)')).toHaveLength(2);
 	});
 
 	it('does not carry the errors of an edit over to the edit opened next (sad path)', async () => {
@@ -162,7 +162,7 @@ describe('TaskForm list and edit behaviour', () => {
 		const view = renderWithApp(app, TaskForm, { user });
 		await fireEvent.click(view.getByRole('button', { name: 'Edit Review' }));
 		await tick();
-		const description = view.getAllByLabelText('Description')[1] as HTMLTextAreaElement;
+		const description = view.getAllByLabelText('Description (optional)')[1] as HTMLTextAreaElement;
 		await fireEvent.input(description, { target: { value: 'D'.repeat(2001) } });
 
 		// WHEN: The edit is saved.
@@ -203,7 +203,7 @@ describe('TaskForm list and edit behaviour', () => {
 		await fireEvent.click(view.getByRole('button', { name: 'Edit Review' }));
 		await tick();
 		const title = view.getAllByLabelText('Task Title')[1] as HTMLInputElement;
-		const description = view.getAllByLabelText('Description')[1] as HTMLTextAreaElement;
+		const description = view.getAllByLabelText('Description (optional)')[1] as HTMLTextAreaElement;
 		await fireEvent.input(title, { target: { value: '' } });
 		await fireEvent.input(description, { target: { value: 'D'.repeat(2001) } });
 

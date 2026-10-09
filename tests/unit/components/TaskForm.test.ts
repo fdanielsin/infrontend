@@ -28,7 +28,7 @@ const task = {
 
 function addTaskForm(view: { getByLabelText: (label: string) => HTMLElement }) {
 	const title = view.getByLabelText('Task Title') as HTMLInputElement;
-	const description = view.getByLabelText('Description') as HTMLTextAreaElement;
+	const description = view.getByLabelText('Description (optional)') as HTMLTextAreaElement;
 	const form = title.closest('form') as HTMLFormElement;
 	return {
 		title,
@@ -127,7 +127,9 @@ describe('TaskForm', () => {
 		// THEN: Only the title is reported (the contract requires it) and nothing is sent.
 		expect(await view.findByText('Title is required')).toBeTruthy();
 		expect(view.queryByText(/at least 3 characters/)).toBeNull();
-		expect(view.getByLabelText('Description').getAttribute('aria-invalid')).toBe('false');
+		expect(view.getByLabelText('Description (optional)').getAttribute('aria-invalid')).toBe(
+			'false'
+		);
 		expect(api.createTask).not.toHaveBeenCalled();
 	});
 

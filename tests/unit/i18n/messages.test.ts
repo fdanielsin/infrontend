@@ -81,7 +81,7 @@ describe('translation files', () => {
 	it('keeps typographic characters of each language as written (limit)', () => {
 		// GIVEN / WHEN: Messages with apostrophes and accents.
 		// THEN: They are stored as written, not escaped or stripped.
-		expect(messagesOf('fr').stats_back_home).toBe("← Retour à l'accueil");
+		expect(messagesOf('fr').stats_back_home).toBe("Retour à l'accueil");
 		expect(messagesOf('es').stats_page_title).toBe('Estadísticas - inBackend');
 		expect(messagesOf('de').notifications_dismiss).toBe('Benachrichtigung schließen');
 	});

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
+	import Icon from '$lib/ui/Icon.svelte';
 	import Button from '$lib/ui/Button.svelte';
 
 	type Tone = 'inverse' | 'danger';
@@ -25,6 +26,7 @@
 		aria-label={m.reference_copy_named({ reference })}
 		onclick={() => oncopy(reference)}
 	>
+		<Icon icon="copy" size={16} class="mr-1 inline align-text-bottom" />
 		{m.reference_copy()}
 	</Button>
 </p>

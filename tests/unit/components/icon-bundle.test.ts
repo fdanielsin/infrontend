@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { createRequire } from 'node:module';
 import { build, type Plugin } from 'vite';
@@ -18,16 +19,25 @@ function pathsOf(body: string): string[] {
 	return [...body.matchAll(/ d="([^"]+)"/g)].map((match) => match[1]!);
 }
 
-const XMARK_PATHS = pathsOf(COLLECTION.icons['xmark']!.body);
-const REFRESH_PATHS = pathsOf(COLLECTION.icons['refresh']!.body);
+// The icons listed in Icon.svelte, read from its imports so the list is written once.
+const LISTED = [
+	...readFileSync('src/lib/ui/icons.ts', 'utf8').matchAll(/~icons\/iconoir\/([a-z-]+)'/g)
+].map((match) => match[1]!);
+const LISTED_PATHS = LISTED.flatMap((name) => pathsOf(COLLECTION.icons[name]!.body));
+const TRASH_PATHS = pathsOf(COLLECTION.icons['trash']!.body);
+
+// A path counts only as a whole attribute value: some drawings are made of pieces of others.
+const drawnIn = (code: string, path: string) => code.includes(` d="${path}"`);
 
 // The icons of the set whose drawing is in `code`, apart from the paths that were expected there.
 // A path too short to be told from other code is not a proof.
-function unexpectedIcons(code: string, expected: string[]): string[] {
+function unexpectedIcons(shipped: string, expected: string[]): string[] {
+	// The JSON of the set is shipped as an escaped string: drop the escapes to read the attributes.
+	const code = shipped.replaceAll('\\', '');
 	return Object.entries(COLLECTION.icons)
 		.filter(([, icon]) =>
 			pathsOf(icon.body).some(
-				(path) => path.length > 30 && !expected.includes(path) && code.includes(path)
+				(path) => path.length > 30 && !expected.includes(path) && drawnIn(code, path)
 			)
 		)
 		.map(([name]) => name);
@@ -68,13 +78,13 @@ const TIMEOUT = 60_000;
 
 describe('icons in the bundle', () => {
 	it(
-		'holds the cross that Icon imports and no other icon of the set (happy path)',
+		'holds the icons that Icon imports and no other icon of the set (happy path)',
 		async () => {
 			const code = await bundle(`export { default } from '${ICON_COMPONENT}';`);
 
-			expect(XMARK_PATHS.length).toBeGreaterThan(0);
-			for (const path of XMARK_PATHS) expect(code).toContain(path);
-			expect(unexpectedIcons(code, XMARK_PATHS)).toEqual([]);
+			expect(LISTED.length).toBeGreaterThan(10);
+			for (const path of LISTED_PATHS) expect(code).toContain(path);
+			expect(unexpectedIcons(code, LISTED_PATHS)).toEqual([]);
 			expect(code).not.toContain('@iconify');
 			expect(code).not.toContain('unplugin');
 			expect(code.length).toBeLessThan(20_000);
@@ -87,11 +97,11 @@ describe('icons in the bundle', () => {
 		async () => {
 			const code = await bundle(
 				`export { default } from '${ICON_COMPONENT}';
-				 export { default as Refresh } from '~icons/iconoir/refresh';`
+				 export { default as Trash } from '~icons/iconoir/trash';`
 			);
 
-			for (const path of REFRESH_PATHS) expect(code).toContain(path);
-			expect(unexpectedIcons(code, [...XMARK_PATHS, ...REFRESH_PATHS])).toEqual([]);
+			for (const path of TRASH_PATHS) expect(code).toContain(path);
+			expect(unexpectedIcons(code, [...LISTED_PATHS, ...TRASH_PATHS])).toEqual([]);
 		},
 		TIMEOUT
 	);
@@ -104,7 +114,7 @@ describe('icons in the bundle', () => {
 				 export { icons } from '@iconify-json/iconoir';`
 			);
 
-			expect(unexpectedIcons(code, XMARK_PATHS).length).toBeGreaterThan(1000);
+			expect(unexpectedIcons(code, LISTED_PATHS).length).toBeGreaterThan(1000);
 			expect(code.length).toBeGreaterThan(500_000);
 		},
 		TIMEOUT

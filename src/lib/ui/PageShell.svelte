@@ -1,12 +1,14 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import type { HTMLAttributes } from 'svelte/elements';
+	import Icon from '$lib/ui/Icon.svelte';
+	import type { IconName } from '$lib/ui/icons';
 	import LanguageSwitcher from '$lib/ui/LanguageSwitcher.svelte';
 
 	interface Props extends HTMLAttributes<HTMLElement> {
 		heading: string;
-		// A decorative symbol before the heading, hidden from assistive technology.
-		icon?: string;
+		// A decorative icon before the heading, hidden from assistive technology.
+		icon?: IconName;
 		subtitle?: string;
 		// A row under the title: the way to another page.
 		actions?: Snippet;
@@ -41,7 +43,7 @@
 				<LanguageSwitcher />
 			</div>
 			<h1 class="text-2xl font-bold wrap-break-word hyphens-auto text-heading sm:text-4xl">
-				{#if icon}<span aria-hidden="true">{icon}</span>{/if}
+				{#if icon}<Icon {icon} size={24} class="inline align-text-bottom" />{/if}
 				{heading}
 			</h1>
 			{#if subtitle}<p class="mt-2 text-muted">{subtitle}</p>{/if}

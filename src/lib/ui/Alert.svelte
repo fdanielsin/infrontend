@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import type { HTMLAttributes } from 'svelte/elements';
+	import Icon from '$lib/ui/Icon.svelte';
 
 	interface Props extends HTMLAttributes<HTMLDivElement> {
 		children: Snippet;
@@ -11,6 +12,10 @@
 	let { class: className, children, ...rest }: Props = $props();
 </script>
 
-<div class={['rounded-control bg-danger-soft p-3 wrap-anywhere text-danger', className]} {...rest}>
-	{@render children()}
+<div
+	class={['flex items-start gap-2 rounded-control bg-danger-soft p-3 text-danger', className]}
+	{...rest}
+>
+	<Icon icon="warning-circle" />
+	<div class="min-w-0 wrap-anywhere">{@render children()}</div>
 </div>

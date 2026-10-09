@@ -2,6 +2,7 @@
 	import type { Attachment } from 'svelte/attachments';
 	import { focusOnMount, ref } from '$lib/ui/attachments';
 	import Button from '$lib/ui/Button.svelte';
+	import Icon from '$lib/ui/Icon.svelte';
 	import IconButton from '$lib/ui/IconButton.svelte';
 	import TextField from '$lib/ui/TextField.svelte';
 	import { m } from '$lib/paraglide/messages';
@@ -133,6 +134,7 @@
 				aria-label={m.tasks_edit_named({ title: task.title })}
 				class={TOUCH_TARGET}
 			>
+				<Icon icon="edit-pencil" size={16} class="mr-1 inline align-text-bottom" />
 				{m.tasks_edit()}
 			</Button>
 		{/if}

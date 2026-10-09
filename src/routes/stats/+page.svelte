@@ -8,6 +8,7 @@
 	import Button from '$lib/ui/Button.svelte';
 	import ButtonLink from '$lib/ui/ButtonLink.svelte';
 	import Card from '$lib/ui/Card.svelte';
+	import Icon from '$lib/ui/Icon.svelte';
 	import PageShell from '$lib/ui/PageShell.svelte';
 	import { ref } from '$lib/ui/attachments';
 	import { getAppState } from '$lib/state/app-state.svelte';
@@ -44,9 +45,12 @@
 	<title>{m.stats_page_title()}</title>
 </svelte:head>
 
-<PageShell bind:element={page} heading={m.stats_heading()} icon="📊">
+<PageShell bind:element={page} heading={m.stats_heading()} icon="stats-report">
 	{#snippet actions()}
-		<ButtonLink href={resolve('/')}>{m.stats_back_home()}</ButtonLink>
+		<ButtonLink href={resolve('/')}>
+			<Icon icon="nav-arrow-left" class="mr-1 inline align-text-bottom" />
+			{m.stats_back_home()}
+		</ButtonLink>
 	{/snippet}
 
 	<div class="max-w-2xl">
@@ -69,7 +73,7 @@
 						{formatNumber(stats.users)}
 					</div>
 					<p class="mt-2 text-lg wrap-anywhere text-muted">
-						<span aria-hidden="true">👥</span>
+						<Icon icon="group" class="mr-1 inline align-text-bottom" />
 						{m.stats_users()}
 					</p>
 				</Card>
@@ -78,7 +82,7 @@
 						{formatNumber(stats.tasks)}
 					</div>
 					<p class="mt-2 text-lg wrap-anywhere text-muted">
-						<span aria-hidden="true">✅</span>
+						<Icon icon="check-circle" class="mr-1 inline align-text-bottom" />
 						{m.stats_tasks()}
 					</p>
 				</Card>
@@ -92,7 +96,7 @@
 							: formatNumber(0)}
 					</div>
 					<p class="mt-2 text-lg wrap-anywhere text-muted">
-						<span aria-hidden="true">📈</span>
+						<Icon icon="graph-up" class="mr-1 inline align-text-bottom" />
 						{m.stats_average()}
 					</p>
 				</Card>
@@ -116,6 +120,7 @@
 					{@attach ref(refs, 'retry')}
 					onclick={() => void retry()}
 				>
+					<Icon icon="refresh" size={16} class="mr-1 inline align-text-bottom" />
 					{m.stats_retry()}
 				</Button>
 			</Alert>

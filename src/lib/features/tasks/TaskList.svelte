@@ -180,6 +180,7 @@
 			<div class="mb-3">
 				<Select
 					id="task-order"
+					icon="sort"
 					label={m.tasks_order_label()}
 					value={taskOrder.current}
 					options={orderOptions}
