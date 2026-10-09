@@ -118,6 +118,7 @@ export class TaskState {
 				duration: UNDO_DURATION,
 				action: {
 					label: m.tasks_undo_delete(),
+					icon: 'undo',
 					run: () => {
 						if (this.#restore(id)) onundo?.(id);
 					}

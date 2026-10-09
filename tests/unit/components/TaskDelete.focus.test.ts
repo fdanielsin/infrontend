@@ -133,6 +133,16 @@ describe('focus around the Undo toast', () => {
 		expect(document.activeElement).toBe(edit);
 	});
 
+	it('draws the undo icon before the label, hidden from assistive technology (happy path)', async () => {
+		const view = await deleteReview();
+
+		const undo = view.getByRole('button', { name: 'Undo' });
+		const icon = undo.querySelector('svg');
+		expect(icon?.getAttribute('data-icon')).toBe('undo');
+		expect(icon?.getAttribute('aria-hidden')).toBe('true');
+		expect(undo.textContent?.trim()).toBe('Undo');
+	});
+
 	it('names the Undo button for a screen reader (happy path)', async () => {
 		const view = await deleteReview();
 

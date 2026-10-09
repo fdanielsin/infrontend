@@ -14,6 +14,7 @@ import Plus from '~icons/iconoir/plus';
 import Refresh from '~icons/iconoir/refresh';
 import Sort from '~icons/iconoir/sort';
 import StatsReport from '~icons/iconoir/stats-report';
+import Undo from '~icons/iconoir/undo';
 import WarningCircle from '~icons/iconoir/warning-circle';
 import WarningTriangle from '~icons/iconoir/warning-triangle';
 import Xmark from '~icons/iconoir/xmark';
@@ -35,6 +36,7 @@ export const ICONS = {
 	refresh: Refresh,
 	sort: Sort,
 	'stats-report': StatsReport,
+	undo: Undo,
 	'warning-circle': WarningCircle,
 	'warning-triangle': WarningTriangle,
 	xmark: Xmark

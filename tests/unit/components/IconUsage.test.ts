@@ -62,6 +62,7 @@ const USED_ICONS: IconName[] = [
 	'refresh',
 	'sort',
 	'stats-report',
+	'undo',
 	'warning-circle',
 	'warning-triangle',
 	'xmark'
