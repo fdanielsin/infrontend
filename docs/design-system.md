@@ -367,7 +367,10 @@ erreur, succès, désactivé, chargement. Le libellé est hors du champ, l'aide 
 Une erreur combine couleur, icône et message (jamais une bordure rouge seule). Le succès
 s'affiche dans le champ. Un champ désactivé n'est pas un champ en chargement, et le
 désactivé ne se simule pas par une simple opacité. L'anneau de focus atteint 3:1.
-**Cible** : états succès, chargement et icône d'erreur, absents aujourd'hui.
+Le succès est une bordure `success` et une icône `check` (16, cachée aux
+lecteurs d'écran, jamais sans l'icône), sans message : la propriété `valid` de `TextField`. Un
+champ est neutre, en erreur ou en succès, jamais deux à la fois (l'état vient de
+`createFieldValidation`). **Cible** : l'état chargement d'un champ, absent aujourd'hui.
 
 ### UserList
 
@@ -528,10 +531,19 @@ toast. Preuve : `tests/unit/validation/validation.test.ts`,
 `tests/unit/components/UserForm.test.ts`, `tests/e2e/accessibility.test.ts`
 (« forms showing validation errors »).
 
-Règles complémentaires ([form-validation-timing](https://designmotionhq.com/patterns/form-validation-timing)) : **Cible** : valider au départ du champ
-(blur), revalider en direct une fois l'erreur affichée, confirmer un champ devenu
-valide ; ni tout à la soumission, ni une erreur à chaque frappe. Aujourd'hui la
-validation a lieu à la soumission.
+Règles complémentaires ([form-validation-timing](https://designmotionhq.com/patterns/form-validation-timing)) : la validation a lieu au départ du champ
+(`onblur`), pas pendant la première saisie ni au simple passage au Tab : un champ n'est
+« touché » qu'une fois sa valeur modifiée. Une fois l'erreur affichée, il est revalidé à chaque
+frappe et passe au succès dès qu'il est corrigé. Le succès dit « format valide » (jamais « e-mail
+disponible ») : un refus serveur `EMAIL_TAKEN` remet le champ en erreur jusqu'à la frappe suivante.
+Un champ facultatif vide n'a pas de succès. À la soumission, tout est validé et le focus va au
+premier champ invalide ; après un envoi réussi, les champs reviennent au neutre. Les règles restent
+dans les schémas zod ; l'état est dans `lib/validation/field-validation.svelte.ts`
+(`createFieldValidation`, utilisé par `UserForm`, `TaskForm` et l'édition en ligne). Aucune
+annonce à la frappe : le message n'est relié (`aria-describedby`) que lorsque l'erreur existe.
+Preuve : `tests/unit/validation/field-validation.test.ts`, `tests/unit/components/UserForm.test.ts`,
+`TaskForm.test.ts`, `TaskForm.list-behaviour.test.ts`, `tests/e2e/accessibility.test.ts`,
+`field-borders.test.ts`, `i18n.test.ts`.
 
 ### Toast, bandeau ou message en ligne
 
@@ -654,7 +666,7 @@ tâche, quel que soit son état ; pendant l'édition elle et la suppression de l
 
 Règles complémentaires ([inline-editing](https://designmotionhq.com/patterns/inline-editing)) : la bascule ne décale rien (même police, même
 taille, même marge) ; Entrée valide, Échap annule ; le départ du champ (blur) se
-comporte pareil partout ; en cas d'échec, le brouillon est conservé. Le titre n'est pas
+comporte pareil partout (il valide le champ, n'enregistre ni n'annule) ; en cas d'échec, le brouillon est conservé. Le titre n'est pas
 cliquable pour éditer : seul le bouton « Modifier » le fait, et le survol de la ligne le
 désigne (voir [TaskItem](#taskitem-et-clampedtext)).
 

@@ -12,6 +12,8 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   languages (infrontend#70).
 - The task list title says what is left ("4 to do of 12", "All done") instead of the total
   (visual review).
+- Fields are checked when they are left: an error shows at blur and follows each keystroke until
+  it is fixed, a valid field shows a green check, and a field only tabbed through stays neutral.
 - A design system guide documents the tokens, components, patterns and content rules of the
   interface (`docs/design-system.md`) (infrontend#45).
 - The design system guide now holds the rules of all 76 reference pattern sheets: rules for
