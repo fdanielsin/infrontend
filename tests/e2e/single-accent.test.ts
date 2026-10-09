@@ -385,6 +385,7 @@ test.describe('Statistics tiles (mocked API)', () => {
 			await page.setViewportSize({ width, height: 900 });
 			await mockApi(page, { users: [ada], tasks: adaTasks, stats: { users: 5, tasks: 12 } });
 			await page.goto('/stats');
+			await expect(page.locator('[data-stat]')).toHaveCount(3);
 			const heading = (await page.getByRole('heading', { level: 1 }).boundingBox())!;
 			const language = (await page.getByRole('combobox', { name: 'Language' }).boundingBox())!;
 
