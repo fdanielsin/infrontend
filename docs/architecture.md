@@ -94,7 +94,9 @@ pas génériques.
   openapi-fetch : chemin, méthode, corps et paramètres sont vérifiés par le
   compilateur. Une dérive entre ce fichier et le contrat est détectée par
   `bun run api:check` (job CI `contract`).
-- Le frontend ne recalcule pas de règles métier ou de montants.
+- Le frontend ne recalcule pas de règles métier ou de montants. Seule exception, que le contrat
+  demande : le format de l'e-mail (`lib/validation/email.ts`, voir
+  [conventions](./conventions.md#validation)).
 - Les statuts et énumérations sont issus du contrat lorsqu'un contrat existe.
 - La validation locale sert à l'ergonomie et au retour immédiat à l'utilisateur.
 - Une validation UX ne doit pas devenir une seconde source de vérité métier.

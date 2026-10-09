@@ -102,6 +102,25 @@ dans un fichier `*.svelte.test.ts`.
 La validation côté frontend est une validation UX. Elle ne remplace pas la
 validation backend et ne doit pas recopier une règle métier complexe.
 
+Une exception, voulue par le contrat : le format de l'e-mail (`CreateUserRequest.email`,
+« à appliquer à l'identique côté client ») est une copie exacte de la règle du serveur, dans
+`lib/validation/email.ts` (`isValidEmail`, branchée dans `UserSchema`). Une adresse que le
+serveur refuse ne passe pas le formulaire, et une adresse qu'il accepte n'est jamais refusée
+localement. Quand le contrat change cette règle, la fonction et la table de cas
+`tests/shared/email-cases.ts` changent ensemble : la table passe par `UserSchema`
+(`tests/unit/i18n/validation-parity.test.ts`) et par un vrai backend
+(`tests/e2e/backend/email-rule.test.ts`). Le champ e-mail est un champ texte (`TextField`
+`type="email"` rend `type="text"` avec `inputmode="email"`, `autocomplete="off"`,
+`spellcheck="false"` et `autocapitalize="off"`) : un `<input type="email">` réécrit la saisie,
+par exemple un domaine international devient du punycode dans `value` sous Chromium. Pas de
+remplissage automatique : l'adresse saisie est celle d'une autre personne, et le critère WCAG
+1.3.5 ne vise que les données de l'utilisateur lui-même. Écarts connus, non traités :
+le formulaire retire les espaces de bord avec `trim()` de JavaScript, qui ne retire pas U+0085
+(le serveur le retire) et retire U+FEFF (le serveur le garde), deux caractères qu'un clavier ne
+produit pas ; les classes Unicode `\p{L}`, `\p{M}` et `\p{Nd}` suivent la version d'Unicode du
+navigateur, alors que les tables du serveur s'arrêtent avant Unicode 15.1 : un caractère très
+récent peut passer le formulaire et être refusé par le serveur (400, toast générique).
+
 Les erreurs de validation doivent :
 
 - être associées au champ concerné ;
@@ -114,7 +133,8 @@ Les erreurs de validation doivent :
 Tous les tests frontend vivent sous `tests/` à la racine du projet :
 
 `tests/unit/` pour les tests unitaires et de composants, `tests/e2e/` pour les
-scénarios Playwright, `tests/hooks/` pour le hook Git versionné
+scénarios Playwright, `tests/shared/` pour les données de test communes aux deux,
+`tests/hooks/` pour le hook Git versionné
 (`.githooks/pre-push`, voir le [README](../README.md)) ; l'organisation
 détaillée et les règles d'écriture sont dans
 [`tests/README.md`](../tests/README.md).

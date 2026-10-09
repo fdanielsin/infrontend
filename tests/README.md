@@ -11,6 +11,9 @@ Tous les tests du frontend vivent sous `tests/`.
     traduction des `ErrorCode` du contrat, nombres, langue d'une requête et
     hook serveur, règles de validation du serveur couvertes par le client ;
   - `tests/unit/support/` pour les aides partagées (hôte de contexte).
+- `tests/shared/` contient les données de test communes aux tests unitaires et aux E2E :
+  la table des adresses e-mail du contrat (`email-cases.ts`), passée par `UserSchema` en
+  unitaire et envoyée à un vrai serveur par `tests/e2e/backend/email-rule.test.ts`.
 - `tests/hooks/` contient le test du hook Git `.githooks/pre-push` : des
   dépôts Git jetables `tests/hooks/.tmp/case-*` (dossier ignoré, chaque `case-*`
   supprimé après son test ; `tests/hooks/.tmp` reste, vide et ignoré), des

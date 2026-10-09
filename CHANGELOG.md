@@ -55,6 +55,9 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- The e-mail check applies the server's rule: an international address such as
+  `ivan@пример.рф` is accepted, and an address the server refuses (a hyphen at the end of a
+  label, a part longer than allowed) is refused before the request is sent (infrontend#74).
 - Without a selected user, the task panel is an empty state (icon, title, instruction); the
   statistics tiles use the width of the page content; a task checkbox has a 44 px touch target on
   touch screens (visual review 5, 13, 30) (infrontend#66).
