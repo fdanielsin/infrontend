@@ -50,6 +50,34 @@ describe('TaskList readable rows', () => {
 		await fireEvent.click(view.getByRole('button', { name: `Edit ${name}` }));
 	}
 
+	it('forwards a tap on the touch target to the checkbox, without renaming it (happy path)', async () => {
+		vi.mocked(api.updateTask).mockResolvedValue({
+			success: true,
+			data: { ...review, completed: true }
+		});
+		const view = renderWithApp(app, TaskForm, { user });
+		const checkbox = view.getByRole('checkbox', { name: 'Review' }) as HTMLInputElement;
+		const target = checkbox.parentElement!.querySelector('[data-touch-target]')!;
+
+		await fireEvent.click(target);
+
+		expect(api.updateTask).toHaveBeenCalledTimes(1);
+		expect(checkbox.hasAttribute('aria-hidden')).toBe(false);
+		expect(view.getAllByRole('checkbox', { name: 'Review' })).toHaveLength(1);
+	});
+
+	it('toggles once when the checkbox itself is clicked (boundary values)', async () => {
+		vi.mocked(api.updateTask).mockResolvedValue({
+			success: true,
+			data: { ...review, completed: true }
+		});
+		const view = renderWithApp(app, TaskForm, { user });
+
+		await fireEvent.click(view.getByRole('checkbox', { name: 'Review' }));
+
+		expect(api.updateTask).toHaveBeenCalledTimes(1);
+	});
+
 	it('disables the checkbox and the delete button of the row being edited only (happy path)', async () => {
 		// GIVEN: Two tasks.
 		const view = renderWithApp(app, TaskForm, { user });

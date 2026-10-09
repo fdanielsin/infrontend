@@ -46,6 +46,11 @@
 		oncancel: () => void;
 	} = $props();
 
+	function tapCheckbox(event: MouseEvent & { currentTarget: HTMLElement }) {
+		if (event.target instanceof HTMLInputElement) return;
+		event.currentTarget.querySelector('input')?.click();
+	}
+
 	// A 44 px target on touch screens, the smaller size kept for a fine pointer.
 	const TOUCH_TARGET = 'pointer-coarse:min-h-11 pointer-coarse:min-w-11';
 </script>
@@ -53,15 +58,26 @@
 <li
 	class="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 gap-y-2 rounded-control bg-surface-muted p-3 @md:grid-cols-[auto_minmax(0,1fr)_auto]"
 >
-	<input
-		id={`task-${task.id}`}
-		type="checkbox"
-		checked={task.completed}
-		onchange={(event) => ontoggle(event.currentTarget)}
-		aria-label={editing ? task.title : undefined}
-		disabled={editing}
-		class="mt-1 h-4 w-4"
-	/>
+	<!-- A tap on the extra touch target is forwarded to the checkbox, which keeps the keyboard
+	     and the accessible name; this wrapper is not a control. -->
+	<!-- svelte-ignore a11y_no_static_element_interactions, a11y_click_events_have_key_events -->
+	<span class="relative mt-1 h-4 w-4" onclick={tapCheckbox}>
+		<input
+			id={`task-${task.id}`}
+			type="checkbox"
+			checked={task.completed}
+			onchange={(event) => ontoggle(event.currentTarget)}
+			aria-label={editing ? task.title : undefined}
+			disabled={editing}
+			class="block h-4 w-4"
+		/>
+		<!-- Touch screens only: a 44 px target around the 16 px box. -->
+		<span
+			data-touch-target
+			aria-hidden="true"
+			class="absolute top-1/2 left-1/2 hidden size-11 -translate-x-1/2 -translate-y-1/2 pointer-coarse:block"
+		></span>
+	</span>
 	{#if editing}
 		<form
 			{@attach ref(refs, 'editForm')}

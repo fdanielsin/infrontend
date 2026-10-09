@@ -1,3 +1,4 @@
+import { AxeBuilder } from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { mockApi, type MockTask, type MockUser } from './support/mock-api';
 import { contrast, measure, worstContrast } from './support/contrast';
@@ -184,6 +185,45 @@ test.describe('Showing the tasks after a selection', () => {
 	});
 });
 
+test.describe('No user selected', () => {
+	test('the task panel is an empty state with an icon, a title and what to do (happy path)', async ({
+		page
+	}) => {
+		// GIVEN: Users, none of them selected, on a wide screen.
+		await mockApi(page, { users: [ADA, GRACE] });
+		await page.setViewportSize({ width: 1280, height: 800 });
+		await page.goto('/');
+		const heading = page.getByRole('heading', { level: 2, name: 'Select a user to manage tasks' });
+		const hint = page.getByText('Pick a user in the list to see their tasks and add new ones.');
+		await expect(heading).toBeVisible();
+		const panel = heading.locator('xpath=..');
+		const createUserY = (await page.getByRole('heading', { name: 'Create User' }).boundingBox())!.y;
+
+		// THEN: An icon of 24 px hidden from assistive technology, a centered title and hint, a panel
+		// tall enough to be a place of its own and shorter than the column beside it.
+		const icon = panel.locator('[data-icon="group"]');
+		const iconBox = (await icon.boundingBox())!;
+		expect([iconBox.width, iconBox.height]).toEqual([24, 24]);
+		await expect(icon).toHaveAttribute('aria-hidden', 'true');
+		expect(await heading.evaluate((element) => getComputedStyle(element).textAlign)).toBe('center');
+		expect(await hint.evaluate((element) => getComputedStyle(element).textAlign)).toBe('center');
+		expect(worstContrast(await measure(hint, 'color'))).toBeGreaterThanOrEqual(4.5);
+		const panelBox = (await panel.boundingBox())!;
+		const leftColumn = (await page.getByRole('heading', { name: /Users \(\d+\)/ }).boundingBox())!;
+		expect(panelBox.height).toBeGreaterThanOrEqual(160);
+		expect(panelBox.height).toBeLessThan(leftColumn.y + leftColumn.height - panelBox.y);
+
+		// WHEN: A user is chosen.
+		await page.getByRole('button', { name: /Ada Lovelace/ }).click();
+		await expect(page.getByRole('heading', { name: 'Tasks for Ada Lovelace' })).toBeVisible();
+
+		// THEN: The left column did not move.
+		expect((await page.getByRole('heading', { name: 'Create User' }).boundingBox())!.y).toBe(
+			createUserY
+		);
+	});
+});
+
 test.describe('Long descriptions', () => {
 	for (const width of [1280, 768, 320]) {
 		for (const [label, description] of [
@@ -296,14 +336,17 @@ test.describe('Editing a task', () => {
 		browser,
 		browserName
 	}) => {
-		test.skip(browserName !== 'chromium', 'pointer: coarse is emulated by Chromium only');
+		test.skip(browserName === 'firefox', 'Firefox has no touch emulation (isMobile)');
 		const context = await browser.newContext({
 			viewport: { width: 375, height: 800 },
 			hasTouch: true,
 			isMobile: true
 		});
 		const page = await context.newPage();
-		await mockApi(page, { users: [ADA], tasks: [task(10, { description: 'D'.repeat(2000) })] });
+		const api = await mockApi(page, {
+			users: [ADA],
+			tasks: [task(10, { description: 'D'.repeat(2000) })]
+		});
 		await page.goto('/');
 		await page.getByRole('button', { name: /Ada Lovelace/ }).tap();
 		for (const name of ['Edit Task 10', 'Delete Task 10', 'Show more: Task 10']) {
@@ -314,6 +357,61 @@ test.describe('Editing a task', () => {
 			const box = (await page.getByRole('button', { name }).boundingBox())!;
 			expect.soft(box.width, name).toBeGreaterThanOrEqual(44);
 		}
+		// The checkbox answers a tap anywhere in a 44 px square around it, and is still drawn at 16 px.
+		const checkbox = page.getByRole('checkbox', { name: 'Task 10' });
+		await checkbox.scrollIntoViewIfNeeded();
+		const box = (await checkbox.boundingBox())!;
+		expect([box.width, box.height]).toEqual([16, 16]);
+		const center = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+		for (const [dx, dy] of [
+			[-21, -21],
+			[21, -21],
+			[-21, 21],
+			[21, 21]
+		] as const) {
+			const answer = await page.evaluate(
+				([x, y]) => {
+					const hit = document.elementFromPoint(x!, y!);
+					const control = document.getElementById('task-10');
+					const answers = hit === control || hit?.parentElement?.contains(control);
+					return answers ? 'the checkbox' : `${hit?.tagName} ${hit?.className}`;
+				},
+				[center.x + dx, center.y + dy]
+			);
+			expect.soft(answer, `corner ${dx},${dy}`).toBe('the checkbox');
+		}
+		await page.touchscreen.tap(center.x - 21, center.y - 21);
+		await expect(checkbox).toBeChecked();
+		// The extra target is not read: the checkbox keeps its role and name, and axe finds nothing.
+		await expect(page.getByRole('checkbox', { name: 'Task 10' })).toHaveCount(1);
+		const target = page.locator('#task-10 + [data-touch-target]');
+		await expect(target).toHaveAttribute('aria-hidden', 'true');
+		expect(await target.evaluate((element) => element.tabIndex)).toBe(-1);
+		// One tap, one change: WebKit must not toggle the box twice.
+		expect(api.calls.filter((call) => call === 'PUT /tasks/{id}')).toHaveLength(1);
+		expect(await checkbox.getAttribute('aria-hidden')).toBeNull();
+		expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 		await context.close();
+	});
+
+	test('keeps the checkbox at 16 px with no wider hit area for a fine pointer (boundary values)', async ({
+		page
+	}) => {
+		await mockApi(page, { users: [ADA], tasks: [task(10)] });
+		await page.setViewportSize({ width: 1280, height: 800 });
+		await page.goto('/');
+		await page.getByRole('button', { name: /Ada Lovelace/ }).click();
+
+		const box = (await page.getByRole('checkbox', { name: 'Task 10' }).boundingBox())!;
+		const hitAside = await page.evaluate(
+			([x, y]) => {
+				const hit = document.elementFromPoint(x!, y!);
+				return hit instanceof HTMLLabelElement && hit.control?.id === 'task-10';
+			},
+			[box.x - 10, box.y + box.height / 2]
+		);
+
+		expect([box.width, box.height]).toEqual([16, 16]);
+		expect(hitAside).toBe(false);
 	});
 });
