@@ -3,6 +3,7 @@
 	import type { Notification } from '$lib/state/notification.svelte';
 	import ReferenceLine from '$lib/ui/ReferenceLine.svelte';
 	import IconButton from '$lib/ui/IconButton.svelte';
+	import { TOAST_BACKGROUNDS } from '$lib/ui/toast-styles';
 
 	interface Props {
 		toast: Notification;
@@ -15,14 +16,6 @@
 	}
 
 	let { toast, onpause, onresume, ondismiss, onaction, oncopyreference }: Props = $props();
-
-	// Whole class names, so Tailwind finds them.
-	const TYPE_CLASSES = {
-		success: 'bg-success',
-		error: 'bg-danger',
-		info: 'bg-info',
-		warning: 'bg-warning'
-	};
 </script>
 
 <!-- Hover and focus only pause the timer; the close button is the keyboard path. -->
@@ -31,7 +24,7 @@
 	data-toast
 	class={[
 		'animate-slide-in grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 rounded-card px-4 py-3 text-white shadow-card-raised',
-		TYPE_CLASSES[toast.type]
+		TOAST_BACKGROUNDS[toast.type]
 	]}
 	onmouseenter={onpause}
 	onmouseleave={(event) => {

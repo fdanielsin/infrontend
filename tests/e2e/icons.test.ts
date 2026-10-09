@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { TOAST_BACKGROUNDS } from '../../src/lib/ui/toast-styles';
 import { measure, worstContrast } from './support/contrast';
 import { ada, adaTasks, mockApi, openHomeWithUser } from './support/mock-api';
 
@@ -144,20 +145,20 @@ test.describe('Icons (computed style, mocked API)', () => {
 		// GIVEN: Elements that wear the four classes of a toast (success, error, info, warning).
 		await mockApi(page, { users: [ada], tasks: adaTasks });
 		await openHomeWithUser(page);
-		await page.evaluate(() => {
-			for (const tone of ['success', 'danger', 'action-strong', 'warning']) {
+		await page.evaluate((backgrounds) => {
+			for (const [type, background] of Object.entries(backgrounds)) {
 				const probe = document.createElement('div');
-				probe.dataset.toastProbe = tone;
-				probe.className = `bg-${tone} text-white`;
+				probe.dataset.toastProbe = type;
+				probe.className = `${background} text-white`;
 				document.body.append(probe);
 			}
-		});
+		}, TOAST_BACKGROUNDS);
 
 		// THEN: White on each of them reaches 3:1 (the icon is the text color of the toast).
-		for (const tone of ['success', 'danger', 'action-strong', 'warning']) {
-			const probe = await measure(page.locator(`[data-toast-probe="${tone}"]`), 'color', 'self');
-			expect(probe.color, tone).toEqual([255, 255, 255]);
-			expect(worstContrast(probe), tone).toBeGreaterThanOrEqual(3);
+		for (const type of Object.keys(TOAST_BACKGROUNDS)) {
+			const probe = await measure(page.locator(`[data-toast-probe="${type}"]`), 'color', 'self');
+			expect(probe.color, type).toEqual([255, 255, 255]);
+			expect(worstContrast(probe), type).toBeGreaterThanOrEqual(3);
 		}
 	});
 
