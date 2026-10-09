@@ -5,6 +5,7 @@ import svelte from 'eslint-plugin-svelte';
 import { defineConfig, includeIgnoreFile } from 'eslint/config';
 import globals from 'globals';
 import ts from 'typescript-eslint';
+import { importBoundaries } from './eslint.boundaries.js';
 
 const gitignorePath = path.resolve(import.meta.dirname, '.gitignore');
 
@@ -54,6 +55,7 @@ export default defineConfig(
 		files: ['tests/**/*.ts'],
 		rules: { '@typescript-eslint/unbound-method': 'off' }
 	},
+	...importBoundaries,
 	{
 		// Override or add rule settings here, such as:
 		// 'svelte/button-has-type': 'error'
