@@ -309,7 +309,13 @@ test.describe('Layout without sideways scroll (mocked API)', () => {
 			await page.setViewportSize({ width: 320, height: 800 });
 			const api = await mockApi(page, { users: [] });
 			api.failNext('POST /users', { status: 500, error: `Cannot create ${'x'.repeat(300)}` });
+			// The page loads the users once hydrated: a form filled sooner would lose its input.
+			const usersLoaded = page.waitForResponse(
+				(response) =>
+					response.url().endsWith('/api/v1/users') && response.request().method() === 'GET'
+			);
 			await page.goto('/');
+			await usersLoaded;
 
 			// WHEN: The user form is submitted.
 			await page.getByLabel(/Name/).fill('Ada');
