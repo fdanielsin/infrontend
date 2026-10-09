@@ -20,7 +20,7 @@
 
 	const VARIANT_CLASSES: Record<Variant, string> = {
 		outlined: 'rounded-card border border-line bg-surface shadow-card',
-		raised: 'rounded-card bg-surface shadow-card-raised transition hover:shadow-card-raised-hover',
+		raised: 'rounded-card bg-surface shadow-card-raised',
 		flat: 'rounded-card bg-surface shadow-card-raised'
 	};
 	const PADDING_CLASSES = { md: 'p-4 sm:p-6', lg: 'p-6 sm:p-8' };

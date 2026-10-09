@@ -62,7 +62,6 @@
 	--radius-card: var(--radius-lg);
 	--shadow-card: var(--shadow-sm);
 	--shadow-card-raised: var(--shadow-lg);
-	--shadow-card-raised-hover: var(--shadow-xl);
 }
 
 @layer base {
