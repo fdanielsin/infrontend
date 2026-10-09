@@ -47,8 +47,16 @@ test.describe('Task management', () => {
 		// Statistics remain available after task management operations.
 		await page.getByRole('link', { name: /View Statistics/ }).click();
 		await expect(page.getByRole('heading', { name: 'Statistics' })).toBeVisible();
-		await expect(page.getByText('Total users created:')).toBeVisible();
-		await expect(page.getByText('Total tasks created:')).toBeVisible();
+		const tiles = page.locator('[data-stat]');
+		const tileOf = (label: string) =>
+			tiles.filter({ has: page.getByText(new RegExp(`^\\W*${label}$`)) });
+		await expect(tiles).toHaveCount(3);
+		await expect(tileOf('Users')).toBeVisible();
+		await expect(tileOf('Tasks')).toBeVisible();
+		await expect(tileOf('Average tasks per user')).toBeVisible();
+		// The user created above is counted (the database is shared, so only a floor is known).
+		const usersCount = await tileOf('Users').locator('[data-stat-value]').innerText();
+		expect(Number(usersCount.replace(/\D/g, ''))).toBeGreaterThanOrEqual(1);
 	});
 
 	test('shows a validation error for an invalid user name (sad path)', async ({ page }) => {
