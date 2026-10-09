@@ -37,9 +37,9 @@ périmètre, rien n'y justifie encore un dossier de fonctionnalité séparé.
 
 ## Phase 3 — garde-fous d'architecture
 
-- [ ] Tester la direction des imports.
-- [ ] Vérifier qu'aucun module partagé ne dépend d'une route ou d'une app.
-- [ ] Vérifier la centralisation des projections API.
+- [x] Tester la direction des imports (`eslint.boundaries.js`, `tests/unit/architecture/`).
+- [x] Vérifier qu'aucun module partagé ne dépend d'une route ou d'une app.
+- [x] Vérifier la centralisation des projections API.
 - [ ] Formaliser les états d'écran discriminés là où ils sont nécessaires.
 
 Les prochaines étapes d'architecture restent volontairement ouvertes : la

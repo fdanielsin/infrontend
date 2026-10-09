@@ -6,6 +6,8 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- The lint refuses imports that break the direction of the dependencies (ui, features, state,
+  api and routes), and contract types or `$env` read outside their place.
 - A design system guide documents the tokens, components, patterns and content rules of the
   interface (`docs/design-system.md`) (infrontend#45).
 - The design system guide now holds the rules of all 76 reference pattern sheets: rules for

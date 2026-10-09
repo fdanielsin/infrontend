@@ -45,8 +45,11 @@ Cette structure n'impose pas de créer un fichier vide pour chaque catégorie.
 ## Direction des dépendances
 
 ```text
-routes → features → api / ui / config
+routes → features → state / ui / validation / i18n → api
 ```
+
+`routes` compose aussi `ui`, `state` et `api` directement ; `config` est injecté. Les
+flèches disent qui peut importer qui, jamais l'inverse.
 
 Règles :
 
@@ -59,6 +62,29 @@ Règles :
   d'environnement SvelteKit ;
 - l'URL backend et les dépendances externes sont injectées aux clients ;
 - aucune route ne duplique la projection d'un endpoint déjà centralisée.
+
+### Contrôle par le lint
+
+`eslint.boundaries.js` (règle `no-restricted-imports`, une liste complète par zone, donc dans
+`bun run lint`, `bun run verify` et la CI) refuse :
+
+- `lib/ui` → `lib/features` ou une route ; `lib/features` → une route ; `lib/state` →
+  `lib/features` ; `lib/api` → `lib/features`, `lib/ui` ou `lib/state` ; tout module de `lib/` →
+  une route ;
+- hors `lib/api`, l'import de `openapi-fetch`, de `$lib/api/schema` et de `$lib/api/zod` : les
+  types et les appels du contrat passent par `$lib/api/client` ;
+- `$env/**` hors de `routes/` et de `lib/api/client.ts` (le point de composition unique qui lit
+  l'URL du backend).
+
+Les imports de type et les réexportations sont refusés comme les autres. Limite connue : un
+`import()` dynamique n'est pas vu par la règle. Preuve que chaque zone échoue sur une violation :
+`tests/unit/architecture/import-boundaries.test.ts` (table de cas, fixtures en mémoire).
+
+Écart accepté : `lib/ui/Notification.svelte` et `LanguageSwitcher.svelte` lisent l'état
+applicatif (`getAppState`), et `ToastItem.svelte` et `toast-styles.ts` importent des types de
+`notification.svelte`. `lib/state` est l'état de l'application, pas une fonctionnalité : la
+règle « `ui` ne dépend jamais d'une fonctionnalité » reste vraie, mais ces composants ne sont
+pas génériques.
 
 ## Frontière avec le backend
 

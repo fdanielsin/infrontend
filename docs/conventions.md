@@ -60,10 +60,12 @@ nouvelles instructions ni utilisées comme référence de validation.
 ## Fonctionnalités
 
 Une fonctionnalité regroupe son orchestration, ses composants spécifiques, ses
-types, son état et ses tests. Elle ne doit pas importer une route.
+types, son état et ses tests. Elle ne doit pas importer une route (le lint le refuse, voir
+[architecture](./architecture.md#contrôle-par-le-lint)).
 
-Les composants génériques vont dans `lib/ui` et ne doivent pas connaître les
-l'état partagé ni les endpoints d'une fonctionnalité.
+Les composants génériques vont dans `lib/ui` et ne connaissent ni une fonctionnalité ni une
+route ; ce que le lint refuse, et l'écart accepté pour les composants qui lisent l'état
+applicatif, sont dans [architecture](./architecture.md#contrôle-par-le-lint).
 
 Une classe d'état (`lib/state/`) expose un état cohérent et les actions qui le
 modifient. Elle ne doit pas devenir un second client HTTP ni contenir des
