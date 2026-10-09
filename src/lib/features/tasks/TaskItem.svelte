@@ -53,10 +53,12 @@
 
 	// A 44 px target on touch screens, the smaller size kept for a fine pointer.
 	const TOUCH_TARGET = 'pointer-coarse:min-h-11 pointer-coarse:min-w-11';
+	// Under the pointer, the row says it can be edited: its "Edit" button, the way to do it, is underlined.
+	const EDIT_HINT = 'group-hover:underline';
 </script>
 
 <li
-	class="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 gap-y-2 rounded-control bg-surface-muted p-3 @md:grid-cols-[auto_minmax(0,1fr)_auto]"
+	class="group grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 gap-y-2 rounded-control bg-surface-muted p-3 hover:bg-surface-hover @md:grid-cols-[auto_minmax(0,1fr)_auto]"
 >
 	<!-- A tap on the extra touch target is forwarded to the checkbox, which keeps the keyboard
 	     and the accessible name; this wrapper is not a control. -->
@@ -149,7 +151,7 @@
 				{@attach registerEditButton(task.id)}
 				onclick={onedit}
 				aria-label={m.tasks_edit_named({ title: task.title })}
-				class={TOUCH_TARGET}
+				class={[TOUCH_TARGET, EDIT_HINT]}
 			>
 				<Icon icon="edit-pencil" size={16} class="mr-1 inline align-text-bottom" />
 				{m.tasks_edit()}
