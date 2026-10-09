@@ -11,7 +11,7 @@
 	let stackHeight = $state(0);
 	// The stack is a landmark only while it holds something to reach; the live regions inside it
 	// stay rendered, empty, so that a later message is announced.
-	const hasToasts = $derived(notifications.items.length > 0);
+	const hasToasts = $derived(notifications.shown.length > 0);
 	const reservedHeight = $derived(hasToasts ? stackHeight : 0);
 	$effect(() => {
 		const root = document.documentElement;

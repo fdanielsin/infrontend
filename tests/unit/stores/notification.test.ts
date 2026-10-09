@@ -3,6 +3,7 @@ import {
 	ANNOUNCEMENT_LIFETIME,
 	type CloseReason,
 	ERROR_NOTIFICATION_DURATION,
+	MAX_VISIBLE_TOASTS,
 	NotificationState
 } from '$lib/state/notification.svelte';
 
@@ -707,6 +708,169 @@ describe('notification store', () => {
 
 			// THEN: Only the new toast is left.
 			expect(notifications.items.map((toast) => toast.message)).toEqual(['Could not delete']);
+		});
+	});
+
+	describe('visible cap and queue', () => {
+		const persistentError = (n: number) =>
+			notifications.notifyError(`Server error ${n}`, { reference: `req-${n}`, persistent: true });
+		const shownMessages = () => notifications.shown.map((toast) => toast.message);
+
+		it('shows at most three toasts and queues the next, in order (happy path)', () => {
+			// GIVEN / WHEN: Five toasts arrive.
+			for (const n of [1, 2, 3, 4, 5]) notifications.add(`Toast ${n}`, 'info', { duration: 0 });
+
+			// THEN: The first three are shown; all five are kept, the others wait.
+			expect(MAX_VISIBLE_TOASTS).toBe(3);
+			expect(shownMessages()).toEqual(['Toast 1', 'Toast 2', 'Toast 3']);
+			expect(notifications.items).toHaveLength(5);
+		});
+
+		it('promotes the next toast when one leaves, in arrival order (happy path)', () => {
+			const first = notifications.add('Toast 1', 'info', { duration: 0 });
+			for (const n of [2, 3, 4, 5]) notifications.add(`Toast ${n}`, 'info', { duration: 0 });
+
+			notifications.remove(first);
+
+			expect(shownMessages()).toEqual(['Toast 2', 'Toast 3', 'Toast 4']);
+		});
+
+		it('starts the timer of a queued toast when it is shown, never before (happy path)', () => {
+			// GIVEN: Three persistent errors fill the stack; a 1 s info waits behind them.
+			const ids = [1, 2, 3].map(persistentError);
+			notifications.add('Waiting', 'info', { duration: 1000 });
+
+			// WHEN: Far more than its duration passes while it is queued.
+			vi.advanceTimersByTime(5000);
+
+			// THEN: It has not been lost.
+			expect(notifications.items.map((toast) => toast.message)).toContain('Waiting');
+
+			// WHEN: A place frees up.
+			notifications.remove(ids[0]!);
+
+			// THEN: It is shown for its whole duration, to the millisecond.
+			expect(shownMessages()).toContain('Waiting');
+			vi.advanceTimersByTime(999);
+			expect(shownMessages()).toContain('Waiting');
+			vi.advanceTimersByTime(1);
+			expect(notifications.items.map((toast) => toast.message)).not.toContain('Waiting');
+		});
+
+		it('counts persistent errors in the three places and never evicts them (boundary)', () => {
+			for (const n of [1, 2, 3, 4]) persistentError(n);
+
+			expect(shownMessages()).toEqual(['Server error 1', 'Server error 2', 'Server error 3']);
+			expect(notifications.items).toHaveLength(4);
+		});
+
+		it('does not queue a toast that has an action: the undo window never waits (boundary)', () => {
+			// GIVEN: Three persistent errors fill the stack.
+			[1, 2, 3].forEach(persistentError);
+			const onclose = vi.fn();
+
+			// WHEN: A deletion can be undone.
+			notifications.add('Task deleted', 'success', {
+				duration: 6000,
+				action: { label: 'Undo', run: vi.fn() },
+				onclose
+			});
+
+			// THEN: It is shown at once and expires on its own 6 s.
+			expect(shownMessages()).toContain('Task deleted');
+			vi.advanceTimersByTime(5999);
+			expect(onclose).not.toHaveBeenCalled();
+			vi.advanceTimersByTime(1);
+			expect(onclose).toHaveBeenCalledWith('expired');
+		});
+
+		it('keeps three toasts without action shown next to a toast with an action (boundary)', () => {
+			notifications.add('Task deleted', 'success', {
+				duration: 0,
+				action: { label: 'Undo', run: vi.fn() }
+			});
+			for (const n of [1, 2, 3, 4]) notifications.add(`Toast ${n}`, 'info', { duration: 0 });
+
+			expect(shownMessages()).toEqual(['Task deleted', 'Toast 1', 'Toast 2', 'Toast 3']);
+		});
+
+		it('shows exactly three without queueing, and the fourth makes a queue (boundary)', () => {
+			for (const n of [1, 2, 3]) notifications.add(`Toast ${n}`, 'info', { duration: 0 });
+			expect(notifications.shown).toHaveLength(3);
+			expect(notifications.items).toHaveLength(3);
+
+			notifications.add('Toast 4', 'info', { duration: 0 });
+			expect(notifications.shown).toHaveLength(3);
+			expect(notifications.items).toHaveLength(4);
+		});
+
+		it('shows nothing when there is nothing (limit)', () => {
+			expect(notifications.shown).toEqual([]);
+		});
+
+		it('keeps a queue without bound, one persistent error only once (limit)', () => {
+			for (let n = 0; n < 50; n++) notifications.add(`Toast ${n}`, 'info', { duration: 0 });
+			persistentError(1);
+			const queued = persistentError(1);
+			const again = notifications.notifyError('Server error 1', {
+				reference: 'req-1',
+				persistent: true
+			});
+
+			expect(notifications.shown).toHaveLength(3);
+			expect(notifications.items).toHaveLength(51);
+			expect(again).toBe(queued);
+		});
+
+		it('drops a queued toast on request, with its callback, without promoting anything (sad path)', () => {
+			[1, 2, 3].forEach(persistentError);
+			const onclose = vi.fn();
+			const queued = notifications.add('Queued', 'info', { duration: 0, onclose });
+			const before = shownMessages();
+
+			notifications.remove(queued);
+
+			expect(onclose).toHaveBeenCalledWith('dismissed');
+			expect(shownMessages()).toEqual(before);
+			expect(notifications.items).toHaveLength(3);
+		});
+
+		it('ignores the pause and resume of a queued toast, which has no timer yet (exception)', () => {
+			[1, 2, 3].forEach(persistentError);
+			const queued = notifications.add('Queued', 'info', { duration: 1000 });
+
+			notifications.pause(queued);
+			notifications.resume(queued);
+			vi.advanceTimersByTime(5000);
+
+			expect(notifications.items.map((toast) => toast.message)).toContain('Queued');
+			expect(shownMessages()).not.toContain('Queued');
+		});
+
+		it('promotes the next toast even when the close callback throws (exception)', () => {
+			const first = notifications.add('Toast 1', 'info', {
+				duration: 0,
+				onclose: () => {
+					throw new Error('callback failed');
+				}
+			});
+			for (const n of [2, 3, 4]) notifications.add(`Toast ${n}`, 'info', { duration: 1000 });
+
+			expect(() => notifications.remove(first)).toThrow('callback failed');
+
+			expect(shownMessages()).toEqual(['Toast 2', 'Toast 3', 'Toast 4']);
+			vi.advanceTimersByTime(1000);
+			expect(notifications.items).toEqual([]);
+		});
+
+		it('splits the shown toasts between status and alert regions, the queue in neither (limit)', () => {
+			notifications.add('Info', 'info', { duration: 0 });
+			persistentError(1);
+			persistentError(2);
+			persistentError(3);
+
+			expect(notifications.statuses.map((toast) => toast.message)).toEqual(['Info']);
+			expect(notifications.alerts).toHaveLength(2);
 		});
 	});
 });

@@ -127,11 +127,10 @@ describe('Notification component', () => {
 	});
 
 	it('announces errors in the alert region and the other types in the status region (boundary)', () => {
-		// GIVEN: One notification of each type.
+		// GIVEN: Three notifications, the most the stack shows at once.
 		app.notifications.items = [
 			{ id: 'e', message: 'Error', type: 'error' },
 			{ id: 's', message: 'Success', type: 'success' },
-			{ id: 'i', message: 'Info', type: 'info' },
 			{ id: 'w', message: 'Warning', type: 'warning' }
 		];
 
@@ -140,7 +139,31 @@ describe('Notification component', () => {
 
 		// THEN: Only the error interrupts assistive technologies.
 		expect(messagesIn(getByRole('alert'))).toEqual(['Error']);
-		expect(messagesIn(getByRole('status'))).toEqual(['Success', 'Info', 'Warning']);
+		expect(messagesIn(getByRole('status'))).toEqual(['Success', 'Warning']);
+	});
+
+	it('renders three toasts at most, and the next one when a place frees up (boundary)', async () => {
+		// GIVEN: Five toasts, none timed.
+		const ids = [1, 2, 3, 4, 5].map((n) =>
+			app.notifications.add(`Toast ${n}`, 'info', { duration: 0 })
+		);
+		const view = renderWithApp(app, Notification);
+
+		// THEN: Three are in the page; the others wait.
+		expect(view.container.querySelectorAll('[data-toast]')).toHaveLength(3);
+		expect(view.queryByText('Toast 4')).toBeNull();
+
+		// WHEN: One is closed.
+		await fireEvent.click(
+			within(view.getByText('Toast 1').closest('[data-toast]') as HTMLElement).getByRole('button', {
+				name: 'Dismiss notification'
+			})
+		);
+
+		// THEN: The next one takes its place, still three.
+		expect(view.getByText('Toast 4')).toBeTruthy();
+		expect(view.container.querySelectorAll('[data-toast]')).toHaveLength(3);
+		expect(app.notifications.items.map((toast) => toast.id)).toEqual(ids.slice(1));
 	});
 
 	it('closes only the notification whose dismiss button is pressed (happy path)', async () => {

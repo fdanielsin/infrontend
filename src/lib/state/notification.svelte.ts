@@ -44,6 +44,9 @@ const DEFAULT_DURATION = 3000;
 const PERSISTENT = 0;
 
 export const ERROR_NOTIFICATION_DURATION = 6000;
+// More than this many toasts would cover the page: the others wait, in arrival order. A toast with
+// an action (an undo window) is never made to wait, and persistent errors take their places.
+export const MAX_VISIBLE_TOASTS = 3;
 // Long enough for a screen reader to read it; short enough not to leave a stale sentence for a
 // reader browsing the page.
 export const ANNOUNCEMENT_LIFETIME = 10_000;
@@ -60,10 +63,17 @@ interface DismissTimer {
 	startedAt: number;
 }
 
+function visibleToasts(items: Notification[]): Notification[] {
+	let places = MAX_VISIBLE_TOASTS;
+	return items.filter((notification) => notification.action || places-- > 0);
+}
+
 export class NotificationState {
+	// Everything not yet closed, the queue included; `shown` is what is on screen.
 	items = $state.raw<Notification[]>([]);
-	alerts = $derived(this.items.filter((notification) => notification.type === 'error'));
-	statuses = $derived(this.items.filter((notification) => notification.type !== 'error'));
+	shown = $derived(visibleToasts(this.items));
+	alerts = $derived(this.shown.filter((notification) => notification.type === 'error'));
+	statuses = $derived(this.shown.filter((notification) => notification.type !== 'error'));
 
 	// Low-severity news with no surface: held for the live region of the notification area, which
 	// is hidden from sight. Nothing is shown, so nothing can cover a control.
@@ -87,7 +97,7 @@ export class NotificationState {
 			{ id, message, type, duration, ...(reference && { reference }), ...(action && { action }) }
 		];
 		if (onclose) this.#closeCallbacks.set(id, onclose);
-		if (duration) this.#startTimer(id, duration);
+		this.#startTimersOfShown();
 		return id;
 	}
 
@@ -167,9 +177,17 @@ export class NotificationState {
 		if (timer?.timeout) clearTimeout(timer.timeout);
 		this.#timers.delete(id);
 		this.items = this.items.filter((notification) => notification.id !== id);
+		this.#startTimersOfShown();
 		const onclose = this.#closeCallbacks.get(id);
 		this.#closeCallbacks.delete(id);
 		onclose?.(reason);
+	}
+
+	// A toast that waits has no timer: it must not expire before anyone has seen it.
+	#startTimersOfShown() {
+		for (const { id, duration } of visibleToasts(this.items)) {
+			if (duration && !this.#timers.has(id)) this.#startTimer(id, duration);
+		}
 	}
 
 	#startTimer(id: string, remaining: number) {

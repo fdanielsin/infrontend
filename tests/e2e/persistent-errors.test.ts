@@ -140,4 +140,59 @@ test.describe('Error toast duration (mocked API)', () => {
 		const { violations } = await new AxeBuilder({ page }).analyze();
 		expect(violations.map((violation) => violation.id)).toEqual([]);
 	});
+
+	test('at most three toasts are on screen, the next one waits and takes the place of a closed one (limit)', async ({
+		page
+	}) => {
+		// GIVEN: Four server errors with different references, one after the other.
+		const api = await openWithClock(page);
+		const toggle = page.getByRole('checkbox', { name: 'Review', exact: true });
+		for (const n of [1, 2, 3, 4]) {
+			api.failNext('PUT /tasks/{id}', {
+				status: 500,
+				error: `Database unavailable ${n}`,
+				requestId: `req-cap-${n}`
+			});
+			await toggle.click();
+			if (n < 4)
+				await expect(alertToasts(page).filter({ hasText: `unavailable ${n}` })).toBeVisible();
+		}
+
+		// THEN: Three are shown, the fourth waits, however long it takes.
+		await page.clock.runFor(TEN_MINUTES);
+		await expect(alertToasts(page)).toHaveCount(3);
+		await expect(page.getByText('Database unavailable 4')).toHaveCount(0);
+
+		// WHEN: The first one is closed.
+		await alertToasts(page).first().getByRole('button', { name: 'Dismiss notification' }).click();
+
+		// THEN: The fourth takes its place, and it too stays until closed.
+		await expect(alertToasts(page)).toHaveCount(3);
+		await expect(page.getByText('Database unavailable 4')).toBeVisible();
+	});
+
+	test('a deletion can still be undone while three persistent errors are shown (boundary)', async ({
+		page
+	}) => {
+		// GIVEN: Three persistent errors fill the stack.
+		const api = await openWithClock(page);
+		const toggle = page.getByRole('checkbox', { name: 'Review', exact: true });
+		for (const n of [1, 2, 3]) {
+			api.failNext('PUT /tasks/{id}', {
+				status: 500,
+				error: `Database unavailable ${n}`,
+				requestId: `req-undo-${n}`
+			});
+			await toggle.click();
+			await expect(alertToasts(page).filter({ hasText: `unavailable ${n}` })).toBeVisible();
+		}
+
+		// WHEN: A task is deleted.
+		await page.getByRole('button', { name: 'Delete Review', exact: true }).click();
+
+		// THEN: The undo toast is shown at once, next to the three errors, and works.
+		await expect(alertToasts(page)).toHaveCount(3);
+		await page.getByRole('button', { name: 'Undo', exact: true }).click();
+		await expect(toggle).toBeVisible();
+	});
 });

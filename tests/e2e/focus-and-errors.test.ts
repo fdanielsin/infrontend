@@ -246,9 +246,9 @@ test.describe('Focus and errors (computed style, mocked API)', () => {
 
 	for (const { width, height, count } of [
 		{ width: 1280, height: 720, count: 1 },
-		{ width: 1280, height: 720, count: 4 },
+		{ width: 1280, height: 720, count: 3 },
 		{ width: 320, height: 568, count: 1 },
-		{ width: 320, height: 568, count: 4 }
+		{ width: 320, height: 568, count: 3 }
 	]) {
 		test(`every control of a long list can be pointed at, under ${count} toast(s) that stay, at ${width}x${height} px (limit)`, async ({
 			page
@@ -306,14 +306,13 @@ test.describe('Focus and errors (computed style, mocked API)', () => {
 	const CASES = [
 		{ width: 1280, height: 700, count: 1 },
 		{ width: 1280, height: 700, count: 2 },
-		{ width: 1280, height: 700, count: 4 },
-		{ width: 1280, height: 700, count: 6 },
+		{ width: 1280, height: 700, count: 3 },
 		{ width: 320, height: 700, count: 1 },
 		{ width: 320, height: 700, count: 2 },
-		{ width: 320, height: 700, count: 4 },
-		{ width: 320, height: 700, count: 6 },
-		// A pile as tall as the window: the stack stops at 40 % of it and scrolls inside.
-		{ width: 320, height: 360, count: 6 }
+		{ width: 320, height: 700, count: 3 },
+		// A pile as tall as the window (three toasts is the most the stack shows): it stops at 40 %
+		// of the window and scrolls inside.
+		{ width: 320, height: 360, count: 3 }
 	];
 	for (const { width, height, count } of CASES) {
 		{
