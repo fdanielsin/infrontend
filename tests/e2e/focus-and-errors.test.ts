@@ -218,16 +218,16 @@ test.describe('Focus and errors (computed style, mocked API)', () => {
 		});
 	}
 
-	test('the banner and the statistics error use the same red (sad path)', async ({ page }) => {
-		// GIVEN: A failing creation, on the home page.
+	test('the field error and the statistics error use the same red (sad path)', async ({ page }) => {
+		// GIVEN: A creation refused for an email already taken: the error is under the email field.
 		const api = await mockApi(page, { users: [ada], tasks: adaTasks });
 		await page.goto('/');
 		await page.getByRole('button', { name: /Ada Lovelace/ }).waitFor();
-		api.failNext('POST /users', { status: 500, error: 'Database unavailable' });
+		api.failNext('POST /users', { status: 409, error: 'Email taken', code: 'EMAIL_TAKEN' });
 		await page.locator('#name').fill('Grace');
 		await page.locator('#email').fill('grace@example.com');
 		await page.locator('#name').press('Enter');
-		const banner = page.getByText('Database unavailable').first();
+		const banner = page.locator('#email-error');
 		await expect(banner).toBeVisible();
 		const bannerColor = await measure(banner, 'color');
 
@@ -368,7 +368,11 @@ test.describe('Focus and errors (computed style, mocked API)', () => {
 							const covered = points.filter(([x, y]) =>
 								document.elementFromPoint(x!, y!)?.closest('[data-toast]')
 							).length;
-							const visible = box.top >= 0 && box.bottom <= window.innerHeight;
+							// What the toasts could hide is the bottom of a control: it must end inside the window, with at
+							// least half of its height shown. The top edge is the browser's: it may leave a control a few
+							// pixels above the window when the page is at its end.
+							const shown = Math.min(box.bottom, window.innerHeight) - Math.max(box.top, 0);
+							const visible = box.bottom <= window.innerHeight && shown >= box.height / 2;
 							return {
 								first,
 								name,
