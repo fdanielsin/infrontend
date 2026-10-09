@@ -32,8 +32,9 @@ et tournent sans backend ; `focus-and-errors.test.ts`, `field-borders.test.ts` e
 `icons.test.ts` mesurent le style calculé avec `e2e/support/contrast.ts` :
 `PUBLIC_API_URL=http://localhost:8080 bun x playwright test accessibility keyboard-focus i18n focus-and-errors field-borders icons page-stability --project=chromium`.
 Ces E2E tournent contre un build de production (`vite build` puis `vite preview`,
-port 4173, jamais réutilisé : un serveur déjà présent sur ce port fait échouer
-le lancement), pas contre `vite dev` : le client de développement recharge la page
+port 4173 par défaut, ou `E2E_PORT` (un port par worktree, par exemple
+`E2E_PORT=4104 bun x playwright test i18n --project=chromium`), jamais réutilisé : un serveur
+déjà présent sur ce port fait échouer le lancement), pas contre `vite dev` : le client de développement recharge la page
 quand sa websocket HMR est perdue (par exemple quand la machine se fige), ce qui
 efface l'état d'un test en cours (`page-stability.test.ts` le vérifie). Le
 `webServer` de `playwright.config.ts` construit donc l'application avant les
