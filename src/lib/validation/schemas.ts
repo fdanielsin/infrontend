@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { m } from '$lib/paraglide/messages';
+import { isValidEmail } from './email';
 
 // An issue carries the key of its message, not its text: the interface translates it when
 // it renders, so an error already shown follows a change of language.
@@ -38,7 +39,9 @@ function boundedText(limit: number, tooLong: ValidationKey) {
 
 export const UserSchema = z.object({
 	name: boundedText(100, 'validation_name_max').pipe(z.string().trim().min(1, NAME_REQUIRED)),
-	email: boundedText(254, 'validation_email_max').pipe(z.string().trim().email(EMAIL_INVALID))
+	email: boundedText(254, 'validation_email_max').pipe(
+		z.string().trim().refine(isValidEmail, EMAIL_INVALID)
+	)
 });
 
 export const TaskSchema = z.object({

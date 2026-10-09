@@ -2,12 +2,16 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { overwriteGetLocale, type Locale } from '$lib/paraglide/runtime';
+import { isValidEmail } from '$lib/validation/email';
 import { TaskSchema, UserSchema, validationMessage } from '$lib/validation/schemas';
+import { EMAIL_CASES } from '../../shared/email-cases';
 
 // The server answers VALIDATION_FAILED with a generic translated message (decision I2):
 // every input it refuses must be refused before sending, with a precise translated message.
 // Rules from the lot D contract (CreateUserRequest, CreateTaskRequest, UpdateTaskRequest)
-// and the domain (user.NewUser, task.NewTask).
+// and the domain (user.NewUser, task.NewTask). The e-mail rule is the exact one of
+// `CreateUserRequest.email` ("à appliquer à l'identique côté client"): tests/shared/email-cases.ts
+// holds its cases, and tests/e2e/backend/email-rule.test.ts sends the same table to a real server.
 
 const LOCALES: Locale[] = ['en', 'fr', 'de', 'es'];
 
@@ -48,6 +52,44 @@ describe('client validation covers every server validation rule', () => {
 		// THEN: The client refuses it on the email field.
 		expect(issueKey(UserSchema, { ...validUser, email }, 'email')).toBe('validation_email_invalid');
 	});
+
+	it.each(
+		EMAIL_CASES.map(
+			([email, accepted, why]) =>
+				[`${accepted ? 'accepts' : 'refuses'} ${why}`, email, accepted] as const
+		)
+	)('%s, as the contract says', (_case, email, accepted) => {
+		// GIVEN / WHEN: The address, in the form. The 254-character limit is checked first.
+		const key = issueKey(UserSchema, { ...validUser, email }, 'email');
+
+		// THEN: Accepted as it is, or refused with the precise message of the field.
+		const refusal = [...email].length > 254 ? 'validation_email_max' : 'validation_email_invalid';
+		expect(key).toBe(accepted ? undefined : refusal);
+	});
+
+	it('ignores the case of the letters and of the punycode prefix, as the server lowercases first (limit)', () => {
+		// GIVEN / WHEN / THEN: Capitals are letters, and `XN--` is the prefix `xn--`.
+		expect(isValidEmail('ADA@EXEMPLE.FR')).toBe(true);
+		expect(isValidEmail('a@b.XN--P1AI')).toBe(true);
+	});
+
+	it(
+		'refuses at once what is built to make a careless pattern backtrack (exception)',
+		{ timeout: 500 },
+		() => {
+			// GIVEN: Addresses within the limits whose label or TLD fails only on the last character: a
+			// pattern like `(?:[\p{L}-]+)+$` would try every way to split the label before giving up
+			// (about 1.5 s for 28 letters, and doubling with each one). A linear pattern takes no time.
+			const hostile = [
+				`a@${'a'.repeat(28)}_.co`,
+				`a@b.${'a'.repeat(23)}1`,
+				`a@${'a-'.repeat(28)}-.co`
+			];
+
+			// WHEN / THEN: They are refused, well inside the time the test is given.
+			expect(hostile.map(isValidEmail)).toEqual([false, false, false]);
+		}
+	);
 
 	it('refuses an empty name, as the server does (sad path)', () => {
 		// GIVEN / WHEN / THEN: The server refuses an empty name; the client too.

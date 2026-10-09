@@ -105,7 +105,10 @@ function keysOf(schema: typeof UserSchema | typeof TaskSchema, value: object, fi
 
 describe('text length limits', () => {
 	const validUser = { name: 'Ada', email: 'ada@example.com' };
-	const emailOfLength = (length: number) => `${'a'.repeat(length - 12)}@example.com`;
+	// A well-formed address of the given length (198 and more): the local part and the labels
+	// of the contract at their longest, then a third label that takes the rest.
+	const emailOfLength = (length: number) =>
+		`${'a'.repeat(64)}@${'b'.repeat(63)}.${'c'.repeat(63)}.${'d'.repeat(length - 197)}.com`;
 
 	it.each([
 		['name', UserSchema, validUser, 100, 'validation_name_max'],

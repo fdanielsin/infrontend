@@ -64,7 +64,7 @@ describe('UserForm', () => {
 		// GIVEN: A rendered form.
 		const { submit, findByText, emailInput } = renderForm();
 
-		// WHEN: The email passes the browser check (type=email) but not the zod rule.
+		// WHEN: The form is novalidate and the field a text field: only the zod rule judges the email.
 		await submit('Ada', 'ada@localhost');
 
 		// THEN: The zod message is shown next to the field and nothing is sent.

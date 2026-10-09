@@ -7,6 +7,9 @@
 		// Already translated: the label stays in the interface language.
 		label: string;
 		value?: string;
+		// 'email' is a text field that asks for the e-mail keyboard: with type="email", the browser
+		// rewrites what is typed (Chrome turns an international domain into punycode). No autofill:
+		// the address typed is another person's, not the user's (WCAG 1.3.5 is about the user's own).
 		type?: 'text' | 'email';
 		multiline?: boolean;
 		rows?: number;
@@ -94,7 +97,11 @@
 {:else if type === 'email'}
 	<input
 		{id}
-		type="email"
+		type="text"
+		inputmode="email"
+		autocomplete="off"
+		spellcheck="false"
+		autocapitalize="off"
 		bind:value
 		{required}
 		aria-invalid={!!error}
