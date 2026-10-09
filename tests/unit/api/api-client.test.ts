@@ -179,6 +179,26 @@ describe('API client', () => {
 		await expect(api.deleteTask(42)).resolves.toEqual({ success: true, message: 'Task deleted' });
 	});
 
+	it.each([
+		['by default', undefined, false],
+		['when asked to outlive the page', { keepalive: true }, true]
+	] as const)(
+		'sends the DELETE %s (keepalive: %s) and no extra header (happy path)',
+		async (_name, options, expected) => {
+			// GIVEN: A backend that accepts the deletion.
+			const fetchMock = mockFetch(jsonResponse({ success: true, message: 'Task deleted' }));
+
+			// WHEN: The task is deleted.
+			await api.deleteTask(42, options);
+
+			// THEN: The request keeps or not alive, and adds no header that would need a CORS preflight allowance.
+			const request = fetchMock.mock.calls[0]?.[0] as Request;
+			expect(request.method).toBe('DELETE');
+			expect(request.keepalive).toBe(expected);
+			expect([...request.headers.keys()].sort()).toEqual(['accept-language']);
+		}
+	);
+
 	it('answers a DELETE 204 as a success without parsing a body (happy path, convention)', async () => {
 		// GIVEN: A deletion answered without content (no endpoint of the contract does it today).
 		mockFetch(new Response(null, { status: 204 }));

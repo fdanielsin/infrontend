@@ -234,11 +234,19 @@ export class ApiClient {
 		);
 	}
 
+	// `keepalive` lets the request outlive the page, for a deletion sent as the page is left. It adds
+	// no header: a custom one would need its own CORS preflight authorization.
 	async deleteTask(
-		id: number
+		id: number,
+		{ keepalive = false }: { keepalive?: boolean } = {}
 	): Promise<ApiResult<SuccessData<paths['/api/v1/tasks/{id}']['delete']>>> {
 		return toResult(
-			() => this.#http.DELETE('/api/v1/tasks/{id}', { params: { path: { id } }, parseAs: 'text' }),
+			() =>
+				this.#http.DELETE('/api/v1/tasks/{id}', {
+					params: { path: { id } },
+					parseAs: 'text',
+					keepalive
+				}),
 			{ schema: zDeleteTaskResponse, hasData: false }
 		);
 	}
