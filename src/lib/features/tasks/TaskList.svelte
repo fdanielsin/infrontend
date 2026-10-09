@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { tick } from 'svelte';
+	import { flushSync, tick } from 'svelte';
 	import type { Attachment } from 'svelte/attachments';
 	import { ref } from '$lib/ui/attachments';
 	import Select from '$lib/ui/Select.svelte';
@@ -139,8 +139,15 @@
 		refs.tasksHeading?.focus();
 	}
 
+	// Undo runs from the toast button, which is about to disappear: the row is rendered and focused
+	// now, so that the toast does not move the focus elsewhere.
+	function focusRestoredRow(taskId: number) {
+		flushSync();
+		document.getElementById(`task-${taskId}`)?.focus();
+	}
+
 	async function handleRemoveTask(taskId: number) {
-		await tasks.remove(taskId);
+		tasks.remove(taskId, { onundo: focusRestoredRow });
 		await focusHeadingIfRowRemoved(taskId);
 	}
 

@@ -41,6 +41,8 @@
 	"tasks_edit": "Modifier",
 	"tasks_edit_named": "Modifier {title}",
 	"tasks_delete_named": "Supprimer {title}",
+	"tasks_deleted_named": "Tâche supprimée : {title}",
+	"tasks_undo_delete": "Annuler",
 	"notifications_dismiss": "Fermer la notification",
 	"notifications_region": "Notifications",
 	"notifications_task_gone": "Tâche déjà supprimée",

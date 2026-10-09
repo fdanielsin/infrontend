@@ -3,6 +3,15 @@ import { m } from '$lib/paraglide/messages';
 import type { NotificationState } from './notification.svelte';
 import { RequestStatus } from './request-status.svelte';
 
+// How long Undo stays offered before the deletion is sent.
+const UNDO_DURATION = 6000;
+
+interface PendingDelete {
+	task: Task;
+	index: number;
+	toastId: string;
+}
+
 const TASK_NOT_FOUND: ErrorCode = 'TASK_NOT_FOUND';
 
 // The task no longer exists on the server: an expected outcome, not an error.
@@ -19,6 +28,12 @@ export class TaskState {
 	// task created for someone else, whose answer comes late, is never added to it. Null only
 	// while no user was ever selected, when there is no list to protect.
 	#listOwnerId: number | null = null;
+	// Deletions the user can still undo, by task id.
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity
+	#pendingDeletes = new Map<number, PendingDelete>();
+	// Deletions sent and not answered yet: the server may still list these tasks.
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity
+	#deletesInFlight = new Set<number>();
 
 	constructor(notifications: NotificationState) {
 		this.#notifications = notifications;
@@ -29,6 +44,7 @@ export class TaskState {
 	clear(ownerId: number | null = null) {
 		this.tasks = [];
 		this.#listOwnerId = ownerId;
+		void this.commitPending();
 	}
 
 	async load(userId: number, isCurrent: () => boolean) {
@@ -37,7 +53,7 @@ export class TaskState {
 			isCurrent
 		});
 		if (result.success && isCurrent()) {
-			this.tasks = result.data;
+			this.tasks = result.data.filter((task) => !this.#deletesInFlight.has(task.id));
 			this.#listOwnerId = userId;
 		}
 	}
@@ -85,14 +101,68 @@ export class TaskState {
 		return true;
 	}
 
-	async remove(id: number) {
-		const result = await this.status.run(() => api.deleteTask(id), {
-			fallbackMessage: m.error_delete_task,
-			tracksLoading: false,
-			isHandled: isTaskGone
-		});
-		if (result.success) this.tasks = this.tasks.filter((task) => task.id !== id);
-		else if (isTaskGone(result)) this.#dropGoneTask(id);
+	// The task leaves the list at once and its deletion waits for the end of the toast: Undo puts
+	// it back without any request. `onundo` lets the caller place the focus once it is back.
+	remove(id: number, { onundo }: { onundo?: (id: number) => void } = {}) {
+		const index = this.tasks.findIndex((task) => task.id === id);
+		const task = this.tasks[index];
+		if (!task || this.#pendingDeletes.has(id)) return;
+		this.tasks = this.tasks.filter((listed) => listed.id !== id);
+		const toastId = this.#notifications.add(
+			m.tasks_deleted_named({ title: task.title }),
+			'success',
+			{
+				duration: UNDO_DURATION,
+				action: {
+					label: m.tasks_undo_delete(),
+					run: () => {
+						if (this.#restore(id)) onundo?.(id);
+					}
+				},
+				onclose: (reason) => {
+					if (reason !== 'action') void this.#commit(id);
+				}
+			}
+		);
+		this.#pendingDeletes.set(id, { task, index, toastId });
+	}
+
+	// Sends every waiting deletion and closes its toast. Safe to call again: a deletion is sent once.
+	async commitPending(options: { keepalive?: boolean } = {}) {
+		const waiting = [...this.#pendingDeletes.values()];
+		const commits = waiting.map(({ task }) => this.#commit(task.id, options));
+		for (const { toastId } of waiting) this.#notifications.remove(toastId, 'dismissed');
+		await Promise.all(commits);
+	}
+
+	#restore(id: number) {
+		const pending = this.#pendingDeletes.get(id);
+		if (!pending) return false;
+		this.#pendingDeletes.delete(id);
+		this.#putBack(pending);
+		return true;
+	}
+
+	#putBack({ task, index }: PendingDelete) {
+		if (this.#listOwnerId !== null && this.#listOwnerId !== task.user_id) return;
+		const tasks = [...this.tasks];
+		tasks.splice(Math.min(index, tasks.length), 0, task);
+		this.tasks = tasks;
+	}
+
+	async #commit(id: number, { keepalive = false }: { keepalive?: boolean } = {}) {
+		const pending = this.#pendingDeletes.get(id);
+		if (!pending) return;
+		this.#pendingDeletes.delete(id);
+		this.#deletesInFlight.add(id);
+		const result = await this.status
+			.run(() => (keepalive ? api.deleteTask(id, { keepalive }) : api.deleteTask(id)), {
+				fallbackMessage: m.error_delete_task,
+				tracksLoading: false,
+				isHandled: isTaskGone
+			})
+			.finally(() => this.#deletesInFlight.delete(id));
+		if (!result.success && !isTaskGone(result)) this.#putBack(pending);
 	}
 
 	// Only a task still in the current list is dropped and announced, so a repeated

@@ -41,6 +41,8 @@
 	"tasks_edit": "Editar",
 	"tasks_edit_named": "Editar {title}",
 	"tasks_delete_named": "Eliminar {title}",
+	"tasks_deleted_named": "Tarea eliminada: {title}",
+	"tasks_undo_delete": "Deshacer",
 	"notifications_dismiss": "Cerrar la notificación",
 	"notifications_region": "Notificaciones",
 	"notifications_task_gone": "Tarea ya eliminada",

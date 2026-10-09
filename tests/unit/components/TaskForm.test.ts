@@ -324,7 +324,7 @@ describe('TaskForm', () => {
 			const editTitle = view.getByDisplayValue('Other') as HTMLInputElement;
 			await fireEvent.input(editTitle, { target: { value: 'Other draft' } });
 
-			// WHEN: The first task is deleted and turns out to be gone already.
+			// WHEN: The first task is deleted and the server confirms it is gone.
 			await fireEvent.click(view.getByRole('button', { name: 'Delete Review' }));
 
 			// THEN: The first line disappears and the draft of the second stays open.

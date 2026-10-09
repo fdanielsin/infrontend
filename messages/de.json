@@ -41,6 +41,8 @@
 	"tasks_edit": "Bearbeiten",
 	"tasks_edit_named": "{title} bearbeiten",
 	"tasks_delete_named": "{title} löschen",
+	"tasks_deleted_named": "Aufgabe gelöscht: {title}",
+	"tasks_undo_delete": "Rückgängig",
 	"notifications_dismiss": "Benachrichtigung schließen",
 	"notifications_region": "Benachrichtigungen",
 	"notifications_task_gone": "Aufgabe bereits gelöscht",

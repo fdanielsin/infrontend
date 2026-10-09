@@ -32,8 +32,14 @@ function failWith(failure: ApiFailure) {
 
 let app: AppState;
 
+// Deleting waits for the end of the Undo toast: the helper lets it end and waits for the answer.
+async function removeAndCommit(id: number) {
+	app.tasks.remove(id);
+	await app.tasks.commitPending();
+}
+
 const actions = [
-	['removeTask', (id: number) => app.tasks.remove(id)],
+	['removeTask', removeAndCommit],
 	['toggleTask', (id: number) => app.tasks.toggle(id, true)],
 	['editTask', (id: number) => app.tasks.edit(id, 'Changed', '')]
 ] as const;
@@ -45,7 +51,7 @@ describe('a task already deleted on the server (TASK_NOT_FOUND)', () => {
 		app.tasks.tasks = [first, second, third];
 	});
 
-	it.each(actions)(
+	it.each(actions.filter(([name]) => name !== 'removeTask'))(
 		'%s drops the task and announces it, without any error (happy path)',
 		async (_name, action) => {
 			// GIVEN: The server no longer knows the task.
@@ -60,9 +66,23 @@ describe('a task already deleted on the server (TASK_NOT_FOUND)', () => {
 				expect.objectContaining({ message: 'Task already deleted', type: 'info' })
 			]);
 			expect(app.tasks.status.error).toBeNull();
-			if (_name !== 'removeTask') expect(result).toBe(false);
+			expect(result).toBe(false);
 		}
 	);
+
+	it('removeTask keeps the task out and says nothing more than its own toast (happy path)', async () => {
+		// GIVEN: The server no longer knows the task the user deleted.
+		failWith(gone);
+
+		// WHEN: The deletion is sent.
+		await removeAndCommit(second.id);
+
+		// THEN: The task stays out, with neither an error nor the "already deleted" information:
+		// the user's wish is met.
+		expect(app.tasks.tasks).toEqual([first, third]);
+		expect(app.notifications.items).toEqual([]);
+		expect(app.tasks.status.error).toBeNull();
+	});
 
 	it.each([
 		[
@@ -133,8 +153,8 @@ describe('a task already deleted on the server (TASK_NOT_FOUND)', () => {
 		// GIVEN: TASK_NOT_FOUND with an unusual server message.
 		failWith({ ...gone, error: 'Gone <b>for good</b>' });
 
-		// WHEN: The task is removed.
-		await app.tasks.remove(second.id);
+		// WHEN: The task is toggled.
+		await app.tasks.toggle(second.id, true);
 
 		// THEN: The fixed information text is shown, never the server message.
 		expect(app.notifications.items.map((n) => n.message)).toEqual(['Task already deleted']);
@@ -155,7 +175,7 @@ describe('a task already deleted on the server (TASK_NOT_FOUND)', () => {
 	it('keeps the error cleared for the next successful action (boundary)', async () => {
 		// GIVEN: A task found gone, then a successful toggle of another one.
 		failWith(gone);
-		await app.tasks.remove(second.id);
+		await removeAndCommit(second.id);
 		vi.mocked(api.updateTask).mockResolvedValue({
 			success: true,
 			data: { id: first.id, title: first.title, description: '', completed: true }
@@ -174,7 +194,7 @@ describe('a task already deleted on the server (TASK_NOT_FOUND)', () => {
 		vi.mocked(api.deleteTask).mockRejectedValue(new TypeError('Failed to fetch'));
 
 		// WHEN: The task is removed.
-		await app.tasks.remove(second.id);
+		await removeAndCommit(second.id);
 
 		// THEN: The error is shown and the task stays.
 		expect(app.tasks.status.error).toBe('Failed to fetch');

@@ -26,6 +26,12 @@ vi.mock('$lib/api/client', () => ({
 	}
 }));
 
+// Deleting waits for the end of the Undo toast: the helper lets it end and waits for the answer.
+async function removeAndCommit(app: AppState, id: number) {
+	app.tasks.remove(id);
+	await app.tasks.commitPending();
+}
+
 describe('tasks store', () => {
 	const task = {
 		id: 10,
@@ -178,7 +184,7 @@ describe('tasks store', () => {
 		vi.mocked(api.deleteTask).mockResolvedValue({ success: true, message: 'Task deleted' });
 
 		// WHEN: The first task is removed.
-		await app.tasks.remove(task.id);
+		await removeAndCommit(app, task.id);
 
 		// THEN: Only the other task remains.
 		expect(api.deleteTask).toHaveBeenCalledWith(task.id);
@@ -191,9 +197,9 @@ describe('tasks store', () => {
 		vi.mocked(api.deleteTask).mockResolvedValue({ success: false, error: 'HTTP 500' });
 
 		// WHEN: The task is removed.
-		await app.tasks.remove(task.id);
+		await removeAndCommit(app, task.id);
 
-		// THEN: The task is still listed and the error is exposed.
+		// THEN: The task is listed again and the error is exposed.
 		expect(app.tasks.tasks).toEqual([task]);
 		expect(app.tasks.status.error).toBe('HTTP 500');
 	});
@@ -207,7 +213,7 @@ describe('tasks store', () => {
 		// WHEN: The unknown id is toggled, edited and removed.
 		await app.tasks.toggle(999, true);
 		await app.tasks.edit(999, 'Changed', 'Changed description');
-		await app.tasks.remove(999);
+		await removeAndCommit(app, 999);
 
 		// THEN: The listed task is untouched.
 		expect(app.tasks.tasks).toEqual([task]);
@@ -216,7 +222,7 @@ describe('tasks store', () => {
 	it.each([
 		['addTask', () => app.tasks.add('New task', 'Details', 1)],
 		['editTask', () => app.tasks.edit(10, 'Changed', 'Changed description')],
-		['removeTask', () => app.tasks.remove(10)]
+		['removeTask', () => removeAndCommit(app, 10)]
 	] as const)(
 		'%s keeps the list and exposes the message when the API call throws (exception)',
 		async (_name, action) => {
@@ -249,8 +255,7 @@ describe('tasks store', () => {
 
 			// WHEN: The action starts, then succeeds.
 			const running =
-				action === 'toggleTask' ? app.tasks.toggle(task.id, true) : app.tasks.remove(task.id);
-			expect(app.tasks.status.error).toBeNull();
+				action === 'toggleTask' ? app.tasks.toggle(task.id, true) : removeAndCommit(app, task.id);
 			if (action === 'toggleTask') answer(updated({ ...task, completed: true }));
 			else answerDelete({ success: true, message: 'Task deleted' });
 			await running;
@@ -272,7 +277,7 @@ describe('tasks store', () => {
 
 			// WHEN: The background action runs.
 			const running =
-				action === 'toggleTask' ? app.tasks.toggle(task.id, true) : app.tasks.remove(task.id);
+				action === 'toggleTask' ? app.tasks.toggle(task.id, true) : removeAndCommit(app, task.id);
 
 			// THEN: loading never becomes true.
 			expect(app.tasks.status.loading).toBe(false);
@@ -305,7 +310,7 @@ describe('tasks store', () => {
 		['addTask', () => app.tasks.add('New task', 'Details', 1), 'Failed to create task'],
 		['toggleTask', () => app.tasks.toggle(10, true), 'Failed to update task'],
 		['editTask', () => app.tasks.edit(10, 'Changed', ''), 'Failed to update task'],
-		['removeTask', () => app.tasks.remove(10), 'Failed to delete task']
+		['removeTask', () => removeAndCommit(app, 10), 'Failed to delete task']
 	] as const)(
 		'%s shows its own fallback message when the failure has none (limit)',
 		async (_name, action, fallback) => {

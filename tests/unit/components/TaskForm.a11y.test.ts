@@ -363,40 +363,63 @@ describe('TaskForm accessibility', () => {
 			expect(view.getByText('No tasks yet')).toBeTruthy();
 		});
 
-		it('leaves the focus on the Delete button when the server refuses the deletion (sad path)', async () => {
-			// GIVEN: An API that refuses the deletion.
-			vi.mocked(api.deleteTask).mockResolvedValue({
-				success: false,
-				error: 'Server error',
-				status: 500
-			});
+		it.each([
+			[
+				'the server refuses the deletion (sad path)',
+				() =>
+					vi.mocked(api.deleteTask).mockResolvedValue({
+						success: false,
+						error: 'Server error',
+						status: 500
+					}),
+				'Server error'
+			],
+			[
+				'the deletion request throws (exception)',
+				() => vi.mocked(api.deleteTask).mockRejectedValue(new Error('Network down')),
+				'Network down'
+			]
+		] as const)(
+			'keeps the focus on the list heading when %s, and shows the row again',
+			async (_case, arrange, message) => {
+				// GIVEN: An API that fails, and the focus on the Delete button.
+				arrange();
+				const view = renderWithApp(app, TaskForm, { user });
+				const deleteButton = view.getByRole('button', { name: 'Delete Review' });
+				deleteButton.focus();
+
+				// WHEN: Delete is pressed and the Undo time runs out.
+				await fireEvent.click(deleteButton);
+				await settle();
+				const heading = view.getByRole('heading', { name: 'Tasks (1)' });
+				await app.tasks.commitPending();
+				await settle();
+
+				// THEN: The row is back, the error is notified and the focus has not been pulled away.
+				expect(view.getByRole('checkbox', { name: 'Review' })).toBeTruthy();
+				expect(app.notifications.items).toEqual([
+					expect.objectContaining({ message, type: 'error' })
+				]);
+				expect(document.activeElement).toBe(heading);
+			}
+		);
+
+		it('puts the focus on the checkbox of the task when the deletion is undone (happy path)', async () => {
+			// GIVEN: A deleted task, focus on the list heading.
 			const view = renderWithApp(app, TaskForm, { user });
 			const deleteButton = view.getByRole('button', { name: 'Delete Review' });
 			deleteButton.focus();
-
-			// WHEN: Delete is pressed.
 			await fireEvent.click(deleteButton);
 			await settle();
+			expect(view.queryByRole('checkbox', { name: 'Review' })).toBeNull();
 
-			// THEN: The task stays and the focus does not move.
-			expect(view.getByRole('checkbox', { name: 'Review' })).toBeTruthy();
-			expect(document.activeElement).toBe(deleteButton);
-		});
+			// WHEN: Undo is pressed in the toast.
+			app.notifications.runAction(app.notifications.items[0]!.id);
 
-		it('leaves the focus on the Delete button when the deletion request throws (exception)', async () => {
-			// GIVEN: A network failure.
-			vi.mocked(api.deleteTask).mockRejectedValue(new Error('Network down'));
-			const view = renderWithApp(app, TaskForm, { user });
-			const deleteButton = view.getByRole('button', { name: 'Delete Review' });
-			deleteButton.focus();
-
-			// WHEN: Delete is pressed.
-			await fireEvent.click(deleteButton);
-			await settle();
-
-			// THEN: The task stays and the focus does not move.
-			expect(view.getByText('Network down')).toBeTruthy();
-			expect(document.activeElement).toBe(deleteButton);
+			// THEN: The row is back first in the list, focused, and nothing was sent.
+			const checkbox = view.getByRole('checkbox', { name: 'Review' });
+			expect(document.activeElement).toBe(checkbox);
+			expect(api.deleteTask).not.toHaveBeenCalled();
 		});
 
 		it('moves the focus to the list heading when a checked task turns out to be gone (limit)', async () => {

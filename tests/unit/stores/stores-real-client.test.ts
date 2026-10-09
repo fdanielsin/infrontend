@@ -70,7 +70,7 @@ describe('stores with the real API client', () => {
 		]);
 	});
 
-	it('drops a task the server reports gone, through the real client (limit)', async () => {
+	it('keeps out a task the server reports gone, through the real client (limit)', async () => {
 		// GIVEN: A listed task that the backend no longer knows.
 		const task = { id: 10, title: 'Gone', description: '', user_id: ada.id, completed: false };
 		app.tasks.tasks = [task];
@@ -81,14 +81,13 @@ describe('stores with the real API client', () => {
 			)
 		);
 
-		// WHEN: The task is removed.
-		await app.tasks.remove(task.id);
+		// WHEN: The task is removed and the deletion is sent.
+		app.tasks.remove(task.id);
+		await app.tasks.commitPending();
 
-		// THEN: It leaves the list with an information, not an error.
+		// THEN: It stays out of the list, without an error nor a notice.
 		expect(app.tasks.tasks).toEqual([]);
 		expect(app.tasks.status.error).toBeNull();
-		expect(app.notifications.items).toEqual([
-			expect.objectContaining({ message: 'Task already deleted', type: 'info' })
-		]);
+		expect(app.notifications.items).toEqual([]);
 	});
 });
