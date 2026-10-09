@@ -48,22 +48,23 @@ Les jetons vivent dans le bloc `@theme` de `src/routes/layout.css`. Chacun nomme
 une teinte de palette Tailwind déjà rendue ; ses ratios validés sont en
 commentaire du jeton. Ratios mesurés (WCAG 1.4.3 texte 4,5:1, 1.4.11 non-texte 3:1) :
 
-| Jeton                               | Teinte               | Usage                                      | Contraste (source : commentaires de `layout.css`)                                                                                                                  |
-| ----------------------------------- | -------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `surface`, `surface-muted`          | blanc, gray-100      | carte, ligne de liste                      |                                                                                                                                                                    |
-| `heading`                           | gray-900             | titres et chiffres                         | 17,9:1 sur blanc                                                                                                                                                   |
-| `surface-hover`, `surface-selected` | gray-200, blue-100   | ligne sous le pointeur, ligne sélectionnée | mesurés (`readable-lists.test.ts`) : nom 16,96 / 17,21, e-mail 6,10 / 6,19 (survol / sélectionnée) ; barre `primary` 4,30:1 et coche 6,19:1 sur `surface-selected` |
-| `label`, `muted`, `subtle`          | gray-700, 600, 500   | libellé, texte secondaire, état vide       | muted 7,56:1 ; subtle 4,84:1 sur blanc                                                                                                                             |
-| `field-border`                      | gray-500             | bordure des champs                         | 4,84 blanc, 4,39 gray-100, 3,93 au pire sur le dégradé (extrémité indigo-100 ; 4,44 sur blue-50 ; 3:1 requis)                                                      |
-| `page-from`, `page-to`              | blue-50, indigo-100  | dégradé de fond de page, porté par `html`  | texte sur le dégradé : voir ci-dessous                                                                                                                             |
-| `line`                              | gray-300             | cadre de carte, séparateur                 | décoratif, pas pour un champ                                                                                                                                       |
-| `disabled`                          | gray-400             | fond d'un bouton désactivé                 |                                                                                                                                                                    |
-| `primary` / `-hover`                | blue-600 / 700       | action principale                          | texte blanc 4,5:1 ou plus                                                                                                                                          |
-| `action-strong` / `-hover`          | blue-700 / 900       | bouton secondaire, lien                    | aussi texte sur gris : 4,5:1 ou plus                                                                                                                               |
-| `success`, `warning`                | green-700, amber-700 | toast de succès, alerte                    | texte blanc 4,5:1 ou plus                                                                                                                                          |
-| `danger` / `-hover`, `danger-soft`  | red-700 / 900, 100   | l'unique couleur d'erreur, fond d'erreur   | 5,21:1 ou plus sur blanc, gray-100, red-100, dégradé                                                                                                               |
-| `info`                              | gray-800             | fond du toast d'information                | blanc dessus 14,7:1 ; jamais la couleur d'une action                                                                                                               |
-| `focus`, `focus-inverse`            | blue-700, blanc      | contour de focus                           | 6,83 blanc, 5,55 indigo-100 ; inverse 4,95 ou plus sur les toasts (succès 4,95, avertissement 5,03, erreur 6,42, info 6,83)                                        |
+| Jeton                                                      | Teinte                                  | Usage                                      | Contraste (source : commentaires de `layout.css`)                                                                                                                  |
+| ---------------------------------------------------------- | --------------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `surface`, `surface-muted`                                 | blanc, gray-100                         | carte, ligne de liste                      |                                                                                                                                                                    |
+| `heading`                                                  | gray-900                                | titres et chiffres                         | 17,9:1 sur blanc                                                                                                                                                   |
+| `surface-hover`, `surface-selected`                        | gray-200, blue-100                      | ligne sous le pointeur, ligne sélectionnée | mesurés (`readable-lists.test.ts`) : nom 16,96 / 17,21, e-mail 6,10 / 6,19 (survol / sélectionnée) ; barre `primary` 4,30:1 et coche 6,19:1 sur `surface-selected` |
+| `label`, `muted`, `subtle`                                 | gray-700, 600, 500                      | libellé, texte secondaire, état vide       | muted 7,56:1 ; subtle 4,84:1 sur blanc                                                                                                                             |
+| `field-border`                                             | gray-500                                | bordure des champs                         | 4,84 blanc, 4,39 gray-100, 3,93 au pire sur le dégradé (extrémité indigo-100 ; 4,44 sur blue-50 ; 3:1 requis)                                                      |
+| `page-from`, `page-to`                                     | blue-50, indigo-100                     | dégradé de fond de page, porté par `html`  | texte sur le dégradé : voir ci-dessous                                                                                                                             |
+| `line`                                                     | gray-300                                | cadre de carte, séparateur                 | décoratif, pas pour un champ                                                                                                                                       |
+| `disabled`                                                 | gray-400                                | fond d'un bouton désactivé                 |                                                                                                                                                                    |
+| `primary` / `-hover`                                       | blue-600 / 700                          | action principale                          | texte blanc 4,5:1 ou plus                                                                                                                                          |
+| `action-strong` / `-hover`                                 | blue-700 / 900                          | bouton secondaire, lien                    | aussi texte sur gris : 4,5:1 ou plus                                                                                                                               |
+| `success`, `warning`                                       | green-700, amber-700                    | toast de succès, alerte                    | texte blanc 4,5:1 ou plus                                                                                                                                          |
+| `danger` / `-hover`, `danger-soft`                         | red-700 / 900, 100                      | l'unique couleur d'erreur, fond d'erreur   | 5,21:1 ou plus sur blanc, gray-100, red-100, dégradé                                                                                                               |
+| `info`                                                     | gray-800                                | fond du toast d'information                | blanc dessus 14,7:1 ; jamais la couleur d'une action                                                                                                               |
+| `success-edge`, `danger-edge`, `warning-edge`, `info-edge` | green-900, red-950, amber-900, gray-950 | bord gauche de 4 px d'un toast             | 3:1 ou plus sur la page (`tests/e2e/icons.test.ts`)                                                                                                                |
+| `focus`, `focus-inverse`                                   | blue-700, blanc                         | contour de focus                           | 6,83 blanc, 5,55 indigo-100 ; inverse 4,95 ou plus sur les toasts (succès 4,95, avertissement 5,03, erreur 6,42, info 6,83)                                        |
 
 Preuves : `tests/e2e/focus-and-errors.test.ts` (même contour de focus à 4,5:1, même
 rouge pour toutes les erreurs, dans les quatre langues), `tests/e2e/field-borders.test.ts`
@@ -209,8 +210,12 @@ d'utilisateurs (`reveal-tasks.ts`).
 
 Règles complémentaires ([focus-states](https://designmotionhq.com/patterns/focus-states)) : `:focus-visible` seulement ; l'ordre du DOM est
 l'ordre visuel ; dans une modale, le focus est piégé, Échap ferme et rend le focus au
-déclencheur. **Cible** : un lien d'évitement comme premier élément focalisable
-(absent aujourd'hui).
+déclencheur. Un **lien d'évitement** (`SkipLink`, « Aller au contenu principal », traduit)
+est le premier élément focalisable de chaque page, avant même le bandeau de panne : caché
+(`sr-only`) tant qu'il n'a pas le focus, en haut à gauche et lisible (4,5:1 ou plus) au focus
+(WCAG 2.4.1). Il mène à `#main-content` (le `<main>` de `PageShell`) et y met le focus par
+script, car SvelteKit prend en charge les liens à ancre sans déplacer le focus. Preuves :
+`tests/e2e/keyboard-focus.test.ts` (quatre langues, bandeau de panne, page des statistiques).
 
 La pile de toasts est fixée en bas ; sa hauteur mesurée (`--toast-stack-height`,
 publiée par `Notification`) est réservée par `scroll-padding-bottom` et
@@ -333,9 +338,10 @@ Action sans texte (aujourd'hui : fermer un toast, supprimer une tâche), avec un
 (16 px, trait 1,5 px, `aria-hidden`, voir [Icônes](#icônes)) : le nom accessible reste celui du
 bouton, et il nomme l'objet (`tasks_delete_named`, `notifications_dismiss`).
 
-Sur écran tactile, le bouton « Supprimer » d'une tâche reçoit une cible de 44 px par `class`
-(`TaskItem.svelte`, `TOUCH_TARGET`). **Cible** ([hover-trap](https://designmotionhq.com/patterns/hover-trap)) :
-la croix de fermeture du toast et `IconButton` lui-même gardent 24 px.
+Sur écran tactile, `IconButton` passe lui-même à 44 px (`pointer-coarse:min-h-11
+pointer-coarse:min-w-11`, deux tons), donc la croix du toast et le bouton « Supprimer » d'une
+tâche ([hover-trap](https://designmotionhq.com/patterns/hover-trap)) ; preuve :
+`tests/unit/components/IconButton.test.ts`, `tests/e2e/icons.test.ts`.
 
 ### Card
 
@@ -465,12 +471,23 @@ Règles complémentaires ([notification-system](https://designmotionhq.com/patte
 - Quatre surfaces selon la gravité : toast, bandeau, modale, badge ; chacune a sa
   persistance. Une info ne justifie jamais une modale ; jamais de modales
   superposées ; les toasts s'empilent.
-- Un toast porte couleur et icône (`ToastItem.svelte` : `TOAST_ICONS`, une icône par type) ;
-  **Cible** : la bordure d'accent, que `ToastItem.svelte` n'a pas. Il ne
+- Un toast porte couleur, icône et bordure d'accent : fond par type (`TOAST_BACKGROUNDS`),
+  icône de type, bord gauche de 4 px plus foncé que le fond (`TOAST_BORDERS`, jetons
+  `*-edge`, 3:1 ou plus sur la page ; `tests/e2e/icons.test.ts`). Il ne
   s'affiche jamais au centre de l'écran. Les durées actuelles (3 s, 6 s) et la pile
-  fixée en bas font autorité ; au-delà d'un petit nombre de toasts visibles, le
-  surplus attend en file et le nombre de toasts visibles est plafonné (**Cible** : aucun plafond
-  aujourd'hui).
+  fixée en bas font autorité.
+- **Plafond** : trois toasts visibles (`MAX_VISIBLE_TOASTS`), le surplus attend dans une file
+  dans l'ordre d'arrivée (`notifications.shown` est ce qui est affiché, `items` tout ce qui
+  n'est pas fermé). La file n'a pas de borne : elle est dédupliquée (une erreur persistante
+  identique n'y entre qu'une fois). Les erreurs persistantes comptent dans les trois places et
+  ne sont jamais évincées. Un toast qui porte une action (la fenêtre d'annulation de 6 s) n'attend
+  jamais et ne compte pas dans les trois. Le minuteur d'un toast ne démarre que lorsqu'il est
+  affiché, pour sa durée entière : un message n'expire pas sans avoir été vu. Un toast en file est
+  annoncé quand il s'affiche, pas quand il arrive. Preuves : `tests/unit/stores/notification.test.ts`,
+  `tests/unit/components/Notification.test.ts`, `tests/e2e/persistent-errors.test.ts`.
+- La croix de fermeture (`IconButton`) garde 24 px à la souris et passe à 44 px sur pointeur
+  grossier (`tests/e2e/icons.test.ts`, Chromium tactile : les autres moteurs n'émulent pas
+  `pointer: coarse`).
 - Une erreur 5xx ou réseau reste jusqu'à fermeture ; les autres erreurs durent 6 s
   (`tests/e2e/persistent-errors.test.ts`).
 

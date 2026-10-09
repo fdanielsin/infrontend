@@ -8,6 +8,8 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - The lint refuses imports that break the direction of the dependencies (ui, features, state,
   api and routes), and contract types or `$env` read outside their place.
+- A "Skip to main content" link is the first stop of every page for keyboard users, in the four
+  languages (infrontend#70).
 - A design system guide documents the tokens, components, patterns and content rules of the
   interface (`docs/design-system.md`) (infrontend#45).
 - The design system guide now holds the rules of all 76 reference pattern sheets: rules for
@@ -23,6 +25,9 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- At most three toasts are shown at once, the others wait their turn (an undo window never
+  waits); each toast type has its own left edge, and the close cross is a 44 px target on touch
+  screens (infrontend#70).
 - Emoji are replaced by Iconoir icons; buttons and links get an icon beside their text, toasts
   one per type, field errors an icon with the message, and the description field says it is
   optional (infrontend#63).
