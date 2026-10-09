@@ -1,12 +1,13 @@
 import type { Task } from '$lib/api/client';
+import type { TaskOrder } from '$lib/state/task-order';
 
-export const TASK_ORDERS = ['created', 'title', 'status'] as const;
-export type TaskOrder = (typeof TASK_ORDERS)[number];
-export const DEFAULT_TASK_ORDER: TaskOrder = 'created';
-
-export function isTaskOrder(value: unknown): value is TaskOrder {
-	return TASK_ORDERS.some((order) => order === value);
-}
+// The list of orders belongs to the state that remembers the choice (state does not import features).
+export {
+	DEFAULT_TASK_ORDER,
+	TASK_ORDERS,
+	isTaskOrder,
+	type TaskOrder
+} from '$lib/state/task-order';
 
 const byId = (a: Task, b: Task) => a.id - b.id;
 

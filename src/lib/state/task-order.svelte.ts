@@ -1,4 +1,4 @@
-import { DEFAULT_TASK_ORDER, isTaskOrder, type TaskOrder } from '$lib/features/tasks/sort-tasks';
+import { DEFAULT_TASK_ORDER, isTaskOrder, type TaskOrder } from './task-order';
 
 export const TASK_ORDER_STORAGE_KEY = 'indrive.task-order';
 
