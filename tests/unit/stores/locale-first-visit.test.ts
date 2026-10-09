@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // The first language detection happens when the application state is built, during
 // hydration. Each test loads fresh modules, as a page load would.
@@ -9,6 +9,12 @@ async function freshAppState() {
 }
 
 describe('first language detection', () => {
+	// The first import transforms the whole module graph, which can exceed the default
+	// timeout under load; later imports hit the cache. Warm it once, outside any test.
+	beforeAll(async () => {
+		await import('$lib/state/app-state.svelte');
+	}, 60_000);
+
 	beforeEach(() => {
 		document.cookie = 'PARAGLIDE_LOCALE=; path=/; max-age=0';
 	});
