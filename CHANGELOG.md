@@ -14,7 +14,7 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Icons come from Iconoir through one `Icon` component: sizes of 16, 20 and 24 px, a single
   1.5 px stroke, always hidden from assistive technology (infrontend#53).
 - A toast can carry an action button and a close callback (pressed, dismissed or expired), for
-  an "Undo" on a deletion; no visible change yet.
+  an "Undo" on a deletion; no visible change yet (infrontend#54).
 
 ### Changed
 
