@@ -45,7 +45,7 @@ test.describe('Task management', () => {
 			(response) => response.request().method() === 'DELETE' && response.url().includes('/tasks/')
 		);
 		await page.getByRole('button', { name: `Delete ${taskTitle} updated` }).click();
-		await expect(page.getByText(`${taskTitle} updated`)).not.toBeVisible();
+		await expect(checkbox).toHaveCount(0);
 		// The DELETE waits for the end of the Undo toast: closing it sends it now.
 		await page.getByRole('button', { name: 'Dismiss notification' }).click();
 		expect((await deleted).ok()).toBe(true);

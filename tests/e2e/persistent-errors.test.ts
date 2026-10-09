@@ -78,9 +78,14 @@ test.describe('Error toast duration (mocked API)', () => {
 		);
 
 		// WHEN: Two deletions fail the same way, then a minute passes.
+		// (A deletion is sent when its Undo toast ends: closing the toast sends it now.)
+		const closeUndoToast = () =>
+			page.getByRole('status').getByRole('button', { name: 'Dismiss notification' }).click();
 		await page.getByRole('button', { name: 'Delete Review 2' }).click();
+		await closeUndoToast();
 		await expect(alertToasts(page)).toHaveCount(1);
 		await page.getByRole('button', { name: 'Delete Review', exact: true }).click();
+		await closeUndoToast();
 		await page.clock.runFor(60_000);
 
 		// THEN: One toast, not two, and it has not left.
