@@ -140,19 +140,19 @@ test.describe('Focus and errors (computed style, mocked API)', () => {
 
 	for (const width of [1280, 320]) {
 		test(`the focus outline of the toast Undo button is white and at 4.5:1 or more, at ${width} px (limit)`, async ({
-			page,
-			browserName
+			page
 		}) => {
 			// GIVEN: A deleted task: its toast offers Undo, on its green background.
 			await page.setViewportSize({ width, height: 900 });
 			await mockApi(page, { users: [ada], tasks: adaTasks });
 			await openHomeWithUser(page);
-			await page.getByRole('button', { name: 'Delete Review 2' }).click();
+			const del = page.getByRole('button', { name: 'Delete Review 2' });
+			await del.focus();
+			await page.keyboard.press('Enter');
 			const undo = page.getByRole('button', { name: 'Undo' });
-			await expect(undo).toBeVisible();
 
-			// WHEN: The button is reached with Tab.
-			await tabTo(page, undo, browserName);
+			// WHEN: The keyboard deletion has put the focus on it (so `:focus-visible` applies).
+			await expect(undo).toBeFocused();
 			await waitForStableScroll(page);
 
 			// THEN: The outline is the inverse one, white, 2 px, readable on the toast.
