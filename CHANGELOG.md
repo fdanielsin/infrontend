@@ -62,11 +62,11 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   that covers the list actions; screen readers still get the news, in a hidden live region, and
   the language announcement is written in the new language (visual review 28, 42) (infrontend#52).
 - A failed request is shown once, as a toast with its reference, no longer also in a red box in
-  the form; an e-mail already in use is shown under the e-mail field (visual review 23).
+  the form; an e-mail already in use is shown under the e-mail field (visual review 23) (infrontend#62).
 - During an outage the user list no longer claims "Users (0) / No users yet": it says it waits
-  for the service, or offers "Retry" after a failure (visual review 25).
+  for the service, or offers "Retry" after a failure (visual review 25) (infrontend#62).
 - Error messages are worded for people in the four languages instead of "Failed to fetch users"
-  or "Unknown error"; the creation errors say the entries are kept (visual review 24).
+  or "Unknown error"; the creation errors say the entries are kept (visual review 24) (infrontend#62).
 
 ## [1.3.0] - 2026-10-08
 
