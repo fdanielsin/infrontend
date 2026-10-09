@@ -68,15 +68,17 @@ et un « GO » explicite.
       versionné `.githooks/pre-push`), bloc `test` mort de
       `vite.config.ts` (jamais exécuté, masqué par `vitest.config.ts`). Ce lot
       remplace l'ancien "Lot 7".
-- [ ] Lot 2 — F-01 (le client HTTP perd le message d'erreur du backend sur
+- [x] Lot 2 — F-01 (le client HTTP perd le message d'erreur du backend sur
       toute réponse non-2xx) et F-02 (partage `loading`/`error` entre
-      `users` et `tasks`, symptôme visible encore présent après le nettoyage).
-- [ ] Lot 3 — Q-07.
+      `users` et `tasks`) : infrontend#7 (et infrontend#10 pour une tâche déjà
+      supprimée côté serveur).
+- [x] Lot 3 — Q-07 : infrontend#6.
 - [x] Lot 5 — doublon du job CI "component-tests" (relance exactement
       `bun run test`, déjà fait par "unit-tests").
-- [ ] Lot 8 — propositions d'amélioration : FP-03 (confirmation avant
-      suppression d'une tâche), FP-01 (filtrer les tâches), FP-02 (compteur
-      de tâches restantes), FP-04 (« tout marquer comme terminé »).
+- [ ] Lot 8 — propositions d'amélioration : FP-01 (filtrer les tâches), FP-02
+      (compteur de tâches restantes), FP-04 (« tout marquer comme terminé »).
+      FP-03 (confirmation avant suppression d'une tâche) est remplacée par une
+      annulation de 6 s après la suppression (`UNDO_DURATION`, `tasks.svelte.ts`).
 
 ## Hors périmètre actuel
 

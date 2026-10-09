@@ -331,11 +331,11 @@ Action sans texte (aujourd'hui : fermer un toast, supprimer une tâche), avec un
 `danger-hover`) et `inverse` (sur fond coloré, contour de focus blanc). Cible
 `min-h-6 min-w-6`. Le dessin est la croix `xmark` d'Iconoir par `Icon`
 (16 px, trait 1,5 px, `aria-hidden`, voir [Icônes](#icônes)) : le nom accessible reste celui du
-bouton. À faire : un nom qui nomme l'objet (« Supprimer {titre} », « Fermer la
-notification »).
+bouton, et il nomme l'objet (`tasks_delete_named`, `notifications_dismiss`).
 
-Sur écran tactile, la cible visuelle de 24 px reçoit une zone de tap de 44 px
-(**Cible**, [hover-trap](https://designmotionhq.com/patterns/hover-trap)).
+Sur écran tactile, le bouton « Supprimer » d'une tâche reçoit une cible de 44 px par `class`
+(`TaskItem.svelte`, `TOUCH_TARGET`). **Cible** ([hover-trap](https://designmotionhq.com/patterns/hover-trap)) :
+la croix de fermeture du toast et `IconButton` lui-même gardent 24 px.
 
 ### Card
 
@@ -390,7 +390,7 @@ en cours de modification ne se coche ni ne se supprime. Les actions « Modifier 
 ont une cible de 44 px sur pointeur grossier (`pointer-coarse:min-h-11 pointer-coarse:min-w-11`,
 passés par `class`). La case à cocher reste de 16 px ; sur pointeur grossier, une zone vide de
 44 px autour d'elle (`data-touch-target`) renvoie le tap à la case, qui garde son nom et le
-clavier. **Cible** : mêmes icônes pour les deux actions (lot Iconoir).
+clavier. « Modifier » porte l'icône `edit-pencil` et « Supprimer » la croix `xmark` (`TaskItem.svelte`).
 `ClampedText` limite la description à trois lignes (`line-clamp-3`) ; le bouton « Afficher
 plus / moins » n'existe que si le texte déborde (un pixel d'écart est un arrondi), reste
 disponible une fois déplié, et porte un nom propre à la ligne (« Afficher plus : {titre} »,
@@ -465,10 +465,12 @@ Règles complémentaires ([notification-system](https://designmotionhq.com/patte
 - Quatre surfaces selon la gravité : toast, bandeau, modale, badge ; chacune a sa
   persistance. Une info ne justifie jamais une modale ; jamais de modales
   superposées ; les toasts s'empilent.
-- Un toast porte couleur, icône et bordure d'accent (**Cible** pour l'icône et la bordure : `ToastItem.svelte` lignes 31-34 n'a que la couleur). Il ne
+- Un toast porte couleur et icône (`ToastItem.svelte` : `TOAST_ICONS`, une icône par type) ;
+  **Cible** : la bordure d'accent, que `ToastItem.svelte` n'a pas. Il ne
   s'affiche jamais au centre de l'écran. Les durées actuelles (3 s, 6 s) et la pile
   fixée en bas font autorité ; au-delà d'un petit nombre de toasts visibles, le
-  surplus attend en file (**Cible**).
+  surplus attend en file et le nombre de toasts visibles est plafonné (**Cible** : aucun plafond
+  aujourd'hui).
 - Une erreur 5xx ou réseau reste jusqu'à fermeture ; les autres erreurs durent 6 s
   (`tests/e2e/persistent-errors.test.ts`).
 
@@ -568,7 +570,7 @@ Règles complémentaires ([loading-states-system](https://designmotionhq.com/pat
   connu. Pas de squelette pour une action de l'utilisateur (voir « Réponse
   optimiste ») ; pas de mélange squelette et spinner. Un shimmer ne tourne que sous
   `prefers-reduced-motion: no-preference`.
-- Un état vide a (**Cible** pour l'icône, absente aujourd'hui) une petite icône ou illustration, le ton de la marque et une action
+- Un état vide a (**Cible** pour l'icône : seul l'état « aucun utilisateur choisi » l'a, `TaskForm.svelte` ; les listes vides d'utilisateurs et de tâches et la page statistiques vide n'en ont pas) une petite icône ou illustration, le ton de la marque et une action
   principale vers l'étape suivante. Quatre cas : premier lancement, aucun résultat,
   erreur, résultat filtré. Jamais « No data » nu ni un ton de journal technique.
 
@@ -724,9 +726,10 @@ de classes les fige : ne pas les remplacer par un jeton sans prévenir qa.
 
 ## 7. Cible
 
-Non réalisé : l'usage de `Icon` (voir [Icônes](#icônes)) à côté du texte des actions, dans
-les toasts, le bandeau et les états vides, et à la place des émojis décoratifs ; l'unification
-des écarts listés en section 2.
+Réalisé : `Icon` (voir [Icônes](#icônes)) accompagne les actions, les toasts et le bandeau, et
+remplace les émojis décoratifs. Non réalisé : les icônes des états vides (liste des
+utilisateurs, liste des tâches, statistiques sans données) ; l'unification des écarts listés en
+section 2.
 
 ## 8. Motifs à venir
 
