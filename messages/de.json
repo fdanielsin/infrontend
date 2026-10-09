@@ -1,5 +1,6 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"skip_to_content": "Zum Hauptinhalt springen",
 	"language_label": "Sprache",
 	"language_changed": "Sprache geändert: {language}",
 	"home_page_title": "inBackend - Aufgabenverwaltung",

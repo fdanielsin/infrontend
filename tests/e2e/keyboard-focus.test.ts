@@ -1,5 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { nextFocusKey } from './support/keyboard';
+import { measure, worstContrast } from './support/contrast';
 import { ada, adaTasks, mockApi, openHomeWithUser } from './support/mock-api';
 
 // Keyboard and focus behavior in a real browser, with a mocked API. Actions use
@@ -295,6 +296,91 @@ test.describe('Keyboard and focus (mocked API)', () => {
 			expect(await animation()).toMatch(/slideIn/);
 			await page.emulateMedia({ reducedMotion: 'reduce' });
 			expect(await animation()).toBe('none');
+		});
+	});
+
+	test.describe('skip link', () => {
+		const SKIP_LINK = {
+			en: 'Skip to main content',
+			fr: 'Aller au contenu principal',
+			de: 'Zum Hauptinhalt springen',
+			es: 'Saltar al contenido principal'
+		} as const;
+
+		for (const [locale, name] of Object.entries(SKIP_LINK)) {
+			test(`the first Tab reaches the skip link in ${locale}; it shows, and Enter moves the focus into the page (happy path)`, async ({
+				page,
+				context,
+				browserName
+			}) => {
+				// GIVEN: A page in the language.
+				await context.addCookies([
+					{ name: 'PARAGLIDE_LOCALE', value: locale, url: 'http://localhost:4173' }
+				]);
+				await mockApi(page, { users: [ada], tasks: adaTasks });
+				const usersLoaded = page.waitForResponse(
+					(response) =>
+						response.url().endsWith('/api/v1/users') && response.request().method() === 'GET'
+				);
+				await page.goto('/');
+				await usersLoaded;
+				const link = page.getByRole('link', { name, exact: true });
+
+				// THEN: Out of focus it is not on screen.
+				expect((await link.boundingBox())?.width ?? 0).toBeLessThanOrEqual(1);
+
+				// WHEN: Tab is pressed once.
+				await page.keyboard.press(nextFocusKey(browserName));
+
+				// THEN: It is focused and shown at the top left, readable and in the viewport.
+				await expect(link).toBeFocused();
+				const box = await link.boundingBox();
+				expect(box!.x).toBeGreaterThanOrEqual(0);
+				expect(box!.y).toBeGreaterThanOrEqual(0);
+				expect(box!.width).toBeGreaterThan(40);
+				const colors = await measure(link, 'color', 'self');
+				expect(worstContrast(colors)).toBeGreaterThanOrEqual(4.5);
+
+				// WHEN: Enter is pressed.
+				await page.keyboard.press('Enter');
+
+				// THEN: The page landmark has the focus and the next Tab enters the content.
+				await expect(page.locator('main')).toBeFocused();
+				await page.keyboard.press(nextFocusKey(browserName));
+				await expect(page.locator('main').locator(':focus')).toBeVisible();
+			});
+		}
+
+		test('it stays the first stop while the outage banner is shown, and exists once (boundary)', async ({
+			page,
+			browserName
+		}) => {
+			// GIVEN: A service that is down, so the banner offers Retry.
+			const api = await mockApi(page, { users: [] });
+			api.readiness = 503;
+			await page.goto('/');
+			await expect(page.getByRole('region', { name: /Service status/ })).toBeVisible();
+
+			// WHEN: Tab is pressed once.
+			await page.keyboard.press(nextFocusKey(browserName));
+
+			// THEN: The skip link is focused before the Retry button.
+			await expect(page.getByRole('link', { name: 'Skip to main content' })).toBeFocused();
+			await expect(page.getByRole('link', { name: 'Skip to main content' })).toHaveCount(1);
+		});
+
+		test('it also leads to the main landmark of the statistics page (boundary)', async ({
+			page,
+			browserName
+		}) => {
+			await mockApi(page, { users: [] });
+			await page.goto('/stats');
+
+			await page.keyboard.press(nextFocusKey(browserName));
+			await expect(page.getByRole('link', { name: 'Skip to main content' })).toBeFocused();
+			await page.keyboard.press('Enter');
+
+			await expect(page.locator('main')).toBeFocused();
 		});
 	});
 });

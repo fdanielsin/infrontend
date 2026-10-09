@@ -1,5 +1,6 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"skip_to_content": "Aller au contenu principal",
 	"language_label": "Langue",
 	"language_changed": "Langue modifiée : {language}",
 	"home_page_title": "inBackend - Gestion des tâches",

@@ -4,6 +4,7 @@
 	import favicon from '$lib/assets/favicon.svg';
 	import ApiVersion from '$lib/features/availability/ApiVersion.svelte';
 	import AvailabilityBanner from '$lib/features/availability/AvailabilityBanner.svelte';
+	import SkipLink from '$lib/ui/SkipLink.svelte';
 	import Notification from '$lib/ui/Notification.svelte';
 	import { flushOnLeave } from '$lib/state/flush-on-leave';
 	import { AppState, setAppState } from '$lib/state/app-state.svelte';
@@ -18,6 +19,7 @@
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
+<SkipLink />
 <AvailabilityBanner />
 {@render children()}
 <ApiVersion />

@@ -32,6 +32,7 @@
 </script>
 
 <main
+	id="main-content"
 	bind:this={element}
 	tabindex="-1"
 	class={['min-h-screen p-4 focus:outline-none sm:p-8', className]}
