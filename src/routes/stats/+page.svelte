@@ -53,11 +53,11 @@
 		</ButtonLink>
 	{/snippet}
 
-	<div class="max-w-2xl">
+	<div>
 		<!-- Each state says what is true: figures, a wait for the service, a load in progress, a
 		     failure with its way out, or nothing to count. A toast carries the error detail. -->
 		{#if stats && stats.users === 0 && stats.tasks === 0}
-			<Card variant="flat" padding="lg" class="text-center">
+			<Card variant="flat" padding="lg" class="mx-auto max-w-2xl text-center">
 				<p class="text-muted">{m.stats_empty()}</p>
 				<a
 					href={resolve('/')}
@@ -102,15 +102,15 @@
 				</Card>
 			</div>
 		{:else if availability.status === 'unavailable'}
-			<Card variant="flat" padding="lg" class="text-center">
+			<Card variant="flat" padding="lg" class="mx-auto max-w-2xl text-center">
 				<p class="text-muted">{m.stats_unavailable()}</p>
 			</Card>
 		{:else if status.loading}
-			<Card variant="flat" padding="lg" class="text-center">
+			<Card variant="flat" padding="lg" class="mx-auto max-w-2xl text-center">
 				<p class="text-muted">{m.stats_loading()}</p>
 			</Card>
 		{:else}
-			<Alert class="font-semibold">
+			<Alert class="mx-auto max-w-2xl font-semibold">
 				<p>{m.stats_load_failed()}</p>
 				<Button
 					variant="secondary"

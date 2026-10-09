@@ -377,6 +377,33 @@ test.describe('Statistics tiles (mocked API)', () => {
 		}
 	});
 
+	for (const width of [1280, 768]) {
+		test(`the three tiles share the width of the content, as on the home page, at ${width} px (boundary)`, async ({
+			page
+		}) => {
+			// GIVEN: The statistics page, whose title and language switcher mark the content edges.
+			await page.setViewportSize({ width, height: 900 });
+			await mockApi(page, { users: [ada], tasks: adaTasks, stats: { users: 5, tasks: 12 } });
+			await page.goto('/stats');
+			const heading = (await page.getByRole('heading', { level: 1 }).boundingBox())!;
+			const language = (await page.getByRole('combobox', { name: 'Language' }).boundingBox())!;
+
+			// WHEN: The tiles are measured.
+			const tiles = await page
+				.locator('[data-stat]')
+				.evaluateAll((nodes) =>
+					nodes.map((node) => node.getBoundingClientRect()).map(({ x, width }) => ({ x, width }))
+				);
+
+			// THEN: Equal widths, from the left edge of the title to the right edge of the switcher.
+			expect(tiles).toHaveLength(3);
+			for (const tile of tiles) expect(tile.width).toBeCloseTo(tiles[0]!.width, 0);
+			expect(tiles[0]!.x).toBeCloseTo(heading.x, 0);
+			const last = tiles[2]!;
+			expect(last.x + last.width).toBeCloseTo(language.x + language.width, 0);
+		});
+	}
+
 	test('the figures share one neutral color: no meaning in blue versus indigo (happy path)', async ({
 		page
 	}) => {
