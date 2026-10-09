@@ -436,12 +436,31 @@ export interface components {
              * @description Normalisé par le serveur : espaces de début et de fin retirés,
              *     minuscules. L'email renvoyé est la forme normalisée, et l'unicité
              *     porte sur elle (`A@x.io` après `a@x.io` : 409 `EMAIL_TAKEN`).
-             *     Format minimal (pas la RFC 5322), sinon 400 `VALIDATION_FAILED` :
-             *     un seul `@`, une partie locale non vide, un domaine d'au moins
-             *     deux labels non vides séparés par des points (`a@.c`, `a@b.` et
-             *     `a@b..c` sont refusés), et aucun espace ni caractère de contrôle
-             *     (après retrait des espaces de début et de fin). Un email vide ou
-             *     composé d'espaces est aussi refusé.
+             *     Format contrôlé sur la forme normalisée (pas la RFC 5322 complète),
+             *     sinon 400 `VALIDATION_FAILED`. Longueurs en caractères Unicode.
+             *     Règle exacte, à appliquer à l'identique côté client :
+             *
+             *     - aucun espace ni caractère de contrôle ;
+             *     - un seul `@` ;
+             *     - partie locale de 1 à 64 caractères, sans point au début ni à la
+             *       fin et sans deux points consécutifs (`.q@b.co`, `q.@b.co` et
+             *       `q..x@b.co` sont refusés, `q.x@b.co` accepté) ;
+             *     - domaine d'au moins deux labels séparés par des points ;
+             *     - chaque label fait de 1 à 63 caractères : lettres (Unicode
+             *       admis, `\p{L}`), signes combinants (`\p{M}`, pour les alphabets
+             *       qui en ont besoin), chiffres (`\p{Nd}`) et tiret `-`, sans tiret
+             *       au début ni à la fin (donc pas de `_`) ;
+             *     - dernier label (TLD) : soit 2 à 24 lettres Unicode
+             *       (`\p{L}` et `\p{M}`, premier caractère une lettre ; ni chiffre
+             *       ni tiret), soit la forme punycode `xn--` suivie d'au moins un
+             *       caractère, 24 caractères au plus au total.
+             *
+             *     Acceptés : `ada@exemple.fr`, `ivan@пример.рф`, `a@b.co`,
+             *     `a@b.xn--p1ai`. Refusés : `a@b.c` (TLD d'un caractère),
+             *     `a@b_c.com` (`_`), `a@-b.com` et `a@b-.com` (tiret au bord),
+             *     `a@b.c0m` (chiffre dans le TLD), une partie locale de 65
+             *     caractères, un label de 64 caractères, un TLD de 25 lettres.
+             *     Un email vide ou composé d'espaces est aussi refusé.
              */
             email: string;
         };
