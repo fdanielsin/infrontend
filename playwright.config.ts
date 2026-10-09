@@ -1,7 +1,10 @@
 import { defineConfig, devices } from '@playwright/test';
 
 // Each worktree serves its E2E build on its own port (`E2E_PORT`), so that two runs never meet.
-const PORT = Number(process.env.E2E_PORT ?? 4173);
+const PORT = Number(process.env.E2E_PORT || 4173);
+if (!Number.isInteger(PORT) || PORT < 1 || PORT > 65_535) {
+	throw new Error(`E2E_PORT must be a whole number from 1 to 65535, got "${process.env.E2E_PORT}"`);
+}
 
 export default defineConfig({
 	testDir: './tests/e2e',
