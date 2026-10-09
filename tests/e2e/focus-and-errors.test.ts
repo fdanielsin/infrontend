@@ -138,6 +138,40 @@ test.describe('Focus and errors (computed style, mocked API)', () => {
 		).toBeGreaterThanOrEqual(4.5);
 	});
 
+	for (const width of [1280, 320]) {
+		test(`the focus outline of the toast Undo button is white and at 4.5:1 or more, at ${width} px (limit)`, async ({
+			page,
+			browserName
+		}) => {
+			// GIVEN: A deleted task: its toast offers Undo, on its green background.
+			await page.setViewportSize({ width, height: 900 });
+			await mockApi(page, { users: [ada], tasks: adaTasks });
+			await openHomeWithUser(page);
+			await page.getByRole('button', { name: 'Delete Review 2' }).click();
+			const undo = page.getByRole('button', { name: 'Undo' });
+			await expect(undo).toBeVisible();
+
+			// WHEN: The button is reached with Tab.
+			await tabTo(page, undo, browserName);
+			await waitForStableScroll(page);
+
+			// THEN: The outline is the inverse one, white, 2 px, readable on the toast.
+			expect(await outlineOf(undo)).toEqual({ style: 'solid', width: '2px', offset: '2px' });
+			const outline = await measure(undo, 'outlineColor');
+			expect(outline.color).toEqual([255, 255, 255]);
+			const toast = await measure(page.locator('[data-toast]').first(), 'color', 'self');
+			expect(toast.backgrounds, 'the toast has its own background').toHaveLength(1);
+			expect(
+				worstContrast({ color: outline.color, backgrounds: toast.backgrounds })
+			).toBeGreaterThanOrEqual(4.5);
+			// The ring is wholly on screen, not clipped by the toast stack or the window.
+			const box = await undo.boundingBox();
+			const viewport = page.viewportSize()!;
+			expect(box!.x - 4).toBeGreaterThanOrEqual(0);
+			expect(box!.x + box!.width + 4).toBeLessThanOrEqual(viewport.width);
+		});
+	}
+
 	for (const locale of ['en', 'fr', 'de', 'es'] as const) {
 		test(`every error is the same red, at 4.5:1 or more, in ${locale} (sad path)`, async ({
 			page

@@ -19,7 +19,7 @@ async function createUserWithTask(request: APIRequestContext, title: string) {
 }
 
 test.describe('Task already deleted elsewhere', () => {
-	test('deleting it again removes the line and shows an information (limit)', async ({
+	test('deleting it again removes the line, with neither information nor error (limit)', async ({
 		page,
 		request
 	}) => {
@@ -33,13 +33,19 @@ test.describe('Task already deleted elsewhere', () => {
 		// WHEN: The task is deleted through the API, then deleted again from the interface.
 		const deleted = await request.delete(`${API}/api/v1/tasks/${taskId}`);
 		expect(deleted.status()).toBe(200);
+		const answer = page.waitForResponse(
+			(response) =>
+				response.request().method() === 'DELETE' && response.url().endsWith(`/tasks/${taskId}`)
+		);
 		await page.getByRole('button', { name: `Delete ${title}` }).click();
+		// The DELETE waits for the end of the Undo toast: closing it sends it now.
+		await page.getByRole('button', { name: 'Dismiss notification' }).click();
 
-		// THEN: The line disappears, the fixed information is shown, and no error.
+		// THEN: The server answered 404, which meets the user's wish: the line stays out, and neither
+		// an information nor an error is shown.
+		expect((await answer).status()).toBe(404);
 		await expect(page.getByText(title)).not.toBeVisible();
-		await expect(
-			page.getByRole('status').filter({ hasText: 'Task already deleted' })
-		).toBeVisible();
+		await expect(page.getByText('Task already deleted')).toHaveCount(0);
 		await expect(page.getByRole('alert')).toBeEmpty();
 	});
 

@@ -80,6 +80,8 @@ test.describe('Critical journeys on the real backend', () => {
 		// WHEN: One task is deleted from the interface.
 		const deleted = waitForTaskCall(page, 'DELETE', gone.id);
 		await page.getByRole('button', { name: `Delete ${gone.title}`, exact: true }).click();
+		// The DELETE waits for the end of the Undo toast: closing it sends it now.
+		await page.getByRole('button', { name: 'Dismiss notification' }).click();
 		expect((await deleted).ok()).toBe(true);
 
 		// THEN: It is gone from the list, after a reload, and from the server; the other one stays.

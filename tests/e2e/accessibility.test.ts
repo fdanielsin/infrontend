@@ -85,25 +85,42 @@ test.describe('Accessibility (axe, mocked API)', () => {
 	test('error and information toasts with the error banner have no violation (exception)', async ({
 		page
 	}) => {
-		// GIVEN: A selected user; the next toggle fails, the next deletion finds the task gone.
+		// GIVEN: A selected user; the next toggle fails, the one after finds the task gone.
 		const api = await mockApi(page, { users: [ada], tasks: adaTasks });
 		await openHomeWithUser(page);
 		api.failNext('PUT /tasks/{id}', { status: 500, error: 'Database unavailable' });
-		api.failNext('DELETE /tasks/{id}', {
+		// WHEN: Both failures happen.
+		await page.getByRole('checkbox', { name: 'Review', exact: true }).click();
+		await expect(page.getByRole('alert').getByText('Database unavailable')).toBeVisible();
+		api.failNext('PUT /tasks/{id}', {
 			status: 404,
 			error: 'Task not found',
 			code: 'TASK_NOT_FOUND'
 		});
-
-		// WHEN: Both failures happen.
-		await page.getByRole('checkbox', { name: 'Review', exact: true }).click();
-		await expect(page.getByRole('alert').getByText('Database unavailable')).toBeVisible();
-		await page.getByRole('button', { name: 'Delete Review 2' }).click();
+		await page.getByRole('checkbox', { name: 'Review 2', exact: true }).click();
 		await expect(page.getByRole('status').getByText('Task already deleted')).toBeVisible();
 
 		// THEN: No violation.
 		await expectNoViolations(page);
 	});
+
+	for (const width of [1280, 320]) {
+		test(`the toast with its Undo button has no violation at ${width} px (happy path)`, async ({
+			page
+		}) => {
+			// GIVEN: A selected user, at the width.
+			await page.setViewportSize({ width, height: 800 });
+			await mockApi(page, { users: [ada], tasks: adaTasks });
+			await openHomeWithUser(page);
+
+			// WHEN: A task is deleted and its Undo toast is shown.
+			await page.getByRole('button', { name: 'Delete Review 2' }).click();
+			await expect(page.getByRole('status').getByRole('button', { name: 'Undo' })).toBeVisible();
+
+			// THEN: No violation.
+			await expectNoViolations(page);
+		});
+	}
 
 	test('statistics page has no violation and declares the interface language (happy path)', async ({
 		page

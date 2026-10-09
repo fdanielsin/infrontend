@@ -41,8 +41,14 @@ test.describe('Task management', () => {
 		await expect(checkbox).not.toBeChecked();
 		await checkbox.check();
 		await expect(checkbox).toBeChecked();
+		const deleted = page.waitForResponse(
+			(response) => response.request().method() === 'DELETE' && response.url().includes('/tasks/')
+		);
 		await page.getByRole('button', { name: `Delete ${taskTitle} updated` }).click();
 		await expect(page.getByText(`${taskTitle} updated`)).not.toBeVisible();
+		// The DELETE waits for the end of the Undo toast: closing it sends it now.
+		await page.getByRole('button', { name: 'Dismiss notification' }).click();
+		expect((await deleted).ok()).toBe(true);
 
 		// Statistics remain available after task management operations.
 		await page.getByRole('link', { name: /View Statistics/ }).click();

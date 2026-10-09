@@ -1,5 +1,5 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
-import { mockApi, type MockTask, type MockUser } from './support/mock-api';
+import { ada, mockApi, type MockTask, type MockUser } from './support/mock-api';
 
 // Layout (320 px, WCAG 1.4.10): whatever a user typed, at the longest length the API accepts and
 // without a single space, nothing makes the page wider than the window, and the page background
@@ -324,6 +324,27 @@ test.describe('Layout without sideways scroll (mocked API)', () => {
 			await expect(page.getByText(/Cannot create/).first()).toBeVisible();
 
 			// THEN: Neither the inline alert nor the toast widens the page.
+			expect(await overflowing(page)).toEqual([]);
+		});
+
+		test('the Undo toast of a task with a very long title fits at 320 px (technical exception)', async ({
+			page
+		}) => {
+			// GIVEN: A task with a long unbroken title.
+			await page.emulateMedia({ reducedMotion: 'reduce' });
+			await page.setViewportSize({ width: 320, height: 800 });
+			const title = `Long${'z'.repeat(300)}`;
+			await mockApi(page, {
+				users: [ada],
+				tasks: [{ id: 10, title, description: '', user_id: 1, completed: false }]
+			});
+			await openHomeWithUser(page);
+
+			// WHEN: It is deleted.
+			await page.getByRole('button', { name: `Delete ${title}` }).click();
+			await expect(page.getByRole('button', { name: 'Undo' })).toBeVisible();
+
+			// THEN: The toast does not widen the page.
 			expect(await overflowing(page)).toEqual([]);
 		});
 
