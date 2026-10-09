@@ -60,20 +60,16 @@ describe('interface language', () => {
 		expect(document.cookie).toContain('PARAGLIDE_LOCALE=fr');
 	});
 
-	it('clears the errors shown by both features and keeps the toasts (happy path)', () => {
-		// GIVEN: An error in each feature and a toast.
+	it('keeps the toasts and the loading state (happy path)', () => {
+		// GIVEN: A toast and a request in progress.
 		const app = new AppState();
-		app.users.status.error = 'Email already in use';
-		app.tasks.status.error = 'Task not found';
 		app.tasks.status.loading = true;
 		app.notifications.add('Saved', 'success', { duration: 0 });
 
 		// WHEN: The language changes.
 		app.changeLocale('de');
 
-		// THEN: Errors are gone, the toast and the loading state are untouched.
-		expect(app.users.status.error).toBeNull();
-		expect(app.tasks.status.error).toBeNull();
+		// THEN: The toast and the loading state are untouched.
 		expect(app.tasks.status.loading).toBe(true);
 		expect(app.notifications.items.map((toast) => toast.message)).toEqual(['Saved']);
 	});

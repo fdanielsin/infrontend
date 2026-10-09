@@ -335,7 +335,7 @@ test.describe('API calls and server errors', () => {
 	});
 
 	for (const locale of ['fr', 'de', 'es'] as const) {
-		test(`shows a taken email in ${locale}, from its error code (happy path)`, async ({
+		test(`shows a taken email under the field in ${locale}, from its error code (happy path)`, async ({
 			page,
 			context
 		}) => {
@@ -360,8 +360,9 @@ test.describe('API calls and server errors', () => {
 				.fill('ada@example.com');
 			await page.getByRole('button', { name: t(locale, 'users_create_button') }).click();
 
-			// THEN: The toast speaks the interface language, not the English server text.
-			await expect(page.getByRole('alert').getByText(t(locale, 'error_email_taken'))).toBeVisible();
+			// THEN: The field speaks the interface language, not the English server text; no toast.
+			await expect(page.locator('#email-error')).toHaveText(t(locale, 'error_email_taken'));
+			await expect(page.locator('[data-toast]')).toHaveCount(0);
 			await expect(page.getByText('Email already in use')).toHaveCount(0);
 		});
 	}

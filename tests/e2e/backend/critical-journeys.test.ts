@@ -138,12 +138,10 @@ test.describe('Critical journeys on the real backend', () => {
 		await page.getByRole('button', { name: 'Create User' }).click();
 		expect((await refused).status()).toBe(409);
 
-		// THEN: The server refusal is shown in English; the toast is then dismissed, so that only
-		// the form error, rewritten at the next attempt, still carries the English text.
-		const alerts = page.getByRole('alert');
-		await expect(alerts.getByText('Email already in use')).toBeVisible();
-		await alerts.getByRole('button', { name: 'Dismiss notification' }).click();
-		await expect(alerts.getByText('Email already in use')).toHaveCount(0);
+		// THEN: The refusal is shown in English under the email field, with no toast.
+		const emailError = page.locator('#email-error');
+		await expect(emailError).toHaveText('Email already in use');
+		await expect(page.locator('[data-toast]')).toHaveCount(0);
 
 		// WHEN: The interface is switched to French, and the same creation is sent with
 		// Accept-Language: en, so that the server answers in English: only the error code can
@@ -168,7 +166,7 @@ test.describe('Critical journeys on the real backend', () => {
 
 		// THEN: The refusal is shown in French from its code, never with the English server text,
 		// and no second user exists.
-		await expect(alerts.getByText('Cette adresse e-mail est déjà utilisée')).toBeVisible();
+		await expect(emailError).toHaveText('Cette adresse e-mail est déjà utilisée');
 		await expect(page.getByText('Email already in use')).toHaveCount(0);
 		const users = (await (await request.get(`${API}/api/v1/users`)).json()) as {
 			data: UserRecord[];

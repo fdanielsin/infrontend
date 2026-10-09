@@ -15,11 +15,9 @@ export class AppState {
 	readonly tasks = new TaskState(this.notifications);
 	readonly users = new UserState(this.tasks, this.notifications);
 
-	// Errors already shown stay in the old language: they are cleared, toasts expire by themselves.
+	// Toasts already shown stay in the old language: they expire by themselves.
 	changeLocale(locale: Locale) {
 		this.locale.set(locale);
-		this.users.status.error = null;
-		this.tasks.status.error = null;
 	}
 }
 

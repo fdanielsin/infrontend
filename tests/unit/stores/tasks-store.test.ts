@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { api, type ApiResult, type UpdatedTask } from '$lib/api/client';
 import { AppState } from '$lib/state/app-state.svelte';
+import { lastToast } from '../support/last-toast';
 
 function updated(task: { id: number; title: string; description: string; completed: boolean }) {
 	return {
@@ -66,7 +67,7 @@ describe('tasks store', () => {
 		// THEN: The existing state remains intact and the error is exposed.
 		expect(result).toBeUndefined();
 		expect(app.tasks.tasks).toEqual([existingTask]);
-		expect(app.tasks.status.error).toBe('Task rejected');
+		expect(lastToast(app)).toBe('Task rejected');
 	});
 
 	it('edits a task and preserves its completion state (happy path)', async () => {
@@ -108,7 +109,7 @@ describe('tasks store', () => {
 		// THEN: The original task and error remain available.
 		expect(result).toBe(false);
 		expect(app.tasks.tasks).toEqual([task]);
-		expect(app.tasks.status.error).toBe('Task not found');
+		expect(lastToast(app)).toBe('Task not found');
 	});
 
 	it('reports failure and leaves the task untouched when the API rejects a toggle (sad path)', async () => {
@@ -124,7 +125,7 @@ describe('tasks store', () => {
 		// optimistic UI, e.g. the checkbox's own DOM element).
 		expect(result).toBe(false);
 		expect(app.tasks.tasks).toEqual([task]);
-		expect(app.tasks.status.error).toBe('Task locked');
+		expect(lastToast(app)).toBe('Task locked');
 	});
 
 	it('reports failure and leaves the task untouched when toggling throws (sad path)', async () => {
@@ -138,7 +139,7 @@ describe('tasks store', () => {
 		// THEN: The caller learns the toggle failed and the task is unchanged.
 		expect(result).toBe(false);
 		expect(app.tasks.tasks).toEqual([task]);
-		expect(app.tasks.status.error).toBe('Network down');
+		expect(lastToast(app)).toBe('Network down');
 	});
 
 	it('reports success when the API accepts a toggle (happy path)', async () => {
@@ -173,7 +174,7 @@ describe('tasks store', () => {
 			completed: false
 		});
 		expect(app.tasks.tasks).toEqual([task, created]);
-		expect(app.tasks.status.error).toBeNull();
+		expect(lastToast(app)).toBeNull();
 		expect(app.tasks.status.loading).toBe(false);
 	});
 
@@ -201,7 +202,7 @@ describe('tasks store', () => {
 
 		// THEN: The task is listed again and the error is exposed.
 		expect(app.tasks.tasks).toEqual([task]);
-		expect(app.tasks.status.error).toBe('HTTP 500');
+		expect(lastToast(app)).toBe('HTTP 500');
 	});
 
 	it('leaves the list unchanged for an id that is not listed (boundary)', async () => {
@@ -237,31 +238,8 @@ describe('tasks store', () => {
 
 			// THEN: The list is unchanged, the error is exposed and loading is over.
 			expect(app.tasks.tasks).toEqual([task]);
-			expect(app.tasks.status.error).toBe('Network down');
+			expect(lastToast(app)).toBe('Network down');
 			expect(app.tasks.status.loading).toBe(false);
-		}
-	);
-
-	it.each(['toggleTask', 'removeTask'] as const)(
-		'%s clears the previous error at start and after success (happy path, QM-03)',
-		async (action) => {
-			// GIVEN: A previous failure and a request that has not answered yet.
-			app.tasks.tasks = [task];
-			app.tasks.status.error = 'previous failure';
-			let answer!: (value: ApiResult<UpdatedTask>) => void;
-			vi.mocked(api.updateTask).mockReturnValue(new Promise((resolve) => (answer = resolve)));
-			let answerDelete!: (value: ApiResult<void>) => void;
-			vi.mocked(api.deleteTask).mockReturnValue(new Promise((resolve) => (answerDelete = resolve)));
-
-			// WHEN: The action starts, then succeeds.
-			const running =
-				action === 'toggleTask' ? app.tasks.toggle(task.id, true) : removeAndCommit(app, task.id);
-			if (action === 'toggleTask') answer(updated({ ...task, completed: true }));
-			else answerDelete({ success: true, message: 'Task deleted' });
-			await running;
-
-			// THEN: The error stays cleared.
-			expect(app.tasks.status.error).toBeNull();
 		}
 	);
 
@@ -307,10 +285,14 @@ describe('tasks store', () => {
 	});
 
 	it.each([
-		['addTask', () => app.tasks.add('New task', 'Details', 1), 'Failed to create task'],
-		['toggleTask', () => app.tasks.toggle(10, true), 'Failed to update task'],
-		['editTask', () => app.tasks.edit(10, 'Changed', ''), 'Failed to update task'],
-		['removeTask', () => removeAndCommit(app, 10), 'Failed to delete task']
+		[
+			'addTask',
+			() => app.tasks.add('New task', 'Details', 1),
+			"We couldn't add the task. Your entries are kept."
+		],
+		['toggleTask', () => app.tasks.toggle(10, true), "We couldn't update the task."],
+		['editTask', () => app.tasks.edit(10, 'Changed', ''), "We couldn't update the task."],
+		['removeTask', () => removeAndCommit(app, 10), "We couldn't delete the task."]
 	] as const)(
 		'%s shows its own fallback message when the failure has none (limit)',
 		async (_name, action, fallback) => {
@@ -325,7 +307,7 @@ describe('tasks store', () => {
 			await action();
 
 			// THEN: The action's fallback is shown and notified.
-			expect(app.tasks.status.error).toBe(fallback);
+			expect(lastToast(app)).toBe(fallback);
 			expect(app.notifications.items).toEqual([expect.objectContaining({ message: fallback })]);
 		}
 	);

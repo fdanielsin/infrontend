@@ -94,20 +94,6 @@ describe('LanguageSwitcher', () => {
 		}
 	);
 
-	it('clears the errors shown by the features when switching (limit)', async () => {
-		// GIVEN: Errors in both features.
-		app.users.status.error = 'Email already in use';
-		app.tasks.status.error = 'Task not found';
-		const view = renderWithApp(app, LanguageSwitcher);
-
-		// WHEN: French is chosen.
-		await choose(view, 'fr');
-
-		// THEN: No error is left in the old language.
-		expect(app.users.status.error).toBeNull();
-		expect(app.tasks.status.error).toBeNull();
-	});
-
 	it('ignores a value that is not an offered language (exception)', async () => {
 		// GIVEN: A tampered select value.
 		const view = renderWithApp(app, LanguageSwitcher);

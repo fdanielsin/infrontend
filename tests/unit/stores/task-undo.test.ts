@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { api, type ApiResult } from '$lib/api/client';
 import { AppState } from '$lib/state/app-state.svelte';
+import { lastToast } from '../support/last-toast';
 
 vi.mock('$lib/api/client', () => ({
 	api: {
@@ -204,7 +205,7 @@ describe('undoable task deletion', () => {
 				expect(api.deleteTask).toHaveBeenCalledTimes(1);
 				expect(api.deleteTask).toHaveBeenCalledWith(second.id);
 				expect(app.tasks.tasks).toEqual([first, third]);
-				expect(app.tasks.status.error).toBeNull();
+				expect(app.notifications.items.filter((toast) => toast.type === 'error')).toEqual([]);
 			}
 		);
 
@@ -245,7 +246,7 @@ describe('undoable task deletion', () => {
 
 			// THEN: Success in disguise: no error, no information, the list without the task.
 			expect(app.tasks.tasks).toEqual([first, third]);
-			expect(app.tasks.status.error).toBeNull();
+			expect(app.notifications.items.filter((toast) => toast.type === 'error')).toEqual([]);
 			expect(app.notifications.items).toEqual([]);
 		});
 
@@ -258,7 +259,7 @@ describe('undoable task deletion', () => {
 			[
 				'an empty refusal',
 				() => vi.mocked(api.deleteTask).mockResolvedValue({ success: false, error: '' }),
-				'Failed to delete task'
+				"We couldn't delete the task."
 			],
 			[
 				'a thrown error',
@@ -277,7 +278,7 @@ describe('undoable task deletion', () => {
 
 				// THEN: The row is back where it was and the error is shown.
 				expect(app.tasks.tasks).toEqual([first, second, third]);
-				expect(app.tasks.status.error).toBe(message);
+				expect(lastToast(app)).toBe(message);
 				expect(app.notifications.items).toEqual([
 					expect.objectContaining({ message, type: 'error' })
 				]);
@@ -322,7 +323,7 @@ describe('undoable task deletion', () => {
 
 			// WHEN: Another user is selected and the refusal arrives.
 			app.tasks.clear(2);
-			await vi.waitFor(() => expect(app.tasks.status.error).toBe('HTTP 500'));
+			await vi.waitFor(() => expect(lastToast(app)).toBe('HTTP 500'));
 
 			// THEN: The other user's list stays empty.
 			expect(app.tasks.tasks).toEqual([]);

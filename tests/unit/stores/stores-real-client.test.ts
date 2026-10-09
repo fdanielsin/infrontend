@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppState } from '$lib/state/app-state.svelte';
+import { lastToast } from '../support/last-toast';
 
 // These tests keep the real API client and only replace fetch: they check what
 // the stores do with transport failures the client itself does not absorb.
@@ -25,9 +26,12 @@ describe('stores with the real API client', () => {
 		await app.users.fetch();
 
 		// THEN: An explicit error is exposed and notified, the list is kept, loading is over.
-		expect(app.users.status.error).toBe('Invalid server response');
+		expect(lastToast(app)).toBe('We got an unexpected answer from the server.');
 		expect(app.notifications.items).toEqual([
-			expect.objectContaining({ message: 'Invalid server response', type: 'error' })
+			expect.objectContaining({
+				message: 'We got an unexpected answer from the server.',
+				type: 'error'
+			})
 		]);
 		expect(app.users.users).toEqual([ada]);
 		expect(app.users.status.loading).toBe(false);
@@ -43,11 +47,11 @@ describe('stores with the real API client', () => {
 		// THEN: Nothing is added and the network error reaches the store.
 		expect(result).toBeUndefined();
 		expect(app.tasks.tasks).toEqual([]);
-		expect(app.tasks.status.error).toBe('Failed to fetch');
+		expect(lastToast(app)).toBe('Failed to fetch');
 		expect(app.tasks.status.loading).toBe(false);
 	});
 
-	it('shows the backend message of a refused creation (sad path, F-01)', async () => {
+	it('returns a refused creation for the form, through the real client (sad path, F-01)', async () => {
 		// GIVEN: The backend refuses a taken email with its error envelope.
 		vi.spyOn(globalThis, 'fetch').mockResolvedValue(
 			new Response(
@@ -61,13 +65,11 @@ describe('stores with the real API client', () => {
 		);
 
 		// WHEN: The user is created.
-		await app.users.add('Ada', 'ada@x.io');
+		const outcome = await app.users.add('Ada', 'ada@x.io');
 
-		// THEN: The backend message reaches the store and the notification, not "HTTP 409".
-		expect(app.users.status.error).toBe('Email already in use');
-		expect(app.notifications.items).toEqual([
-			expect.objectContaining({ message: 'Email already in use', type: 'error' })
-		]);
+		// THEN: The refusal is returned for the form to show under the field; no toast.
+		expect(outcome).toEqual({ status: 'email_taken' });
+		expect(app.notifications.items).toEqual([]);
 	});
 
 	it('keeps out a task the server reports gone, through the real client (limit)', async () => {
@@ -87,7 +89,6 @@ describe('stores with the real API client', () => {
 
 		// THEN: It stays out of the list, without an error nor a notice.
 		expect(app.tasks.tasks).toEqual([]);
-		expect(app.tasks.status.error).toBeNull();
 		expect(app.notifications.items).toEqual([]);
 	});
 });

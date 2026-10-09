@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { ref } from '$lib/ui/attachments';
-	import Alert from '$lib/ui/Alert.svelte';
 	import Button from '$lib/ui/Button.svelte';
 	import Card from '$lib/ui/Card.svelte';
 	import Icon from '$lib/ui/Icon.svelte';
@@ -62,10 +61,6 @@
 	<div class="space-y-6">
 		<Card>
 			<h2 class="mb-4 text-xl font-bold wrap-anywhere">{m.tasks_for_user({ name: user.name })}</h2>
-
-			{#if status.error}
-				<Alert class="mb-4">{status.error}</Alert>
-			{/if}
 
 			<form
 				onsubmit={(e) => {

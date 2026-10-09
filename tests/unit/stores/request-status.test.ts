@@ -17,7 +17,6 @@ describe('createRequestStatus', () => {
 
 		// THEN: Nothing is loading, so the forms start enabled.
 		expect(status.loading).toBe(false);
-		expect(status.error).toBeNull();
 	});
 
 	it('leaves the loading of a tracked request alone when a background action ends (limit)', async () => {
@@ -56,9 +55,14 @@ describe('createRequestStatus', () => {
 		);
 
 		// THEN: A failure is returned, shown and notified with the generic message.
-		expect(result).toEqual({ success: false, error: 'Unknown error', kind: 'unknown' });
-		expect(status.error).toBe('Unknown error');
-		expect(notifications.items).toEqual([expect.objectContaining({ message: 'Unknown error' })]);
+		expect(result).toEqual({
+			success: false,
+			error: 'Something unexpected happened. Please try again.',
+			kind: 'unknown'
+		});
+		expect(notifications.items).toEqual([
+			expect.objectContaining({ message: 'Something unexpected happened. Please try again.' })
+		]);
 	});
 
 	describe('how long the error toast stays', () => {
@@ -77,13 +81,12 @@ describe('createRequestStatus', () => {
 			const status = new RequestStatus(notifications);
 			await run(status, { success: false, error: 'Server said no', ...fields });
 
-			// THEN: One error toast with no end of its own; the inline error is shown as before.
+			// THEN: One error toast with no end of its own.
 			expect(notifications.items).toEqual([
 				expect.objectContaining({ type: 'error', duration: 0 })
 			]);
 			vi.advanceTimersByTime(60 * 60 * 1000);
 			expect(notifications.items).toHaveLength(1);
-			expect(status.error).not.toBeNull();
 			vi.useRealTimers();
 		});
 
@@ -156,9 +159,8 @@ describe('createRequestStatus with a handled failure', () => {
 	});
 
 	it('reports nothing for a failure the caller handles, and still ends the loading (limit)', async () => {
-		// GIVEN: A status with a previous error and a failure the caller declares handled.
+		// GIVEN: A status and a failure the caller declares handled.
 		const status = new RequestStatus(notifications);
-		status.error = 'previous';
 		const failure = { success: false as const, error: 'Task not found', code: 'TASK_NOT_FOUND' };
 
 		// WHEN: The action fails that way.
@@ -169,7 +171,6 @@ describe('createRequestStatus with a handled failure', () => {
 
 		// THEN: The failure is returned to the caller; no error, no notification, loading over.
 		expect(result).toEqual(failure);
-		expect(status.error).toBeNull();
 		expect(notifications.items).toEqual([]);
 		expect(status.loading).toBe(false);
 	});
@@ -188,7 +189,6 @@ describe('createRequestStatus with a handled failure', () => {
 		);
 
 		// THEN: It is shown and notified as an error.
-		expect(status.error).toBe('Something went wrong on our side. Please try again in a moment.');
 		expect(notifications.items).toEqual([
 			expect.objectContaining({
 				message: 'Something went wrong on our side. Please try again in a moment.',

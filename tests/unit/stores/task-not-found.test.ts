@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { api, type ApiFailure, type Task } from '$lib/api/client';
 import { AppState } from '$lib/state/app-state.svelte';
+import { lastToast } from '../support/last-toast';
 
 vi.mock('$lib/api/client', () => ({
 	api: {
@@ -65,7 +66,7 @@ describe('a task already deleted on the server (TASK_NOT_FOUND)', () => {
 			expect(app.notifications.items).toEqual([
 				expect.objectContaining({ message: 'Task already deleted', type: 'info' })
 			]);
-			expect(app.tasks.status.error).toBeNull();
+			expect(app.notifications.items.filter((toast) => toast.type === 'error')).toEqual([]);
 			expect(result).toBe(false);
 		}
 	);
@@ -81,7 +82,6 @@ describe('a task already deleted on the server (TASK_NOT_FOUND)', () => {
 		// the user's wish is met.
 		expect(app.tasks.tasks).toEqual([first, third]);
 		expect(app.notifications.items).toEqual([]);
-		expect(app.tasks.status.error).toBeNull();
 	});
 
 	it.each([
@@ -123,7 +123,7 @@ describe('a task already deleted on the server (TASK_NOT_FOUND)', () => {
 				await action(second.id);
 
 				// THEN: The error is shown and notified as an error, the task stays.
-				expect(app.tasks.status.error).toBe(shown);
+				expect(lastToast(app)).toBe(shown);
 				expect(app.notifications.items).toEqual([
 					expect.objectContaining({ message: shown, type: 'error' })
 				]);
@@ -145,7 +145,7 @@ describe('a task already deleted on the server (TASK_NOT_FOUND)', () => {
 			// THEN: Nothing changes and nothing is announced.
 			expect(app.tasks.tasks).toEqual([first]);
 			expect(app.notifications.items).toEqual([]);
-			expect(app.tasks.status.error).toBeNull();
+			expect(app.notifications.items.filter((toast) => toast.type === 'error')).toEqual([]);
 		}
 	);
 
@@ -185,7 +185,7 @@ describe('a task already deleted on the server (TASK_NOT_FOUND)', () => {
 		await app.tasks.toggle(first.id, true);
 
 		// THEN: No error appears.
-		expect(app.tasks.status.error).toBeNull();
+		expect(app.notifications.items.filter((toast) => toast.type === 'error')).toEqual([]);
 		expect(app.tasks.tasks).toEqual([{ ...first, completed: true }, third]);
 	});
 
@@ -197,7 +197,7 @@ describe('a task already deleted on the server (TASK_NOT_FOUND)', () => {
 		await removeAndCommit(second.id);
 
 		// THEN: The error is shown and the task stays.
-		expect(app.tasks.status.error).toBe('Failed to fetch');
+		expect(lastToast(app)).toBe('Failed to fetch');
 		expect(app.tasks.tasks).toEqual([first, second, third]);
 	});
 });

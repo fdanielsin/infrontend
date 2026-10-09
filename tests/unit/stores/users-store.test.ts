@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { api, type ApiResult, type Task, type User } from '$lib/api/client';
 import { AppState } from '$lib/state/app-state.svelte';
+import { lastToast } from '../support/last-toast';
 
 vi.mock('$lib/api/client', () => ({
 	api: {
@@ -48,7 +49,7 @@ describe('users store', () => {
 
 			// THEN: The collection is stored without an error.
 			expect(app.users.users).toEqual([ada]);
-			expect(app.users.status.error).toBeNull();
+			expect(lastToast(app)).toBeNull();
 			expect(app.users.status.loading).toBe(false);
 		});
 
@@ -61,7 +62,7 @@ describe('users store', () => {
 			await app.users.fetch();
 
 			// THEN: The error is exposed, the list is unchanged and loading is over.
-			expect(app.users.status.error).toBe('HTTP 500');
+			expect(lastToast(app)).toBe('HTTP 500');
 			expect(app.users.users).toEqual([ada]);
 			expect(app.users.status.loading).toBe(false);
 		});
@@ -74,7 +75,7 @@ describe('users store', () => {
 			await app.users.fetch();
 
 			// THEN: The error is exposed and loading is over.
-			expect(app.users.status.error).toBe('Network down');
+			expect(lastToast(app)).toBe('Network down');
 			expect(app.users.status.loading).toBe(false);
 		});
 	});
@@ -89,10 +90,10 @@ describe('users store', () => {
 			const result = await app.users.add('Bob', 'bob@example.com');
 
 			// THEN: The user is returned, appended after the existing one, without error.
-			expect(result).toEqual(bob);
+			expect(result).toEqual({ status: 'created', user: bob });
 			expect(api.createUser).toHaveBeenCalledWith({ name: 'Bob', email: 'bob@example.com' });
 			expect(app.users.users).toEqual([ada, bob]);
-			expect(app.users.status.error).toBeNull();
+			expect(lastToast(app)).toBeNull();
 			expect(app.users.status.loading).toBe(false);
 		});
 
@@ -104,9 +105,9 @@ describe('users store', () => {
 			const result = await app.users.add('Ada', 'ada@example.com');
 
 			// THEN: The error is exposed and no user is added.
-			expect(result).toBeUndefined();
+			expect(result).toEqual({ status: 'failed' });
 			expect(app.users.users).toEqual([]);
-			expect(app.users.status.error).toBe('HTTP 500');
+			expect(lastToast(app)).toBe('HTTP 500');
 		});
 
 		it('exposes the message and adds nothing when the API call throws (exception)', async () => {
@@ -117,9 +118,9 @@ describe('users store', () => {
 			const result = await app.users.add('Ada', 'ada@example.com');
 
 			// THEN: Nothing is added and the error is exposed.
-			expect(result).toBeUndefined();
+			expect(result).toEqual({ status: 'failed' });
 			expect(app.users.users).toEqual([]);
-			expect(app.users.status.error).toBe('Network down');
+			expect(lastToast(app)).toBe('Network down');
 			expect(app.users.status.loading).toBe(false);
 		});
 	});
@@ -147,7 +148,7 @@ describe('users store', () => {
 			await app.users.select(99);
 
 			// THEN: Nothing is selected, the tasks are not requested.
-			expect(app.users.status.error).toBe('HTTP 404');
+			expect(lastToast(app)).toBe('HTTP 404');
 			expect(app.users.selected).toBeNull();
 			expect(api.getUserTasks).not.toHaveBeenCalled();
 			expect(app.users.status.loading).toBe(false);
@@ -165,8 +166,7 @@ describe('users store', () => {
 			// THEN: Bob is selected with an empty list and the tasks error; users keep no error.
 			expect(app.users.selected).toEqual(bob);
 			expect(app.tasks.tasks).toEqual([]);
-			expect(app.tasks.status.error).toBe('HTTP 500');
-			expect(app.users.status.error).toBeNull();
+			expect(app.notifications.items.map((toast) => toast.message)).toEqual(['HTTP 500']);
 		});
 
 		it('clears the previous tasks as soon as another user is selected (limit, QM-04)', async () => {
@@ -201,7 +201,7 @@ describe('users store', () => {
 			// THEN: No user stays selected with an emptied list; the error is shown.
 			expect(app.users.selected).toBeNull();
 			expect(app.tasks.tasks).toEqual([]);
-			expect(app.users.status.error).toBe('User not found');
+			expect(lastToast(app)).toBe('User not found');
 			expect(api.getUserTasks).not.toHaveBeenCalled();
 		});
 
@@ -275,14 +275,14 @@ describe('users store', () => {
 			await app.users.select(ada.id);
 
 			// THEN: The error is exposed and loading is over.
-			expect(app.users.status.error).toBe('Network down');
+			expect(lastToast(app)).toBe('Network down');
 			expect(app.users.selected).toBeNull();
 			expect(app.users.status.loading).toBe(false);
 		});
 	});
 
 	describe('error feedback', () => {
-		it('exposes the backend message as is (sad path, F-01)', async () => {
+		it('shows no toast for a taken email, which the form says under the field (sad path, F-01)', async () => {
 			// GIVEN: The backend refuses a taken email.
 			vi.mocked(api.createUser).mockResolvedValue({
 				success: false,
@@ -294,14 +294,18 @@ describe('users store', () => {
 			// WHEN: The user is created.
 			await app.users.add('Ada', 'ada@x.io');
 
-			// THEN: The exact backend message is exposed.
-			expect(app.users.status.error).toBe('Email already in use');
+			// THEN: No toast: the form says it under the email field.
+			expect(lastToast(app)).toBeNull();
 		});
 
 		it.each([
-			['fetchUsers', () => app.users.fetch(), 'Failed to fetch users'],
-			['addUser', () => app.users.add('Ada', 'ada@x.io'), 'Failed to create user'],
-			['selectUser', () => app.users.select(1), 'Failed to fetch user']
+			['fetchUsers', () => app.users.fetch(), "We couldn't load the users."],
+			[
+				'addUser',
+				() => app.users.add('Ada', 'ada@x.io'),
+				"We couldn't create the user. Your entries are kept."
+			],
+			['selectUser', () => app.users.select(1), "We couldn't load this user."]
 		] as const)(
 			'%s shows its own fallback message when the failure has none (limit)',
 			async (_name, action, fallback) => {
@@ -315,7 +319,7 @@ describe('users store', () => {
 				await action();
 
 				// THEN: The action's fallback is shown.
-				expect(app.users.status.error).toBe(fallback);
+				expect(lastToast(app)).toBe(fallback);
 			}
 		);
 
@@ -328,7 +332,7 @@ describe('users store', () => {
 			await app.users.select(ada.id);
 
 			// THEN: The tasks fallback is shown in the tasks status.
-			expect(app.tasks.status.error).toBe('Failed to fetch tasks');
+			expect(lastToast(app)).toBe("We couldn't load the tasks.");
 		});
 
 		it('publishes the failure as a 6 s error notification (sad path, QM-02)', async () => {
@@ -378,24 +382,8 @@ describe('users store', () => {
 			await first;
 
 			// THEN: The stale failure is neither shown nor notified.
-			expect(app.users.status.error).toBeNull();
+			expect(lastToast(app)).toBeNull();
 			expect(app.notifications.items).toEqual([]);
-		});
-
-		it('clears the previous error when an action starts and keeps it cleared on success (happy path, QM-03)', async () => {
-			// GIVEN: A previous failure and a request that has not answered yet.
-			app.users.status.error = 'previous failure';
-			const pending = deferred<ApiResult<User[]>>();
-			vi.mocked(api.getUsers).mockReturnValue(pending.promise);
-
-			// WHEN: Users are fetched.
-			const fetching = app.users.fetch();
-
-			// THEN: The error is cleared at once, and stays cleared after the success.
-			expect(app.users.status.error).toBeNull();
-			pending.resolve({ success: true, data: [ada] });
-			await fetching;
-			expect(app.users.status.error).toBeNull();
 		});
 
 		it('keeps users and tasks errors and loading apart (sad path, F-02)', async () => {
@@ -406,13 +394,14 @@ describe('users store', () => {
 			// WHEN: The user is created.
 			const creating = app.users.add('Ada', 'ada@x.io');
 
-			// THEN: Only the users status is loading, then only it holds the error.
+			// THEN: Only the users status is loading; the error is one toast.
 			expect(app.users.status.loading).toBe(true);
 			expect(app.tasks.status.loading).toBe(false);
 			pending.resolve({ success: false, error: 'Email already in use' });
 			await creating;
-			expect(app.users.status.error).toBe('Email already in use');
-			expect(app.tasks.status.error).toBeNull();
+			expect(app.notifications.items.map((toast) => toast.message)).toEqual([
+				'Email already in use'
+			]);
 		});
 	});
 });

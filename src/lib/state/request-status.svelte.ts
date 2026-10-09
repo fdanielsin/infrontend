@@ -17,7 +17,6 @@ interface RunOptions {
 // One instance per domain: a failure in one feature must not show up in another.
 export class RequestStatus {
 	loading: boolean;
-	error: string | null = $state(null);
 
 	readonly #notifications: NotificationState;
 
@@ -36,7 +35,6 @@ export class RequestStatus {
 		}: RunOptions
 	): Promise<ApiResult<T>> {
 		if (tracksLoading) this.loading = true;
-		this.error = null;
 		let result: ApiResult<T>;
 		try {
 			result = await action();
@@ -48,9 +46,7 @@ export class RequestStatus {
 		}
 		if (isCurrent()) {
 			if (!result.success && !isHandled(result)) {
-				const message = failureMessage(result, fallbackMessage);
-				this.error = message;
-				this.#notifications.notifyError(message, {
+				this.#notifications.notifyError(failureMessage(result, fallbackMessage), {
 					reference: result.requestId,
 					persistent: isPersistentFailure(result)
 				});

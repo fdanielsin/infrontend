@@ -4,9 +4,18 @@ import type { NotificationState } from './notification.svelte';
 import { RequestStatus } from './request-status.svelte';
 import type { TaskState } from './tasks.svelte';
 
+// What the list may claim: nothing is known before the first answer.
+export type LoadState = 'idle' | 'loading' | 'loaded' | 'failed';
+
+// An email already taken is shown under the email field, so it gets no toast; the other failures
+// are reported by their toast.
+export type AddUserOutcome =
+	{ status: 'created'; user: User } | { status: 'email_taken' } | { status: 'failed' };
+
 export class UserState {
 	users = $state.raw<User[]>([]);
 	selected = $state.raw<User | null>(null);
+	loadState = $state<LoadState>('idle');
 	readonly status: RequestStatus;
 
 	readonly #tasks: TaskState;
@@ -18,19 +27,24 @@ export class UserState {
 	}
 
 	async fetch() {
+		this.loadState = 'loading';
 		const result = await this.status.run(() => api.getUsers(), {
 			fallbackMessage: m.error_fetch_users
 		});
 		if (result.success) this.users = result.data;
+		this.loadState = result.success ? 'loaded' : 'failed';
 	}
 
-	async add(name: string, email: string) {
+	async add(name: string, email: string): Promise<AddUserOutcome> {
 		const result = await this.status.run(() => api.createUser({ name, email }), {
-			fallbackMessage: m.error_create_user
+			fallbackMessage: m.error_create_user,
+			isHandled: (failure) => failure.code === 'EMAIL_TAKEN'
 		});
-		if (!result.success) return undefined;
-		this.users = [...this.users, result.data];
-		return result.data;
+		if (result.success) {
+			this.users = [...this.users, result.data];
+			return { status: 'created', user: result.data };
+		}
+		return { status: result.code === 'EMAIL_TAKEN' ? 'email_taken' : 'failed' };
 	}
 
 	async select(id: number) {

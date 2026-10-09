@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { ref } from '$lib/ui/attachments';
-	import Alert from '$lib/ui/Alert.svelte';
 	import Button from '$lib/ui/Button.svelte';
 	import Card from '$lib/ui/Card.svelte';
 	import Icon from '$lib/ui/Icon.svelte';
@@ -17,21 +16,28 @@
 	let name = $state('');
 	let email = $state('');
 	let fieldErrors = $state.raw<{ name?: string; email?: string }>({});
+	// The server refused this email: said under the field until it is edited.
+	let emailTaken = $state(false);
 	const refs: Partial<Record<'nameInput' | 'emailInput', HTMLElement>> = {};
 
 	async function handleSubmit() {
 		const result = UserSchema.safeParse({ name, email });
 		fieldErrors = {};
+		emailTaken = false;
 		if (!result.success) {
 			fieldErrors = zodIssuesToFieldErrors(result.error, USER_FIELDS);
 			await tick();
 			(fieldErrors.name ? refs.nameInput : refs.emailInput)?.focus();
 			return;
 		}
-		const created = await users.add(result.data.name, result.data.email);
-		if (created) {
+		const outcome = await users.add(result.data.name, result.data.email);
+		if (outcome.status === 'created') {
 			name = '';
 			email = '';
+		} else if (outcome.status === 'email_taken') {
+			emailTaken = true;
+			await tick();
+			refs.emailInput?.focus();
 		}
 	}
 </script>
@@ -39,10 +45,6 @@
 <div class="space-y-6">
 	<Card>
 		<h2 class="mb-4 text-xl font-bold">{m.users_create_heading()}</h2>
-
-		{#if status.error}
-			<Alert class="mb-4">{status.error}</Alert>
-		{/if}
 
 		<form
 			onsubmit={(e) => {
@@ -70,7 +72,12 @@
 					bind:value={email}
 					{@attach ref(refs, 'emailInput')}
 					required
-					error={fieldErrors.email ? validationMessage(fieldErrors.email) : undefined}
+					oninput={() => (emailTaken = false)}
+					error={fieldErrors.email
+						? validationMessage(fieldErrors.email)
+						: emailTaken
+							? m.error_email_taken()
+							: undefined}
 				/>
 			</div>
 

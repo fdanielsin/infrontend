@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { api, type ApiResult, type Task, type User } from '$lib/api/client';
 import { AppState } from '$lib/state/app-state.svelte';
+import { lastToast } from '../support/last-toast';
 
 vi.mock('$lib/api/client', () => ({
 	api: { getUser: vi.fn(), getUserTasks: vi.fn(), createTask: vi.fn() }
@@ -62,7 +63,7 @@ describe('a task created while the selected user changes', () => {
 		expect(seen.flat().map((task) => task.title)).not.toContain('For Ada');
 		expect(app.tasks.tasks).toEqual([forNora]);
 		expect(await adding).toEqual(forAda);
-		expect(app.tasks.status.error).toBeNull();
+		expect(lastToast(app)).toBeNull();
 	});
 
 	it('does not leave the task under the other user when his tasks fail to load (exception)', async () => {

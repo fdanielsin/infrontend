@@ -3,6 +3,7 @@ import { cleanup, fireEvent, waitFor } from '@testing-library/svelte';
 import { api } from '$lib/api/client';
 import { AppState } from '$lib/state/app-state.svelte';
 import TaskForm from '$lib/features/tasks/TaskForm.svelte';
+import { lastToast } from '../support/last-toast';
 import { renderWithApp } from '../support/render-with-app';
 
 vi.mock('$lib/api/client', () => ({
@@ -57,7 +58,7 @@ describe('TaskForm', () => {
 	it('reverts the checkbox to the real state when the API rejects the toggle (sad path)', async () => {
 		// GIVEN: A rendered task list and an API that rejects the toggle request.
 		vi.mocked(api.updateTask).mockResolvedValue({ success: false, error: 'Task locked' });
-		const { getByRole, getByText } = renderWithApp(app, TaskForm, { user });
+		const { getByRole } = renderWithApp(app, TaskForm, { user });
 		const checkbox = getByRole('checkbox', { name: 'Review' }) as HTMLInputElement;
 
 		// WHEN: The user clicks the checkbox (the browser flips it natively before
@@ -67,7 +68,7 @@ describe('TaskForm', () => {
 		// THEN: Once the rejection is handled, the checkbox reflects the real,
 		// unchanged `completed` value instead of keeping the optimistic click.
 		await waitFor(() => expect(checkbox.checked).toBe(false));
-		expect(getByText('Task locked')).toBeTruthy();
+		expect(lastToast(app)).toBe('Task locked');
 	});
 
 	it('asks to select a user when none is selected (happy path)', () => {
@@ -255,7 +256,7 @@ describe('TaskForm', () => {
 	it('reverts the checkbox when the toggle request throws (exception)', async () => {
 		// GIVEN: A toggle request that rejects.
 		vi.mocked(api.updateTask).mockRejectedValue(new Error('Network down'));
-		const { getByRole, getByText } = renderWithApp(app, TaskForm, { user });
+		const { getByRole } = renderWithApp(app, TaskForm, { user });
 		const checkbox = getByRole('checkbox', { name: 'Review' }) as HTMLInputElement;
 
 		// WHEN: The checkbox is clicked.
@@ -263,7 +264,7 @@ describe('TaskForm', () => {
 
 		// THEN: It returns to the real state and the error is shown.
 		await waitFor(() => expect(checkbox.checked).toBe(false));
-		expect(getByText('Network down')).toBeTruthy();
+		expect(lastToast(app)).toBe('Network down');
 	});
 
 	it('keeps "Add Task" usable while the users are loading (sad path, F-02)', () => {
@@ -275,17 +276,6 @@ describe('TaskForm', () => {
 
 		// THEN: Adding a task is not blocked by another feature.
 		expect((getByRole('button', { name: 'Add Task' }) as HTMLButtonElement).disabled).toBe(false);
-	});
-
-	it('does not show a users error in the task form (sad path, F-02)', () => {
-		// GIVEN: The users feature failed.
-		app.users.status.error = 'Email already in use';
-
-		// WHEN: The task form is rendered.
-		const { queryByText } = renderWithApp(app, TaskForm, { user });
-
-		// THEN: The error stays in its own feature.
-		expect(queryByText('Email already in use')).toBeNull();
 	});
 
 	describe('a task already deleted on the server', () => {

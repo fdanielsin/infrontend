@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { api } from '$lib/api/client';
 import { AppState } from '$lib/state/app-state.svelte';
+import { lastToast } from '../support/last-toast';
 
 vi.mock('$lib/api/client', () => ({
 	api: {
@@ -46,10 +47,9 @@ describe('application state', () => {
 		// WHEN: The users are fetched.
 		await app.users.fetch();
 
-		// THEN: The error stays in the users feature; tasks keep a separate, clean status.
+		// THEN: The error is one toast; tasks keep a separate, idle status.
 		expect(app.users.status).not.toBe(app.tasks.status);
-		expect(app.users.status.error).toBe('Users down');
-		expect(app.tasks.status.error).toBeNull();
+		expect(lastToast(app)).toBe('Users down');
 		expect(app.tasks.status.loading).toBe(false);
 	});
 });

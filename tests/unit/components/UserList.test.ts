@@ -148,6 +148,7 @@ describe('UserList', () => {
 	it('shows a hint under the empty list (limit)', () => {
 		// GIVEN / WHEN: No user.
 		app.users.users = [];
+		app.users.loadState = 'loaded';
 		const view = renderWithApp(app, UserForm);
 
 		// THEN: The existing text stays and tells the next step.

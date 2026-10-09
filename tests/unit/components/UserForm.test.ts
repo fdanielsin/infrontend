@@ -4,6 +4,7 @@ import { tick } from 'svelte';
 import { api, type ApiResult, type User } from '$lib/api/client';
 import { AppState } from '$lib/state/app-state.svelte';
 import UserForm from '$lib/features/users/UserForm.svelte';
+import { lastToast } from '../support/last-toast';
 import { renderWithApp } from '../support/render-with-app';
 
 vi.mock('$lib/api/client', () => ({
@@ -98,7 +99,8 @@ describe('UserForm', () => {
 	});
 
 	it('shows "No users yet" for an empty list (limit)', () => {
-		// GIVEN / WHEN: No user is loaded.
+		// GIVEN / WHEN: The answer was an empty list.
+		app.users.loadState = 'loaded';
 		const { getByText } = renderForm();
 
 		// THEN: The empty state and a zero count are shown.
@@ -142,48 +144,18 @@ describe('UserForm', () => {
 		);
 	});
 
-	it('shows the error inline when the users cannot be loaded (exception)', async () => {
+	it('shows a failed load as such, never as an empty list (exception)', async () => {
 		// GIVEN: A rendered form and a backend that cannot be reached.
 		vi.mocked(api.getUsers).mockRejectedValue(new TypeError('Failed to fetch'));
-		const { findByText, getByText } = renderForm();
+		const { findByText, queryByText } = renderForm();
 
 		// WHEN: The page loads the users.
 		await app.users.fetch();
 
-		// THEN: The failure is shown and the list stays empty.
-		expect(await findByText('Failed to fetch')).toBeTruthy();
-		expect(getByText('No users yet')).toBeTruthy();
-	});
-
-	it('shows the backend message as is, without prefix (sad path, F-01)', async () => {
-		// GIVEN: The backend refuses a taken email.
-		vi.mocked(api.createUser).mockResolvedValue({
-			success: false,
-			error: 'Email already in use',
-			status: 409,
-			code: 'EMAIL_TAKEN'
-		});
-		const { submit, findByText, getByText } = renderForm();
-
-		// WHEN: The form is submitted.
-		await submit('Ada', 'ada@x.io');
-
-		// THEN: The exact message is displayed, and no user is listed.
-		expect((await findByText('Email already in use')).textContent?.trim()).toBe(
-			'Email already in use'
-		);
-		expect(getByText('No users yet')).toBeTruthy();
-	});
-
-	it('does not show a tasks error in the user form (sad path, F-02)', () => {
-		// GIVEN: The tasks feature failed.
-		app.tasks.status.error = 'Task not found';
-
-		// WHEN: The user form is rendered.
-		const { queryByText } = renderForm();
-
-		// THEN: The error stays in its own feature.
-		expect(queryByText('Task not found')).toBeNull();
+		// THEN: The list says it failed; the error detail is the toast's.
+		expect(await findByText('Users could not be loaded.')).toBeTruthy();
+		expect(queryByText('No users yet')).toBeNull();
+		expect(lastToast(app)).toBe('Failed to fetch');
 	});
 
 	describe('focus after a failed validation', () => {
