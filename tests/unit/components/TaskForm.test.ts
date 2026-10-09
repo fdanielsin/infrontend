@@ -80,6 +80,16 @@ describe('TaskForm', () => {
 		expect(queryByRole('button', { name: 'Add Task' })).toBeNull();
 	});
 
+	it('shows the invitation as an empty state: icon, title, instruction (happy path)', () => {
+		const { getByRole, container } = renderWithApp(app, TaskForm, { user: null });
+
+		expect(getByRole('heading', { level: 2, name: 'Select a user to manage tasks' })).toBeTruthy();
+		expect(container.querySelector('[data-icon="group"]')?.getAttribute('aria-hidden')).toBe(
+			'true'
+		);
+		expect(container.textContent).toContain('Pick a user in the list');
+	});
+
 	it('adds a task and clears the fields (happy path)', async () => {
 		// GIVEN: An API that accepts the task.
 		const created = { ...task, id: 11, title: 'Buy milk', description: 'Semi-skimmed' };

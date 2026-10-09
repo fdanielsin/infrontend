@@ -58,8 +58,9 @@
 </script>
 
 {#if !user}
-	<Card>
-		<p class="text-subtle">{m.tasks_select_user()}</p>
+	<Card padding="lg" class="text-center sm:py-12">
+		<Icon icon="group" size={24} class="mx-auto text-subtle" />
+		<h2 class="mt-3 text-xl font-bold">{m.tasks_select_user()}</h2>
 		<p class="mt-1 text-sm text-subtle">{m.tasks_select_user_hint()}</p>
 	</Card>
 {:else}
