@@ -43,6 +43,12 @@
 		--color-gray-800
 	); /* neutral toast: white text 14.7:1, never the color of an action */
 
+	/* Left edge of each toast type: darker than its background, 3:1 or more on the page */
+	--color-success-edge: var(--color-green-900);
+	--color-danger-edge: var(--color-red-950);
+	--color-warning-edge: var(--color-amber-900);
+	--color-info-edge: var(--color-gray-950);
+
 	/* Focus: the one outline of the interface (3:1 or more on white, gray-100, blue-100 and the page gradient) */
 	--color-focus: var(--color-blue-700); /* 5.55:1 on indigo-100, 6.83:1 on white */
 	--color-focus-inverse: var(--color-white); /* on the colored toasts: 4.95:1 or more */

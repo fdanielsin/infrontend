@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { TOAST_BACKGROUNDS } from '../../src/lib/ui/toast-styles';
+import { TOAST_BACKGROUNDS, TOAST_BORDERS } from '../../src/lib/ui/toast-styles';
 import { measure, worstContrast } from './support/contrast';
 import { ada, adaTasks, mockApi, openHomeWithUser } from './support/mock-api';
 
@@ -162,6 +162,38 @@ test.describe('Icons (computed style, mocked API)', () => {
 		}
 	});
 
+	test('the left edge of each toast type is 3:1 or more on the page and not the toast color (boundary)', async ({
+		page
+	}) => {
+		// GIVEN: Elements that wear the border classes of a toast, on the page.
+		await mockApi(page, { users: [ada], tasks: adaTasks });
+		await openHomeWithUser(page);
+		await page.evaluate(
+			([borders, backgrounds]) => {
+				for (const type of Object.keys(borders)) {
+					const probe = document.createElement('div');
+					probe.dataset.edgeProbe = type;
+					probe.className = `${borders[type]} ${backgrounds[type]}`;
+					probe.style.height = '10px';
+					document.body.append(probe);
+				}
+			},
+			[TOAST_BORDERS, TOAST_BACKGROUNDS] as [Record<string, string>, Record<string, string>]
+		);
+
+		// THEN: Each edge stands out from the page (WCAG 1.4.11) and differs from its own toast color.
+		for (const type of Object.keys(TOAST_BORDERS)) {
+			const probe = page.locator(`[data-edge-probe="${type}"]`);
+			const edge = await measure(probe, 'borderLeftColor');
+			expect(worstContrast(edge), type).toBeGreaterThanOrEqual(3);
+			const fill = await measure(probe, 'borderLeftColor', 'self');
+			expect(fill.backgrounds[0], type).not.toEqual(edge.color);
+			expect(await probe.evaluate((node) => getComputedStyle(node).borderLeftWidth), type).toBe(
+				'4px'
+			);
+		}
+	});
+
 	test('the cross is still drawn in forced colors mode, in the color of its button (sad path)', async ({
 		page
 	}) => {
@@ -231,5 +263,33 @@ test.describe('Icons (computed style, mocked API)', () => {
 		await expect(page.getByLabel('Name', { exact: true })).toHaveAccessibleDescription(
 			(await error.innerText()).trim()
 		);
+	});
+
+	test.describe('coarse pointer', () => {
+		test.use({ hasTouch: true, isMobile: true });
+
+		test('the close cross of a toast is a 44 px target, drawn at 16 px (boundary)', async ({
+			page,
+			browserName
+		}) => {
+			// pointer: coarse can only be emulated on Chromium.
+			test.skip(browserName !== 'chromium', 'pointer: coarse is emulated on Chromium only');
+
+			// GIVEN: A toast on a touch screen.
+			const api = await mockApi(page, { users: [ada], tasks: adaTasks });
+			await openHomeWithUser(page);
+			api.failNext('PUT /tasks/{id}', { status: 400, error: 'Nope' });
+			// A script click: the touch target of the checkbox is not what this test is about.
+			await page
+				.getByRole('checkbox', { name: 'Review', exact: true })
+				.evaluate((box: HTMLInputElement) => box.click());
+			const close = page.locator('[data-toast] [data-toast-dismiss]').first();
+			await expect(close).toBeVisible();
+
+			// THEN: The target is 44 x 44 and the cross stays 16 px.
+			const target = await close.boundingBox();
+			expect([target?.width, target?.height]).toEqual([44, 44]);
+			expect((await crossOf(close).boundingBox())?.width).toBe(16);
+		});
 	});
 });

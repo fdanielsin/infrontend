@@ -100,4 +100,16 @@ describe('IconButton component', () => {
 
 		expect(view.getByRole('button', { name: 'x' })).toBeTruthy();
 	});
+
+	it.each(['danger', 'inverse'] as const)(
+		'is 44 px for a coarse pointer, whatever its tone: %s (boundary)',
+		(tone) => {
+			const { container } = render(IconButton, { props: { label: 'Close', tone } });
+
+			const button = buttonOf(container);
+			expect(button.classList.contains('pointer-coarse:min-h-11')).toBe(true);
+			expect(button.classList.contains('pointer-coarse:min-w-11')).toBe(true);
+			expect(button.classList.contains('min-h-6')).toBe(true);
+		}
+	);
 });

@@ -12,12 +12,13 @@
 
 	let { label, tone = 'danger', type = 'button', class: className, ...rest }: Props = $props();
 
-	// 24 px minimum target (WCAG 2.5.8). `inverse` is for white-on-color surfaces such as toasts.
+	// 24 px minimum target (WCAG 2.5.8), 44 px for a coarse pointer. `inverse` is for white-on-color
+	// surfaces such as toasts.
 	const TONE_CLASSES: Record<Tone, string> = {
 		danger:
-			'inline-flex min-h-6 min-w-6 items-center justify-center rounded-control text-danger hover:text-danger-hover',
+			'inline-flex min-h-6 min-w-6 pointer-coarse:min-h-11 pointer-coarse:min-w-11 items-center justify-center rounded-control text-danger hover:text-danger-hover',
 		inverse:
-			'inline-flex min-h-6 min-w-6 items-center justify-center rounded-control hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-inverse'
+			'inline-flex min-h-6 min-w-6 pointer-coarse:min-h-11 pointer-coarse:min-w-11 items-center justify-center rounded-control hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-inverse'
 	};
 </script>
 

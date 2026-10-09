@@ -6,7 +6,7 @@
 	import Icon from '$lib/ui/Icon.svelte';
 	import type { IconName } from '$lib/ui/icons';
 	import IconButton from '$lib/ui/IconButton.svelte';
-	import { TOAST_BACKGROUNDS } from '$lib/ui/toast-styles';
+	import { TOAST_BACKGROUNDS, TOAST_BORDERS } from '$lib/ui/toast-styles';
 
 	interface Props {
 		toast: Notification;
@@ -34,7 +34,8 @@
 	data-toast
 	class={[
 		'animate-slide-in grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 rounded-card px-4 py-3 text-white shadow-card-raised',
-		TOAST_BACKGROUNDS[toast.type]
+		TOAST_BACKGROUNDS[toast.type],
+		TOAST_BORDERS[toast.type]
 	]}
 	onmouseenter={onpause}
 	onmouseleave={(event) => {

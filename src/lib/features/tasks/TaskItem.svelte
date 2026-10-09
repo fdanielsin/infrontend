@@ -159,7 +159,7 @@
 			label={m.tasks_delete_named({ title: task.title })}
 			onclick={onremove}
 			disabled={editing}
-			class={[TOUCH_TARGET, 'disabled:cursor-not-allowed disabled:opacity-50']}
+			class="disabled:cursor-not-allowed disabled:opacity-50"
 		/>
 	</div>
 </li>
