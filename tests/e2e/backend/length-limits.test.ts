@@ -167,8 +167,8 @@ test.describe('Length limits, client and server together', () => {
 		page,
 		request
 	}) => {
-		// GIVEN: A well-formed address one character over the limit. (A value without "@" never
-		// reaches the schema: the browser blocks it on the email field first.)
+		// GIVEN: A well-formed address one character over the limit. The length is checked before
+		// the format, so a malformed address of that length would show the same single message.
 		const tooLong = `a${email254(uniqueSuffix())}`;
 		expect(tooLong.length).toBe(255);
 		await openHome(page);
@@ -236,4 +236,38 @@ test.describe('Length limits, client and server together', () => {
 		expect(nulled.status()).toBe(400);
 		expect(((await nulled.json()) as { error_code: string }).error_code).toBe('INVALID_BODY');
 	});
+});
+
+test.describe('E-mail formats, client and server together', () => {
+	// Addresses of the contract (and an accented one) that the former check refused. The local part
+	// is made unique, the domain is the one of the contract.
+	for (const [local, domain] of [
+		['ivan', 'пример.рф'],
+		['a', 'b.xn--p1ai'],
+		['josé.x', 'example.com']
+	]) {
+		test(`creates a user with an address at ${domain}, as it was typed (happy path)`, async ({
+			page
+		}) => {
+			// GIVEN: The home page and an address the form used to refuse.
+			const email = `${local}${uniqueSuffix()}@${domain}`;
+			await openHome(page);
+
+			// WHEN: The user is created from the form.
+			const sent = page.waitForRequest(
+				(outgoing) => outgoing.url().endsWith('/api/v1/users') && outgoing.method() === 'POST'
+			);
+			const answered = page.waitForResponse(
+				(response) =>
+					response.url().endsWith('/api/v1/users') && response.request().method() === 'POST'
+			);
+			await submitUser(page, 'Ada', email);
+
+			// THEN: The request carries the address as typed, the server creates the user and the list
+			// shows it. (The server lowercases, and the address is already in lower case.)
+			expect((await sent).postDataJSON()).toEqual({ name: 'Ada', email });
+			expect((await answered).status()).toBe(201);
+			await expect(page.getByText(email)).toBeVisible();
+		});
+	}
 });
