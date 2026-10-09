@@ -62,7 +62,9 @@ git push origin v1.1.0
 | `docker run --rm -p 3000:3000 infrontend`                                       | Run the image on `http://localhost:3000`                                                                        |
 
 In a fresh worktree, give the variable on the command line:
-`PUBLIC_API_URL=http://localhost:8080 bun run verify`.
+`PUBLIC_API_URL=http://localhost:8080 bun run verify`. Without a call to a real backend
+(`verify`, `test`, `test:e2e:mocked`), any URL works, for instance `http://localhost:59999`;
+the lint fails when the variable is unset.
 
 ## Documentation
 
