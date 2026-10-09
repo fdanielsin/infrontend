@@ -16,6 +16,8 @@
 		required?: boolean;
 		// Already translated error text; its presence marks the field invalid.
 		error?: string | undefined;
+		// The value was checked and is fine: a green border and a check, never the color alone.
+		valid?: boolean;
 		// Defaults to `<id>-error`.
 		errorId?: string;
 		// Tighter control for fields inside a list row (edit form).
@@ -35,6 +37,7 @@
 		rows,
 		required,
 		error,
+		valid = false,
 		errorId = `${id}-error`,
 		compact = false,
 		labelHidden = false,
@@ -43,9 +46,13 @@
 	}: Props = $props();
 
 	// Whole class names, so Tailwind finds them.
-	const CONTROL_CLASSES =
-		'w-full rounded-control border border-field-border aria-invalid:border-danger';
-	const SIZE_CLASSES = { default: 'mt-1 px-3 py-2', compact: 'px-2 py-1' };
+	const CONTROL_CLASSES = 'w-full rounded-control border aria-invalid:border-danger';
+	// Two border colors on one element: the stylesheet order, not the class order, would decide.
+	const NEUTRAL_BORDER = 'border-field-border';
+	const VALID_CLASSES = 'border-success pr-8';
+	const SIZE_CLASSES = { default: 'px-3 py-2', compact: 'px-2 py-1' };
+	const WRAPPER_CLASSES = { default: 'relative mt-1', compact: 'relative' };
+	const CHECK_CLASSES = { default: 'top-3', compact: 'top-2' };
 	const ERROR_CLASSES = {
 		default: 'mt-1 flex items-start gap-1 text-sm text-danger',
 		compact: 'flex items-start gap-1 text-sm text-danger'
@@ -83,44 +90,58 @@
 <label for={id} class={labelHidden ? 'sr-only' : 'block text-sm font-medium text-label'}>
 	{label}
 </label>
-{#if multiline}
-	<textarea
-		{id}
-		bind:value
-		{rows}
-		{required}
-		aria-invalid={!!error}
-		aria-describedby={error ? errorId : undefined}
-		class={[CONTROL_CLASSES, SIZE_CLASSES[size], autoGrow && 'resize-none overflow-hidden']}
-		{@attach autoGrow ? growToContent : undefined}
-		{...rest}></textarea>
-{:else if type === 'email'}
-	<input
-		{id}
-		type="text"
-		inputmode="email"
-		autocomplete="off"
-		spellcheck="false"
-		autocapitalize="off"
-		bind:value
-		{required}
-		aria-invalid={!!error}
-		aria-describedby={error ? errorId : undefined}
-		class={[CONTROL_CLASSES, SIZE_CLASSES[size]]}
-		{...rest}
-	/>
-{:else}
-	<input
-		{id}
-		type="text"
-		bind:value
-		{required}
-		aria-invalid={!!error}
-		aria-describedby={error ? errorId : undefined}
-		class={[CONTROL_CLASSES, SIZE_CLASSES[size]]}
-		{...rest}
-	/>
-{/if}
+<div class={WRAPPER_CLASSES[size]}>
+	{#if multiline}
+		<textarea
+			{id}
+			bind:value
+			{rows}
+			{required}
+			aria-invalid={!!error}
+			aria-describedby={error ? errorId : undefined}
+			class={[
+				CONTROL_CLASSES,
+				SIZE_CLASSES[size],
+				valid ? VALID_CLASSES : NEUTRAL_BORDER,
+				autoGrow && 'resize-none overflow-hidden'
+			]}
+			{@attach autoGrow ? growToContent : undefined}
+			{...rest}></textarea>
+	{:else if type === 'email'}
+		<input
+			{id}
+			type="text"
+			inputmode="email"
+			autocomplete="off"
+			spellcheck="false"
+			autocapitalize="off"
+			bind:value
+			{required}
+			aria-invalid={!!error}
+			aria-describedby={error ? errorId : undefined}
+			class={[CONTROL_CLASSES, SIZE_CLASSES[size], valid ? VALID_CLASSES : NEUTRAL_BORDER]}
+			{...rest}
+		/>
+	{:else}
+		<input
+			{id}
+			type="text"
+			bind:value
+			{required}
+			aria-invalid={!!error}
+			aria-describedby={error ? errorId : undefined}
+			class={[CONTROL_CLASSES, SIZE_CLASSES[size], valid ? VALID_CLASSES : NEUTRAL_BORDER]}
+			{...rest}
+		/>
+	{/if}
+	{#if valid}
+		<Icon
+			icon="check"
+			size={16}
+			class={['pointer-events-none absolute right-2 text-success', CHECK_CLASSES[size]]}
+		/>
+	{/if}
+</div>
 {#if error}
 	<p id={errorId} class={ERROR_CLASSES[size]}>
 		<Icon icon="warning-circle" size={16} class="mt-0.5" />
