@@ -280,9 +280,6 @@ Règles :
 
 - La transition de survol de `Card` `raised` (`Card.svelte`, ligne 23) n'est pas
   conditionnée par `prefers-reduced-motion`.
-- Le bouton d'envoi est `disabled` pendant la requête, ce qui fait perdre le focus à
-  qui valide au bouton. Non corrigé volontairement (les tests s'appuient sur
-  `disabled`, gain faible). Voir la règle de [Button](#button).
 
 ## 3. Composants
 
@@ -303,8 +300,9 @@ rouge et l'ambre disent un état, jamais une action. `ButtonLink` est un lien ve
 autre page avec le look `secondary` : l'aller (« View Statistics ») et le retour
 (« Back to home ») sont identiques, sous le titre. Les classes viennent de
 `ui/button-styles.ts`. États : survol, focus global, désactivé (`bg-disabled` sur
-`primary`, bordure et texte `disabled` sur `secondary` et `link`), chargement (le texte
-change, ex. « Création… », et le bouton est `disabled`). Preuve :
+`primary`, bordure et texte `disabled` sur `secondary` et `link`), envoi en cours (le
+texte change, ex. « Création… », `aria-busy="true"`, curseur `progress`, jamais `disabled`).
+Preuve : `tests/unit/components/SubmitButtons.test.ts`, `tests/e2e/submit-buttons.test.ts`,
 `tests/unit/components/Button.test.ts`, `tests/e2e/single-accent.test.ts`. À faire : un verbe court, décrit par le texte ; un
 `aria-label` plus précis seulement s'il ajoute le sujet (« Modifier {titre} »,
 `messages/*.json` `tasks_edit_named`). À éviter : un bouton sans texte (utiliser
@@ -313,13 +311,17 @@ change, ex. « Création… », et le bouton est `disabled`). Preuve :
 Règles complémentaires ([disabled-buttons](https://designmotionhq.com/patterns/disabled-buttons), [microcopy](https://designmotionhq.com/patterns/microcopy)) :
 
 - Le libellé dit ce que l'on obtient (« Ajouter la tâche »), pas « Valider ».
-- **Cible** : pas de `disabled` pour empêcher une validation. Le bouton reste actif, la
-  validation se fait au clic et le focus va au premier champ invalide. Un bouton
-  `disabled` sort de la tabulation, son infobulle ne s'affiche pas et son contraste
+- Pas de `disabled` pour empêcher une validation ni pendant un envoi : « Créer l'utilisateur »,
+  « Ajouter la tâche » et « Enregistrer » restent actifs. La validation se fait au clic, avec
+  nos messages (les formulaires portent `novalidate` : sans lui le navigateur bloquait l'envoi
+  d'un champ `required` vide avec sa bulle native, dans sa propre langue, constat 22 de la revue
+  visuelle) et le focus va au premier champ invalide. `required` reste pour la sémantique.
+  Un bouton `disabled` sort de la tabulation, son infobulle ne s'affiche pas et son contraste
   échoue : réservé à une action réellement indisponible.
-- **Cible** : pendant un envoi, `aria-busy` à la place de `disabled`, un second envoi
-  est ignoré et le focus reste sur le bouton (aujourd'hui : `disabled`, voir
-  [Écarts constatés](#écarts-constatés)).
+- Pendant un envoi, `aria-busy="true"` et un état d'envoi propre au formulaire (un chargement
+  de liste du même domaine ne le touche pas) ; un second envoi est ignoré et le focus reste sur
+  le bouton. « Enregistrer » garde son libellé. Pas d'opacité réduite, qui ferait baisser le
+  contraste ; aucune animation.
 
 ### IconButton
 
@@ -830,6 +832,6 @@ est devenue la section 7.
   unique de 6 s.
 - [toast-notifications](https://designmotionhq.com/patterns/toast-notifications) : durées de 3 s et 6 s conservées ; 5xx et erreur réseau
   jusqu'à fermeture.
-- [disabled-buttons](https://designmotionhq.com/patterns/disabled-buttons) : pas de `disabled` pour la validation (**Cible**).
+- [disabled-buttons](https://designmotionhq.com/patterns/disabled-buttons) : pas de `disabled` pour la validation ni pendant l'envoi (voir [Button](#button)).
 - [easing-curves](https://designmotionhq.com/patterns/easing-curves), [shadow-elevation](https://designmotionhq.com/patterns/shadow-elevation) et [depth-layers](https://designmotionhq.com/patterns/depth-layers) : aucune valeur
   reprise, à définir (**Cible : jeton à créer**).
