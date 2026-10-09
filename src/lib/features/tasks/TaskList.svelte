@@ -151,7 +151,11 @@
 	async function focusUndoButton() {
 		await tick();
 		const buttons = document.querySelectorAll<HTMLElement>('[data-toast-action]');
-		(buttons[buttons.length - 1] ?? refs.tasksHeading)?.focus();
+		const undo = buttons[buttons.length - 1];
+		// Firefox shows no focus ring on a button focused by script after the focused control went
+		// away; `focusVisible` asks for it (ignored where unsupported).
+		if (undo) undo.focus({ focusVisible: true } as FocusOptions);
+		else refs.tasksHeading?.focus();
 	}
 
 	// The toast leaves with the focus on it: back to the list heading, not to <body>. A focus that

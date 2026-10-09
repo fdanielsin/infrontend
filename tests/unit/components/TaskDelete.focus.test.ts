@@ -111,6 +111,17 @@ describe('focus around the Undo toast', () => {
 		expect(document.activeElement).toBe(view.getByRole('checkbox', { name: 'Review' }));
 	});
 
+	it('gives the focus to the heading when it is already on <body> as the toast ends (boundary)', async () => {
+		const view = await deleteReview();
+		(document.activeElement as HTMLElement).blur();
+		expect(document.activeElement).toBe(document.body);
+
+		app.notifications.remove(app.notifications.items[0]!.id, 'expired');
+		await settle();
+
+		expect(document.activeElement).toBe(view.getByRole('heading', { name: 'Tasks (1)' }));
+	});
+
 	it('does not take the focus back when it has moved elsewhere before the toast ends (limit)', async () => {
 		const view = await deleteReview();
 		const edit = view.getByRole('button', { name: 'Edit Deploy' });
