@@ -176,7 +176,8 @@ même trait sur tout le jeu, la même boîte englobante, des tailles prises dans
   reste la croix d'`IconButton` ; Enregistrer et Annuler n'ont pas d'icône), libellé du tri,
   tuiles de statistiques et rangées de `UserList` (20), un type par toast (`check-circle`,
   `warning-circle`, `info-circle`, `warning-triangle`) et le bandeau d'indisponibilité. Un
-  bouton d'action de toast prend l'icône donnée par `ToastAction.icon`, si elle existe.
+  bouton d'action de toast prend l'icône donnée par `ToastAction.icon` (« Annuler » d'une
+  suppression : `undo`).
 - **Erreur de champ** : couleur, icône `warning-circle` (16) et message, jamais la couleur seule
   (WCAG 1.4.1) ; l'icône est cachée, le message reste lié au champ (`aria-describedby`).
   `Alert` met la même icône (20) devant son texte.
