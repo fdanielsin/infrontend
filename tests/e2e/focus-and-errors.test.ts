@@ -244,6 +244,65 @@ test.describe('Focus and errors (computed style, mocked API)', () => {
 		expect(worstContrast(statsColor)).toBeGreaterThanOrEqual(4.5);
 	});
 
+	for (const { width, height, count } of [
+		{ width: 1280, height: 720, count: 1 },
+		{ width: 1280, height: 720, count: 4 },
+		{ width: 320, height: 568, count: 1 },
+		{ width: 320, height: 568, count: 4 }
+	]) {
+		test(`every control of a long list can be pointed at, under ${count} toast(s) that stay, at ${width}x${height} px (limit)`, async ({
+			page
+		}) => {
+			// GIVEN: A list of twelve tasks, so that the page scrolls, and `count` persistent error toasts.
+			await page.setViewportSize({ width, height });
+			await page.clock.install({ time: 0 });
+			await page.clock.pauseAt(1000);
+			const tasks = Array.from({ length: 12 }, (_, index) => ({
+				id: 100 + index,
+				title: `Long list ${index + 1}`,
+				description: 'A short description',
+				user_id: 1,
+				completed: false
+			}));
+			const api = await mockApi(page, { users: [ada], tasks });
+			await openHomeWithUser(page);
+			for (let toast = 1; toast <= count; toast++) {
+				api.failNext('PUT /tasks/{id}', {
+					status: 500,
+					error: `Database unavailable ${toast}`,
+					requestId: `req-${toast}`
+				});
+				await page.getByRole('checkbox', { name: 'Long list 1', exact: true }).click();
+				await expect(page.locator('[data-toast]')).toHaveCount(toast);
+			}
+
+			// WHEN: Each control of the list is brought to the best place the page can scroll it to (its
+			// top near the top of the window, or the end of the page for the last ones), and the
+			// pointer is put on its center.
+			const unreachable = await page.evaluate(() => {
+				const controls = [
+					...document.querySelectorAll<HTMLElement>('ul button, ul input[type="checkbox"]')
+				].filter((control) => !(control as HTMLButtonElement).disabled);
+				const failures: string[] = [];
+				for (const control of controls) {
+					const top = control.getBoundingClientRect().top + window.scrollY;
+					window.scrollTo({ top: Math.max(0, top - 100), behavior: 'instant' });
+					const box = control.getBoundingClientRect();
+					const hit = document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2);
+					if (!hit || !(hit === control || control.contains(hit))) {
+						const name = control.getAttribute('aria-label') ?? control.id ?? control.tagName;
+						failures.push(`${name} -> ${hit?.closest('[data-toast]') ? 'a toast' : hit?.tagName}`);
+					}
+				}
+				return failures;
+			});
+
+			// THEN: Nothing is under a toast: every control answers the pointer, with no toast closed.
+			expect(unreachable).toEqual([]);
+			await expect(page.locator('[data-toast]')).toHaveCount(count);
+		});
+	}
+
 	const CASES = [
 		{ width: 1280, height: 700, count: 1 },
 		{ width: 1280, height: 700, count: 2 },
