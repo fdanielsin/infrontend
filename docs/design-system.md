@@ -591,8 +591,10 @@ d'avertissement le dit et la référence reste sélectionnable.
 Supprimer une tâche n'ouvre aucune confirmation (`IconButton` rouge, nom
 « Supprimer {titre} »). La ligne sort aussitôt de la liste et un toast « Tâche
 supprimée : {titre} » offre « Annuler » pendant 6 s (pause au survol et au focus,
-comme tout toast). L'élément focalisé disparaît : le focus va au titre de la liste
-(`tabindex="-1"`).
+comme tout toast). L'élément focalisé disparaît : le focus va au bouton « Annuler » du
+toast. Tant que le focus y reste, le minuteur est en pause : le clavier n'a pas de limite de
+temps (WCAG 2.2.1). À la fermeture du toast (croix, expiration ou envoi), le focus revient au
+titre de la liste (`tabindex="-1"`), sauf s'il est déjà ailleurs.
 
 - **Annuler** remet la tâche à sa place, sans aucun appel réseau, et donne le focus à
   sa case à cocher (le focus posé par l'action n'est pas repris par le toast).
