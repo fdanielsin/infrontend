@@ -120,6 +120,16 @@ export const zAcceptLanguage = z.string().max(1024);
 export const zId = z.int().gte(0).max(4294967295, { error: 'Invalid value: Expected uint32 to be <= 4294967295' });
 
 /**
+ * Filtre sur l'état des tâches : `true` pour les tâches terminées,
+ * `false` pour les autres ; absent, aucun filtre. Seules les valeurs
+ * exactes `true` et `false` (en minuscules) sont acceptées : toute autre
+ * valeur (`True`, `1`, `yes`, valeur vide), ou un paramètre répété, donne
+ * 400 `VALIDATION_FAILED`. Un paramètre de requête inconnu est ignoré.
+ *
+ */
+export const zCompletedFilter = z.boolean();
+
+/**
  * Service disponible
  */
 export const zHealthCheckResponse = zHealthResponse;

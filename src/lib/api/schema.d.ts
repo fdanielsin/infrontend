@@ -146,7 +146,16 @@ export interface paths {
     };
     "/api/v1/users/{id}/tasks": {
         parameters: {
-            query?: never;
+            query?: {
+                /**
+                 * @description Filtre sur l'état des tâches : `true` pour les tâches terminées,
+                 *     `false` pour les autres ; absent, aucun filtre. Seules les valeurs
+                 *     exactes `true` et `false` (en minuscules) sont acceptées : toute autre
+                 *     valeur (`True`, `1`, `yes`, valeur vide), ou un paramètre répété, donne
+                 *     400 `VALIDATION_FAILED`. Un paramètre de requête inconnu est ignoré.
+                 */
+                completed?: components["parameters"]["CompletedFilter"];
+            };
             header?: {
                 /**
                  * @description Langue des messages : le français pour `fr` et ses variantes, l'anglais
@@ -166,7 +175,9 @@ export interface paths {
         /**
          * Lister les tâches d'un utilisateur
          * @description Les tâches sont retournées triées par `id` croissant (ordre de
-         *     création), garanti par le serveur.
+         *     création), garanti par le serveur. Le paramètre `completed` ne garde
+         *     que les tâches terminées (`true`) ou non terminées (`false`) ; absent,
+         *     toutes les tâches sont retournées.
          */
         get: operations["listUserTasks"];
         put?: never;
@@ -175,7 +186,7 @@ export interface paths {
         options?: never;
         /**
          * Lister les tâches d'un utilisateur, sans corps
-         * @description Répond comme `GET /api/v1/users/{id}/tasks`, sans corps (RFC 9110, section 9.3.2).
+         * @description Répond comme `GET /api/v1/users/{id}/tasks`, y compris avec `completed`, sans corps (RFC 9110, section 9.3.2).
          */
         head: operations["listUserTasksHead"];
         patch?: never;
@@ -528,6 +539,21 @@ export interface components {
                 "application/json": components["schemas"]["ErrorResponse"];
             };
         };
+        /**
+         * @description Identifiant utilisateur invalide (`INVALID_ID`) ou valeur invalide du
+         *     paramètre `completed` (`VALIDATION_FAILED`) ; l'identifiant est vérifié
+         *     en premier
+         */
+        InvalidUserIdOrCompletedFilter: {
+            headers: {
+                "Content-Language": components["headers"]["ContentLanguage"];
+                Vary: components["headers"]["Vary"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
         /** @description Identifiant tâche invalide (`INVALID_ID`) */
         InvalidTaskId: {
             headers: {
@@ -613,6 +639,18 @@ export interface components {
             };
             content?: never;
         };
+        /**
+         * @description Identifiant utilisateur invalide (`INVALID_ID`) ou valeur invalide du
+         *     paramètre `completed` (`VALIDATION_FAILED`), sans corps
+         */
+        HeadInvalidUserIdOrCompletedFilter: {
+            headers: {
+                "Content-Language": components["headers"]["ContentLanguage"];
+                Vary: components["headers"]["Vary"];
+                [name: string]: unknown;
+            };
+            content?: never;
+        };
         /** @description Utilisateur introuvable (`USER_NOT_FOUND`), sans corps */
         HeadUserNotFound: {
             headers: {
@@ -643,6 +681,14 @@ export interface components {
         AcceptLanguage: string;
         /** @description Identifiant numérique non négatif */
         Id: number;
+        /**
+         * @description Filtre sur l'état des tâches : `true` pour les tâches terminées,
+         *     `false` pour les autres ; absent, aucun filtre. Seules les valeurs
+         *     exactes `true` et `false` (en minuscules) sont acceptées : toute autre
+         *     valeur (`True`, `1`, `yes`, valeur vide), ou un paramètre répété, donne
+         *     400 `VALIDATION_FAILED`. Un paramètre de requête inconnu est ignoré.
+         */
+        CompletedFilter: boolean;
     };
     requestBodies: never;
     headers: {
@@ -966,7 +1012,16 @@ export interface operations {
     };
     listUserTasks: {
         parameters: {
-            query?: never;
+            query?: {
+                /**
+                 * @description Filtre sur l'état des tâches : `true` pour les tâches terminées,
+                 *     `false` pour les autres ; absent, aucun filtre. Seules les valeurs
+                 *     exactes `true` et `false` (en minuscules) sont acceptées : toute autre
+                 *     valeur (`True`, `1`, `yes`, valeur vide), ou un paramètre répété, donne
+                 *     400 `VALIDATION_FAILED`. Un paramètre de requête inconnu est ignoré.
+                 */
+                completed?: components["parameters"]["CompletedFilter"];
+            };
             header?: {
                 /**
                  * @description Langue des messages : le français pour `fr` et ses variantes, l'anglais
@@ -998,13 +1053,22 @@ export interface operations {
                     };
                 };
             };
-            400: components["responses"]["InvalidUserId"];
+            400: components["responses"]["InvalidUserIdOrCompletedFilter"];
             500: components["responses"]["InternalServerError"];
         };
     };
     listUserTasksHead: {
         parameters: {
-            query?: never;
+            query?: {
+                /**
+                 * @description Filtre sur l'état des tâches : `true` pour les tâches terminées,
+                 *     `false` pour les autres ; absent, aucun filtre. Seules les valeurs
+                 *     exactes `true` et `false` (en minuscules) sont acceptées : toute autre
+                 *     valeur (`True`, `1`, `yes`, valeur vide), ou un paramètre répété, donne
+                 *     400 `VALIDATION_FAILED`. Un paramètre de requête inconnu est ignoré.
+                 */
+                completed?: components["parameters"]["CompletedFilter"];
+            };
             header?: {
                 /**
                  * @description Langue des messages : le français pour `fr` et ses variantes, l'anglais
@@ -1032,7 +1096,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            400: components["responses"]["HeadInvalidUserId"];
+            400: components["responses"]["HeadInvalidUserIdOrCompletedFilter"];
             500: components["responses"]["HeadInternalServerError"];
         };
     };
