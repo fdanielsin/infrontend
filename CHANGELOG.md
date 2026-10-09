@@ -28,7 +28,9 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   actions are 44 px on touch screens (infrontend#51).
 - Choosing a user on a narrow screen scrolls to the task list; empty lists say what to do next
   (infrontend#51).
-- An error toast for a server error (5xx), a network failure or a malformed answer now stays until it is closed, so that its reference can be copied; the same error is shown once; other errors still leave after 6 s.
+- An error toast for a server error (5xx), a network failure or a malformed answer now stays
+  until it is closed, so that its reference can be copied; the same error is shown once; other
+  errors still leave after 6 s (infrontend#57).
 
 ### Fixed
 
