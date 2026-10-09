@@ -36,6 +36,7 @@ describe('button system', () => {
 			expect(classes).toContain('border');
 			expect(classes).toContain('border-action-strong');
 			expect(classes).toContain('text-action-strong');
+			expect(classes).toContain('hover:bg-action-strong/10');
 			expect(classes).toContain('disabled:border-disabled');
 			expect(classes).toContain('disabled:text-disabled');
 			expect(classes).not.toContain('bg-primary');

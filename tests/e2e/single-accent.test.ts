@@ -232,6 +232,31 @@ test.describe('Buttons of the same role look alike (mocked API)', () => {
 		expect(worstContrast(border)).toBeGreaterThanOrEqual(3);
 	});
 
+	test('a secondary button gets a tint under the pointer, a primary one a darker fill (happy path)', async ({
+		page
+	}) => {
+		// GIVEN: A task in edition, so Save (primary) and Cancel (secondary) are on screen.
+		await openHome(page);
+		await page.getByRole('button', { name: 'Edit Review', exact: true }).click();
+		const cancel = page.getByRole('button', { name: 'Cancel' });
+		const save = page.getByRole('button', { name: 'Save' });
+		const [cancelRest, saveRest] = [
+			await backgroundRgb(page, cancel),
+			await backgroundRgb(page, save)
+		];
+
+		// WHEN: The pointer is over each of them.
+		await cancel.hover();
+		const cancelHover = await backgroundRgb(page, cancel);
+		await save.hover();
+		const saveHover = await backgroundRgb(page, save);
+
+		// THEN: Each background changes: the outline gets a tint, the fill its hover color.
+		expect(cancelHover).not.toEqual(cancelRest);
+		expect(saveHover).not.toEqual(saveRest);
+		expect(saveHover).toEqual(await rgbOf(page, await token(page, '--color-primary-hover')));
+	});
+
 	test('the primary button text reads on its fill: 4.5:1 (limit)', async ({ page }) => {
 		await openHome(page);
 		const button = page.getByRole('button', { name: 'Add Task' });
