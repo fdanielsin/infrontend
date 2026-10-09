@@ -13,7 +13,6 @@
 	import TaskList from './TaskList.svelte';
 
 	const { tasks } = getAppState();
-	const status = tasks.status;
 	let { user = null }: { user: User | null } = $props();
 
 	let submitting = $state(false);
