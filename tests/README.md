@@ -101,7 +101,7 @@ tourne sur un minuteur natif que les faux minuteurs de Vitest ne pilotent pas :
 Chaque test construit son propre `new AppState()` (ou `NotificationState`,
 `RequestStatus`) : aucun état de module n'est partagé, il n'y a rien à remettre
 à zéro entre deux tests. Le test prépare et inspecte l'état directement
-(`app.tasks.tasks = [...]`, `app.users.status.error`).
+(`app.tasks.tasks = [...]`, `app.users.loadState`).
 
 Les fichiers de production ne doivent pas contenir de fichiers `*.test.*`,
 `*.spec.*` ou de dossiers `__tests__/`.

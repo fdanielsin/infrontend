@@ -406,8 +406,9 @@ recherche au-delà d'une dizaine d'options, une ouverture d'environ 150 ms.
 
 ### Alert
 
-Bandeau d'erreur en ligne (`bg-danger-soft text-danger`), **sans rôle ARIA** : l'erreur
-est annoncée une seule fois, par son toast (voir [Motifs](#4-motifs)).
+Bandeau en ligne (`bg-danger-soft text-danger`), **sans rôle ARIA**. Il n'affiche plus d'erreur de
+requête (le toast en est l'unique surface, voir [Motifs](#4-motifs)) ; la page statistiques
+l'utilise encore pour son état d'échec.
 
 ### Notification et ToastItem
 
@@ -514,13 +515,14 @@ validation a lieu à la soumission.
 
 ### Toast, bandeau ou message en ligne
 
-| Besoin                                                                                 | Moyen                            | Pourquoi                                                            |
-| -------------------------------------------------------------------------------------- | -------------------------------- | ------------------------------------------------------------------- |
-| Erreur d'un champ                                                                      | message sous le champ            | relié par `aria-describedby`                                        |
-| Erreur d'une requête (formulaire, liste)                                               | `Alert` en ligne + toast `error` | l'alerte en ligne n'a pas de rôle : une seule annonce, par le toast |
-| Information dont l'effet se voit déjà à l'écran (langue, tri, déplacement d'une ligne) | annonce `aria-live`, sans toast  | lue par les lecteurs d'écran, rien de visible à recouvrir           |
-| Confirmation passagère (service rétabli, référence copiée)                             | toast `status`                   | annonce polie, disparaît seule                                      |
-| Service indisponible, durable                                                          | bandeau `AvailabilityBanner`     | reste tant que l'incident dure, avec « Réessayer »                  |
+| Besoin                                                                                 | Moyen                             | Pourquoi                                                        |
+| -------------------------------------------------------------------------------------- | --------------------------------- | --------------------------------------------------------------- |
+| Erreur d'un champ                                                                      | message sous le champ             | relié par `aria-describedby`                                    |
+| Erreur d'une requête (formulaire, liste)                                               | toast `error` seul                | une seule surface, avec référence, copie et persistance         |
+| Refus du serveur rattachable à un champ (e-mail déjà pris, code `EMAIL_TAKEN`)         | message sous le champ, sans toast | le contrat ne désigne aucun autre champ : le reste est un toast |
+| Information dont l'effet se voit déjà à l'écran (langue, tri, déplacement d'une ligne) | annonce `aria-live`, sans toast   | lue par les lecteurs d'écran, rien de visible à recouvrir       |
+| Confirmation passagère (service rétabli, référence copiée)                             | toast `status`                    | annonce polie, disparaît seule                                  |
+| Service indisponible, durable                                                          | bandeau `AvailabilityBanner`      | reste tant que l'incident dure, avec « Réessayer »              |
 
 Un succès de création n'a pas de toast : le formulaire se vide et la liste change.
 
@@ -545,11 +547,13 @@ invitation « Rien à compter » avec lien vers l'accueil quand utilisateurs et 
 0 ; attente du service (« s'afficheront dès que le service sera rétabli », sans chargement ni
 second « Réessayer », le bandeau l'a) ; chargement ; échec (« Impossible de charger… » et
 « Réessayer », dont le clic met le focus sur `<main>` le temps du rechargement). Le toast
-garde le détail technique et la référence. **Cible** : la liste des utilisateurs de l'accueil
-affiche encore « Users (0) / No users yet » tant que ses données sont inconnues (panne au
-chargement) ; elle suivra la même règle, avec un état de chargement connu de `UserState`,
-dans un lot suivant. Preuve : `tests/unit/components/StatsPage.states.test.ts`,
-`tests/e2e/truthful-states.test.ts`.
+garde le détail technique et la référence. La liste des utilisateurs de
+l'accueil suit la même règle avec `UserState.loadState` (`idle`, `loading`, `loaded`, `failed`) :
+sans chargement réussi, ni compteur ni « No users yet » ; pendant une panne (bandeau) un texte
+neutre sans bouton, hors panne un échec avec « Réessayer » ; les utilisateurs déjà affichés
+restent affichés si un rechargement échoue. Preuve : `tests/unit/components/StatsPage.states.test.ts`,
+`tests/unit/components/UserList.load-state.test.ts`, `tests/e2e/truthful-states.test.ts`,
+`tests/e2e/user-list-states.test.ts`.
 
 Règles complémentaires ([loading-states-system](https://designmotionhq.com/patterns/loading-states-system), [skeleton-loading](https://designmotionhq.com/patterns/skeleton-loading), [empty-states](https://designmotionhq.com/patterns/empty-states)) :
 
