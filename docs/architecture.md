@@ -172,6 +172,12 @@ une fois par changement de choix, jamais au chargement. Quand une modification
 (case à cocher, enregistrement d'une édition) déplace la ligne, le focus reste sur le même
 contrôle (restauré après `tick()`) et « titre : position N sur M » est annoncé de même.
 
+Le filtre « Toutes / À faire / Terminées » suit le même modèle : `features/tasks/filter-tasks.ts`
+(pur) filtre sans modifier son entrée, `TaskFilterState` garde le choix sous `indrive.task-filter`,
+et `TaskList` dérive `visibleTasks` = tri(filtre(`tasks.tasks`)). Le filtre se fait dans le
+navigateur : l'API n'est pas appelée avec `?completed=` (son paramètre existe, il n'est pas
+utilisé par l'interface).
+
 ## Évolution future
 
 Un découpage en packages ou plusieurs applications ne sera envisagé que

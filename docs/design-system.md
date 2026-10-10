@@ -693,6 +693,22 @@ chargement. Quand une modification déplace une ligne, le focus reste sur le mê
 [architecture.md](./architecture.md#tri-des-tâches). Preuve :
 `tests/e2e/task-sorting.test.ts`, `tests/unit/components/TaskSorting.test.ts`.
 
+### Filtre de la liste
+
+`Select` « Afficher » (Toutes, À faire, Terminées) avant le tri, dès la première tâche (un filtre
+mémorisé ne laisse jamais une liste vide sans moyen d'en sortir). Le filtrage se fait dans le
+navigateur, sur la liste déjà chargée (`filterTasks`, puis le tri) : `tasks.tasks`, le titre et son
+compteur « n à faire sur N » ne changent jamais avec le filtre. Le choix est gardé comme le tri
+(`TaskFilterState`, `localStorage`, clé `indrive.task-filter`, valeur inconnue = Toutes) et annoncé
+une fois par changement (« Tâches à faire affichées : 2 »), jamais au chargement. Une liste filtrée
+vide dit « Aucune tâche à faire » ou « Aucune tâche terminée », pas « Aucune tâche ». Une coche qui
+fait sortir la ligne du filtre met le focus sur la ligne qui prend sa place (sinon sur le titre de
+la liste) et annonce « titre : déplacée vers Terminées » ; la ligne en cours d'édition reste
+affichée ; une tâche créée ou remise par Annuler que le filtre cache est annoncée (« titre :
+visible dans À faire »), sans toast ; « position N sur M » compte les lignes affichées. Preuve :
+`tests/unit/components/TaskSorting.test.ts`, `tests/unit/tasks/filter-tasks.test.ts`,
+`tests/unit/stores/task-filter.test.ts`, `tests/e2e/task-filter.test.ts`.
+
 ### Réponse optimiste
 
 Mettre l'interface à jour tout de suite, puis revenir en arrière proprement en cas

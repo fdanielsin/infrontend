@@ -6,6 +6,8 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- The task list can be filtered to the tasks to do or the done ones, in the browser; the choice is
+  remembered, the count in the title stays right, and an empty filter says so (infrontend#77).
 - The lint refuses imports that break the direction of the dependencies (ui, features, state,
   api and routes), and contract types or `$env` read outside their place.
 - A "Skip to main content" link is the first stop of every page for keyboard users, in the four
