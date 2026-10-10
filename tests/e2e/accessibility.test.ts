@@ -95,7 +95,9 @@ test.describe('Accessibility (axe, mocked API)', () => {
 		await page.getByLabel('Email', { exact: true }).fill('grace@');
 		await page.getByLabel('Email', { exact: true }).blur();
 		await expect(page.getByText('Invalid email address')).toBeVisible();
-		await expect(page.locator('svg[data-icon="check"]').first()).toBeVisible();
+		await expect(
+			page.getByLabel('Name', { exact: true }).locator('xpath=..').locator('svg[data-icon="check"]')
+		).toBeVisible();
 
 		// THEN: No violation.
 		await expectNoViolations(page);

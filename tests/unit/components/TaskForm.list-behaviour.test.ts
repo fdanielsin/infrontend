@@ -242,16 +242,20 @@ describe('TaskForm list and edit behaviour', () => {
 		const title = view.getAllByLabelText('Task Title')[1] as HTMLElement;
 		const description = view.getAllByLabelText('Description (optional)')[1] as HTMLTextAreaElement;
 
-		// WHEN: The title is emptied and left, the description changed and left.
-		await fireEvent.input(title, { target: { value: '' } });
-		await fireEvent.blur(title);
+		// WHEN: The description is changed to a valid text and left.
 		await fireEvent.input(description, { target: { value: 'Other' } });
 		await fireEvent.blur(description);
 
-		// THEN: The title shows its error, the description its success; nothing was saved or closed.
-		expect(title.getAttribute('aria-invalid')).toBe('true');
+		// THEN: It shows its success; nothing was saved, and the edit stays open.
 		expect(description.parentElement?.querySelector('svg[data-icon="check"]')).not.toBeNull();
 		expect(api.updateTask).not.toHaveBeenCalled();
 		expect(view.getByRole('button', { name: 'Save' })).toBeTruthy();
+
+		// WHEN: The title is emptied and left.
+		await fireEvent.input(title, { target: { value: '' } });
+		await fireEvent.blur(title);
+
+		// THEN: It shows its error.
+		expect(title.getAttribute('aria-invalid')).toBe('true');
 	});
 });

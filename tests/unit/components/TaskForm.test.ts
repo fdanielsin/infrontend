@@ -385,6 +385,28 @@ describe('TaskForm', () => {
 		const check = (field: HTMLElement) =>
 			field.parentElement?.querySelector('svg[data-icon="check"]') ?? null;
 
+		it('wires the optional description: no check when empty, a check when filled, an error over the limit (limit)', async () => {
+			const view = renderWithApp(app, TaskForm, { user });
+			const description = view.getAllByLabelText(
+				'Description (optional)'
+			)[0] as HTMLTextAreaElement;
+			const typeAndLeave = async (value: string) => {
+				await fireEvent.input(description, { target: { value } });
+				await fireEvent.blur(description);
+			};
+
+			await typeAndLeave('x');
+			await typeAndLeave('');
+			expect(check(description)).toBeNull();
+			await typeAndLeave('   ');
+			expect(check(description)).toBeNull();
+			await typeAndLeave('ok');
+			expect(check(description)).not.toBeNull();
+			await typeAndLeave('D'.repeat(2001));
+			expect(description.getAttribute('aria-invalid')).toBe('true');
+			expect(check(description)).toBeNull();
+		});
+
 		it('links the title error at blur, gives an empty description no check, and returns to neutral once created (happy path, limit)', async () => {
 			vi.mocked(api.createTask).mockResolvedValue({
 				success: true,
