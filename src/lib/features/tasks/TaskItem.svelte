@@ -118,7 +118,7 @@
 				{@attach ref(refs, 'editTitleInput')}
 				error={errorOf('title')}
 				valid={editFields.status('title') === 'valid'}
-				onblur={() => editFields.blur('title')}
+				onblur={(event: FocusEvent) => editFields.blur('title', event)}
 			/>
 			<TextField
 				compact
@@ -133,7 +133,7 @@
 				error={errorOf('description')}
 				valid={editFields.status('description') === 'valid'}
 				oninput={() => editFields.input('description')}
-				onblur={() => editFields.blur('description')}
+				onblur={(event: FocusEvent) => editFields.blur('description', event)}
 			/>
 			<div class="flex flex-wrap gap-2">
 				<Button type="submit" aria-busy={saving ? 'true' : undefined}>

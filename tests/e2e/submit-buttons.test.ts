@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { AxeBuilder } from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { nextFocusKey } from './support/keyboard';
 import { ada, adaTasks, mockApi, openHomeWithUser } from './support/mock-api';
 
 // The submit buttons are never disabled: validation happens on press, with our messages (never the
@@ -141,5 +142,57 @@ test.describe('Submit buttons (mocked API)', () => {
 		release();
 		await expect(save).toHaveCount(0);
 		expect(calls(api, 'PUT /tasks/{id}')).toBe(1);
+	});
+});
+
+// Leaving a field: an error shown at that moment must not cost the click on a button of the form.
+test.describe('Leaving a field for a button (mocked API)', () => {
+	test.beforeEach(async ({ page }) => {
+		await page.emulateMedia({ reducedMotion: 'reduce' });
+	});
+
+	test('a mouse click on Add Task right after leaving an invalid title is not lost (limit)', async ({
+		page
+	}) => {
+		// GIVEN: A title typed then emptied, the focus still in it.
+		const api = await mockApi(page, { users: [ada], tasks: adaTasks });
+		await openHomeWithUser(page);
+		await page.locator('#title').fill('x');
+		await page.locator('#title').fill('');
+
+		// WHEN: The button is pressed with the mouse: the press takes the focus out of the title.
+		await page.getByRole('button', { name: 'Add Task' }).click();
+
+		// THEN: The click went through (the form validated and focused the title), nothing was sent.
+		await expect(page.getByText('Title is required')).toBeVisible();
+		await expect(page.locator('#title')).toBeFocused();
+		expect(calls(api, 'POST /tasks')).toBe(0);
+	});
+
+	test('a mouse click on Cancel right after leaving an invalid edit title closes the edit (limit)', async ({
+		page
+	}) => {
+		await mockApi(page, { users: [ada], tasks: adaTasks });
+		await openHomeWithUser(page);
+		await page.getByRole('button', { name: 'Edit Review', exact: true }).click();
+		await page.locator('#edit-title-10').fill('');
+
+		await page.getByRole('button', { name: 'Cancel' }).click();
+
+		await expect(page.getByRole('button', { name: 'Save' })).toHaveCount(0);
+	});
+
+	test('leaving an invalid title with Tab still shows its error (boundary)', async ({
+		page,
+		browserName
+	}) => {
+		await mockApi(page, { users: [ada], tasks: adaTasks });
+		await openHomeWithUser(page);
+		await page.locator('#title').fill('x');
+		await page.locator('#title').fill('');
+
+		await page.keyboard.press(nextFocusKey(browserName));
+
+		await expect(page.getByText('Title is required')).toBeVisible();
 	});
 });

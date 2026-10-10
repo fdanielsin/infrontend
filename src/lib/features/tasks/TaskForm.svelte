@@ -94,7 +94,7 @@
 						error={errorOf(addFields, 'title')}
 						valid={addFields.status('title') === 'valid'}
 						oninput={() => addFields.input('title')}
-						onblur={() => addFields.blur('title')}
+						onblur={(event: FocusEvent) => addFields.blur('title', event)}
 					/>
 				</div>
 
@@ -109,7 +109,7 @@
 						error={errorOf(addFields, 'description')}
 						valid={addFields.status('description') === 'valid'}
 						oninput={() => addFields.input('description')}
-						onblur={() => addFields.blur('description')}
+						onblur={(event: FocusEvent) => addFields.blur('description', event)}
 					/>
 				</div>
 
