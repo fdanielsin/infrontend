@@ -449,6 +449,16 @@ test.describe('Editing a task', () => {
 		await expect(checkbox).toBeDisabled();
 		await expect(page.getByRole('button', { name: `Delete ${title}` })).toBeDisabled();
 
+		// WHEN: The title is changed to another long one and left, so the success check appears.
+		await field.fill('U'.repeat(200));
+		await field.blur();
+		await expect(field.locator('xpath=..').locator('svg[data-icon="check"]')).toBeVisible();
+
+		// THEN: The check took no room from the text: still no inner scroll.
+		expect(
+			await field.evaluate((element) => element.scrollHeight <= element.clientHeight + 1)
+		).toBe(true);
+
 		// WHEN: The title is emptied then shortened and Enter pressed.
 		const before = (await field.boundingBox())!.height;
 		await field.fill('Brief');

@@ -49,7 +49,10 @@
 	const CONTROL_CLASSES = 'w-full rounded-control border aria-invalid:border-danger';
 	// Two border colors on one element: the stylesheet order, not the class order, would decide.
 	const NEUTRAL_BORDER = 'border-field-border';
-	const VALID_CLASSES = 'border-success pr-8';
+	const VALID_BORDER = 'border-success';
+	// Room for the check. A field that grows with its text keeps it always: it is measured once, and
+	// a padding added later would hide its last lines.
+	const CHECK_ROOM = 'pr-8';
 	const SIZE_CLASSES = { default: 'px-3 py-2', compact: 'px-2 py-1' };
 	const WRAPPER_CLASSES = { default: 'relative mt-1', compact: 'relative' };
 	const CHECK_CLASSES = { default: 'top-3', compact: 'top-2' };
@@ -102,7 +105,8 @@
 			class={[
 				CONTROL_CLASSES,
 				SIZE_CLASSES[size],
-				valid ? VALID_CLASSES : NEUTRAL_BORDER,
+				valid ? VALID_BORDER : NEUTRAL_BORDER,
+				(valid || autoGrow) && CHECK_ROOM,
 				autoGrow && 'resize-none overflow-hidden'
 			]}
 			{@attach autoGrow ? growToContent : undefined}
@@ -119,7 +123,12 @@
 			{required}
 			aria-invalid={!!error}
 			aria-describedby={error ? errorId : undefined}
-			class={[CONTROL_CLASSES, SIZE_CLASSES[size], valid ? VALID_CLASSES : NEUTRAL_BORDER]}
+			class={[
+				CONTROL_CLASSES,
+				SIZE_CLASSES[size],
+				valid ? VALID_BORDER : NEUTRAL_BORDER,
+				valid && CHECK_ROOM
+			]}
 			{...rest}
 		/>
 	{:else}
@@ -130,7 +139,12 @@
 			{required}
 			aria-invalid={!!error}
 			aria-describedby={error ? errorId : undefined}
-			class={[CONTROL_CLASSES, SIZE_CLASSES[size], valid ? VALID_CLASSES : NEUTRAL_BORDER]}
+			class={[
+				CONTROL_CLASSES,
+				SIZE_CLASSES[size],
+				valid ? VALID_BORDER : NEUTRAL_BORDER,
+				valid && CHECK_ROOM
+			]}
 			{...rest}
 		/>
 	{/if}
