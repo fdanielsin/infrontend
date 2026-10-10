@@ -1,9 +1,13 @@
-import { AxeBuilder } from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { expectNoAxeViolations } from './support/axe';
 import { nextFocusKey } from './support/keyboard';
-import { ada, adaTasks, grace, mockApi, openHomeWithUser } from './support/mock-api';
+import { ada, adaTasks, mockApi, openHomeWithUser } from './support/mock-api';
 
 // Deleting a task is undoable for 6 s: the row leaves at once, the DELETE waits. The API is mocked.
+// The rules of the store (the row back in place, a task already gone, a refusal, a change of user)
+// are tested by task-undo.test.ts and TaskDelete.focus.test.ts. Kept here: the keyboard path in a
+// real browser, the real timer and request, and the page being left (the wiring in +layout.svelte,
+// which no unit test mounts).
 
 const deletes = (calls: string[]) => calls.filter((call) => call === 'DELETE /tasks/{id}');
 const undoButton = (page: Page) => page.getByRole('status').getByRole('button', { name: 'Undo' });
@@ -22,220 +26,93 @@ test.describe('Undoable task deletion (mocked API)', () => {
 		await page.emulateMedia({ reducedMotion: 'reduce' });
 	});
 
-	test('Delete hides the row and offers Undo, without any request yet (happy path)', async ({
-		page
+	test('a deletion made and undone with the keyboard puts the row back in place and sends nothing (happy path)', async ({
+		page,
+		browserName
 	}) => {
-		// GIVEN: A user with two tasks and a frozen clock.
+		// GIVEN: A user with two tasks, and a clock that the test moves.
 		await page.clock.install();
 		const api = await mockApi(page, { users: [ada], tasks: adaTasks });
 		await openHomeWithUser(page);
 
-		// WHEN: The first task is deleted.
-		await page.getByRole('button', { name: 'Delete Review', exact: true }).click();
+		// WHEN: The first task is deleted with the keyboard.
+		await page.getByRole('button', { name: 'Delete Review', exact: true }).focus();
+		await page.keyboard.press('Enter');
 
-		// THEN: It is out of the list, the toast names it, nothing was sent, and 5 s later still nothing.
+		// THEN: The row is out of the list, the toast names it, Undo has the focus, nothing was sent.
 		await expect(page.getByRole('checkbox', { name: 'Review', exact: true })).toHaveCount(0);
 		await expect(page.getByRole('status').getByText('Task deleted: Review')).toBeVisible();
-		await expect(undoButton(page)).toBeVisible();
-		await page.clock.runFor(5000);
+		await expect(undoButton(page)).toBeFocused();
 		expect(deletes(api.calls)).toHaveLength(0);
-	});
 
-	test('Undo puts the row back where it was, with the focus on its checkbox, and sends nothing (happy path)', async ({
-		page
-	}) => {
-		// GIVEN: A task deleted with the keyboard-reachable Undo button focused.
-		await page.clock.install();
-		const api = await mockApi(page, { users: [ada], tasks: adaTasks });
-		await openHomeWithUser(page);
-		await page.getByRole('button', { name: 'Delete Review', exact: true }).click();
-		await undoButton(page).focus();
+		// WHEN: The focus is on the last control of the page, and Tab goes into the toast.
+		await page.getByRole('button', { name: 'Delete Review 2', exact: true }).focus();
+		await page.keyboard.press(nextFocusKey(browserName));
 
-		// WHEN: Undo is pressed with Enter, then the time would have run out.
+		// THEN: Undo has the focus, and the toast waits for the keyboard user (WCAG 2.2.1), with no violation.
+		await expect(undoButton(page)).toBeFocused();
+		await page.clock.runFor(60_000);
+		await expect(undoButton(page)).toBeVisible();
+		expect(deletes(api.calls)).toHaveLength(0);
+		await expectNoAxeViolations(page);
+
+		// WHEN: Undo is pressed with Enter.
 		await undoButton(page).press('Enter');
 
-		// THEN: The row is first again, focused (the toast did not take the focus elsewhere), the
-		// toast is gone, and no DELETE ever leaves.
-		const checkbox = page.getByRole('checkbox', { name: 'Review', exact: true });
-		await expect(checkbox).toBeFocused();
-		await expect(page.locator('[data-toast]')).toHaveCount(0);
+		// THEN: The row is first again and has the focus, the toast is gone, no DELETE ever leaves.
+		await expect(page.getByRole('checkbox', { name: 'Review', exact: true })).toBeFocused();
 		await expect(page.locator('li label').first()).toHaveText('Review');
+		await expect(page.locator('[data-toast]')).toHaveCount(0);
 		await page.clock.runFor(10_000);
 		expect(deletes(api.calls)).toHaveLength(0);
 	});
 
-	test('Undo with the mouse restores the row and keeps it after the delay (happy path)', async ({
+	test('the DELETE leaves when the 6 s are over, and when the toast of another task is closed (happy path)', async ({
 		page
 	}) => {
-		const api = await mockApi(page, { users: [ada], tasks: adaTasks });
-		await openHomeWithUser(page);
-		await page.getByRole('button', { name: 'Delete Review 2' }).click();
-
-		await undoButton(page).click();
-
-		await expect(page.getByRole('checkbox', { name: 'Review 2', exact: true })).toBeVisible();
-		await page.waitForTimeout(300);
-		expect(deletes(api.calls)).toHaveLength(0);
-	});
-
-	test('the DELETE leaves once the 6 s are over, and the row stays out (happy path)', async ({
-		page
-	}) => {
-		// GIVEN: A deleted task.
+		// GIVEN: A user with two tasks, and a clock that the test moves.
 		await page.clock.install();
 		const api = await mockApi(page, { users: [ada], tasks: adaTasks });
 		await openHomeWithUser(page);
-		await page.getByRole('button', { name: 'Delete Review', exact: true }).click();
 
-		// WHEN: Neither the pointer nor the focus is on the toast (either pauses its timer), and the
-		// time runs out.
+		// WHEN: A task is deleted; neither the pointer nor the focus is on its toast (either pauses
+		// its timer); the time runs out.
+		await page.getByRole('button', { name: 'Delete Review', exact: true }).click();
 		await page.mouse.move(0, 0);
 		await page.evaluate(() => (document.activeElement as HTMLElement).blur());
 		await page.clock.runFor(6100);
 
-		// THEN: One DELETE was sent, the toast is gone and the task is gone on the server.
+		// THEN: One DELETE was sent, the toast is gone, the task is gone on the server and in the list.
 		await expect.poll(() => deletes(api.calls).length).toBe(1);
 		await expect(page.locator('[data-toast]')).toHaveCount(0);
 		expect(api.tasks.map((task) => task.id)).toEqual([11]);
 		await expect(page.getByRole('checkbox', { name: 'Review', exact: true })).toHaveCount(0);
-	});
 
-	test('closing the toast sends the DELETE at once (happy path)', async ({ page }) => {
-		const api = await mockApi(page, { users: [ada], tasks: adaTasks });
-		await openHomeWithUser(page);
-		await page.getByRole('button', { name: 'Delete Review', exact: true }).click();
-
+		// WHEN: Another task is deleted and its toast is closed.
+		await page.getByRole('button', { name: 'Delete Review 2' }).click();
 		await page.getByRole('button', { name: 'Dismiss notification' }).click();
 
-		await expect.poll(() => deletes(api.calls).length).toBe(1);
+		// THEN: Its DELETE leaves at once.
+		await expect.poll(() => deletes(api.calls).length).toBe(2);
+		expect(api.tasks).toEqual([]);
 	});
 
-	test('a task the server no longer knows stays out, with no error nor notice (limit)', async ({
-		page
-	}) => {
-		const api = await mockApi(page, { users: [ada], tasks: adaTasks });
-		await openHomeWithUser(page);
-		api.failNext('DELETE /tasks/{id}', {
-			status: 404,
-			error: 'Task not found',
-			code: 'TASK_NOT_FOUND'
-		});
-		await page.getByRole('button', { name: 'Delete Review', exact: true }).click();
-
-		await page.getByRole('button', { name: 'Dismiss notification' }).click();
-
-		await expect.poll(() => deletes(api.calls).length).toBe(1);
-		await expect(page.locator('[data-toast]')).toHaveCount(0);
-		await expect(page.getByRole('checkbox', { name: 'Review', exact: true })).toHaveCount(0);
-	});
-
-	test('a refused deletion puts the row back and shows the error (sad path)', async ({ page }) => {
-		const api = await mockApi(page, { users: [ada], tasks: adaTasks });
-		await openHomeWithUser(page);
-		api.failNext('DELETE /tasks/{id}', { status: 500, error: 'Database unavailable' });
-		await page.getByRole('button', { name: 'Delete Review', exact: true }).click();
-
-		await page.getByRole('button', { name: 'Dismiss notification' }).click();
-
-		await expect(page.getByRole('alert').getByText('Database unavailable')).toBeVisible();
-		await expect(page.locator('li label').first()).toHaveText('Review');
-	});
-
-	test('a connection that fails puts the row back and shows the error (exception)', async ({
-		page
-	}) => {
-		await mockApi(page, { users: [ada], tasks: adaTasks });
-		await openHomeWithUser(page);
-		await page.route('**/api/v1/tasks/10', (route) => route.abort('connectionrefused'));
-		await page.getByRole('button', { name: 'Delete Review', exact: true }).click();
-
-		await page.getByRole('button', { name: 'Dismiss notification' }).click();
-
-		await expect(page.getByRole('alert')).not.toBeEmpty();
-		await expect(page.getByRole('checkbox', { name: 'Review', exact: true })).toBeVisible();
-	});
-
-	test('selecting another user sends the pending deletion at once (limit)', async ({ page }) => {
-		const api = await mockApi(page, { users: [ada, grace], tasks: adaTasks });
-		await openHomeWithUser(page);
-		await page.getByRole('button', { name: 'Delete Review', exact: true }).click();
-
-		await page.getByRole('button', { name: /Grace Hopper/ }).click();
-
-		await expect.poll(() => deletes(api.calls).length).toBe(1);
-		await expect(page.locator('[data-toast]')).toHaveCount(0);
-		expect(api.tasks.map((task) => task.id)).toEqual([11]);
-	});
-
-	test('leaving the page sends the pending deletion once, for hidden and pagehide together (limit)', async ({
-		page
-	}) => {
+	test('leaving the page sends every deletion still waiting (limit)', async ({ page }) => {
+		// GIVEN: Two deletions that can still be undone, and a clock that only the test moves, so that
+		// no toast can expire and send its DELETE by itself.
+		await page.clock.install({ time: 0 });
+		await page.clock.pauseAt(1000);
 		const api = await mockApi(page, { users: [ada], tasks: adaTasks });
 		await openHomeWithUser(page);
 		await page.getByRole('button', { name: 'Delete Review', exact: true }).click();
 		await page.getByRole('button', { name: 'Delete Review 2' }).click();
 
+		// WHEN: The page becomes hidden, then it is unloaded.
 		await leavePage(page);
 
+		// THEN: Both DELETE leave, and no toast waits any more.
 		await expect.poll(() => deletes(api.calls).length).toBe(2);
-		await page.waitForTimeout(300);
-		expect(deletes(api.calls)).toHaveLength(2);
 		await expect(page.locator('[data-toast]')).toHaveCount(0);
-	});
-
-	test('leaving the page with nothing pending sends nothing (boundary)', async ({ page }) => {
-		const api = await mockApi(page, { users: [ada], tasks: adaTasks });
-		await openHomeWithUser(page);
-
-		await leavePage(page);
-		await page.waitForTimeout(200);
-
-		expect(deletes(api.calls)).toHaveLength(0);
-	});
-
-	test('Tab reaches Undo then Dismiss and Enter on Undo works from the keyboard path (happy path)', async ({
-		page,
-		browserName
-	}) => {
-		// GIVEN: A task deleted from its Delete button, the focus then on the list heading.
-		await page.clock.install();
-		await mockApi(page, { users: [ada], tasks: adaTasks });
-		await openHomeWithUser(page);
-		await page.getByRole('button', { name: 'Delete Review 2' }).focus();
-		await page.keyboard.press('Enter');
-		await expect(undoButton(page)).toBeFocused();
-		const lastControl = page.getByRole('button', { name: 'Delete Review', exact: true });
-		await lastControl.focus();
-
-		// WHEN: Tab goes into the toast.
-		await page.keyboard.press(nextFocusKey(browserName));
-
-		// THEN: Undo has the focus, and the toast waits for the keyboard user.
-		await expect(undoButton(page)).toBeFocused();
-		await page.clock.runFor(20_000);
-		await expect(undoButton(page)).toBeVisible();
-		await page.keyboard.press('Enter');
-		await expect(page.getByRole('checkbox', { name: 'Review 2', exact: true })).toBeFocused();
-	});
-
-	test('the deletion waits as long as the keyboard stays on Undo, and axe finds nothing (limit, WCAG 2.2.1)', async ({
-		page
-	}) => {
-		// GIVEN: A task deleted from the keyboard; the clock is ours.
-		await page.clock.install();
-		const api = await mockApi(page, { users: [ada], tasks: adaTasks });
-		await openHomeWithUser(page);
-		await page.getByRole('button', { name: 'Delete Review', exact: true }).focus();
-		await page.keyboard.press('Enter');
-		await expect(undoButton(page)).toBeFocused();
-
-		// WHEN: A minute passes with the focus on Undo.
-		await page.clock.runFor(60_000);
-
-		// THEN: The toast is still there, nothing was sent, and the page has no violation.
-		await expect(undoButton(page)).toBeVisible();
-		expect(deletes(api.calls)).toHaveLength(0);
-		const { violations } = await new AxeBuilder({ page }).analyze();
-		expect(violations.map((violation) => violation.id)).toEqual([]);
+		expect(api.tasks).toEqual([]);
 	});
 });

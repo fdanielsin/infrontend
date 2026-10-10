@@ -1,26 +1,19 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { AxeBuilder } from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { expectNoAxeViolations } from './support/axe';
 import { nextFocusKey } from './support/keyboard';
+import { horizontalOverflow } from './support/layout';
 import { ada, adaTasks, mockApi, openHomeWithUser } from './support/mock-api';
 
 // The submit buttons are never disabled: validation happens on press, with our messages (never the
 // browser bubble, visual review 22), and a slow request only marks the button busy. API mocked.
-
-const LOCALES = ['en', 'fr', 'de', 'es'] as const;
-const messages = Object.fromEntries(
-	LOCALES.map((locale) => [
-		locale,
-		JSON.parse(
-			readFileSync(resolve(process.cwd(), 'messages', `${locale}.json`), 'utf8')
-		) as Record<string, string>
-	])
-);
+// What each button does with its state (busy, enabled, a second press ignored, the label) is tested
+// by SubmitButtons.test.ts; kept here: the validation bubble of a real browser, and the busy
+// buttons in a real page (contrast, width at 320 px, the focus).
 
 const calls = (api: { calls: string[] }, operation: string) =>
 	api.calls.filter((call) => call === operation).length;
 
+// Holds the answer to every request of that method and address until the returned function is called.
 async function slowRoute(page: Page, method: string, pattern: string) {
 	let release!: () => void;
 	const gate = new Promise<void>((resolve) => (release = resolve));
@@ -37,111 +30,93 @@ test.describe('Submit buttons (mocked API)', () => {
 		await page.emulateMedia({ reducedMotion: 'reduce' });
 	});
 
-	for (const locale of LOCALES) {
-		test(`an empty form shows our message, not the browser bubble, in ${locale} (sad path)`, async ({
-			page
-		}) => {
-			// GIVEN: The page in the language, with a user selected.
-			const api = await mockApi(page, { users: [ada], tasks: adaTasks });
-			await page
-				.context()
-				.addCookies([{ name: 'PARAGLIDE_LOCALE', value: locale, url: 'http://localhost:4173' }]);
-			await page.goto('/');
-			await page.getByRole('button', { name: /Ada Lovelace/ }).click();
-			await page.locator('#title').waitFor();
-
-			// WHEN: Each form is submitted empty, with the keyboard.
-			await page.locator('#name').press('Enter');
-			await page.locator('#title').press('Enter');
-
-			// THEN: Our messages are shown, the fields are marked invalid, nothing was sent, and the
-			// first invalid field of the last form has the focus.
-			await expect(page.getByText(messages[locale]!['validation_name_required']!)).toBeVisible();
-			await expect(page.getByText(messages[locale]!['validation_title_required']!)).toBeVisible();
-			await expect(page.locator('#name')).toHaveAttribute('aria-invalid', 'true');
-			await expect(page.locator('#title')).toBeFocused();
-			expect(calls(api, 'POST /users')).toBe(0);
-			expect(calls(api, 'POST /tasks')).toBe(0);
-		});
-	}
-
-	test('the buttons stay enabled while the form is invalid (happy path)', async ({ page }) => {
-		await mockApi(page, { users: [ada], tasks: adaTasks });
-		await openHomeWithUser(page);
-
-		await expect(page.getByRole('button', { name: 'Create User' })).toBeEnabled();
-		await expect(page.getByRole('button', { name: 'Add Task' })).toBeEnabled();
-	});
-
-	test('Add Task, busy during a slow request, keeps its focus and sends once (limit)', async ({
+	test('an empty form shows our message, not the browser bubble, and the focus goes to its first invalid field (sad path)', async ({
 		page
 	}) => {
-		// GIVEN: A creation that waits.
+		// GIVEN: A selected user, so that both forms are on the page.
 		const api = await mockApi(page, { users: [ada], tasks: adaTasks });
 		await openHomeWithUser(page);
-		const release = await slowRoute(page, 'POST', '**/api/v1/tasks');
-		await page.locator('#title').fill('Plan');
-		const button = page.getByRole('button', { name: 'Add Task' });
-		await button.focus();
 
-		// WHEN: It is pressed, then pressed again while it waits.
-		await page.keyboard.press('Enter');
-		const busy = page.getByRole('button', { name: 'Adding…' });
-		await expect(busy).toHaveAttribute('aria-busy', 'true');
-		await page.keyboard.press('Enter');
+		// WHEN: Each form is submitted empty, with the keyboard (a disabled button, or the validation of
+		// the browser, would stop the submission and show its own bubble).
+		await page.locator('#name').press('Enter');
+		await page.locator('#title').press('Enter');
 
-		// THEN: Enabled, focused, no violation, one request; busy ends with the answer.
-		await expect(busy).toBeEnabled();
-		await expect(busy).toBeFocused();
-		const { violations } = await new AxeBuilder({ page }).analyze();
-		expect(violations.map((violation) => violation.id)).toEqual([]);
-		release();
-		await expect(page.getByRole('button', { name: 'Add Task' })).not.toHaveAttribute(
-			'aria-busy',
-			'true'
-		);
-		expect(calls(api, 'POST /tasks')).toBe(1);
+		// THEN: Our messages are shown, the fields are marked invalid, nothing was sent, and the focus
+		// is on the first invalid field of the last form.
+		await expect(page.getByText('Name is required')).toBeVisible();
+		await expect(page.getByText('Title is required')).toBeVisible();
+		await expect(page.locator('#name')).toHaveAttribute('aria-invalid', 'true');
+		await expect(page.locator('#title')).toHaveAttribute('aria-invalid', 'true');
+		await expect(page.locator('#title')).toBeFocused();
+		expect(calls(api, 'POST /users')).toBe(0);
+		expect(calls(api, 'POST /tasks')).toBe(0);
 	});
 
-	test('Create User, busy during a slow request at 320 px, does not widen the page (boundary)', async ({
+	test('the three submit buttons stay enabled and keep their label and focus while their request waits, with no violation and no sideways scroll (limit)', async ({
 		page
 	}) => {
-		await page.setViewportSize({ width: 320, height: 800 });
-		await mockApi(page, { users: [ada], tasks: adaTasks });
-		await openHomeWithUser(page);
-		const release = await slowRoute(page, 'POST', '**/api/v1/users');
-		await page.locator('#name').fill('Grace');
-		await page.locator('#email').fill('grace@example.com');
-
-		await page.locator('#email').press('Enter');
-
-		const busy = page.getByRole('button', { name: 'Creating…' });
-		await expect(busy).toHaveAttribute('aria-busy', 'true');
-		await expect(busy).toBeEnabled();
-		expect(
-			await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)
-		).toBe(true);
-		release();
-	});
-
-	test('Save keeps its label and is busy during a slow request (limit)', async ({ page }) => {
+		// GIVEN: A selected user, a task in edition, and an answer that waits for each of the three
+		// requests.
 		const api = await mockApi(page, { users: [ada], tasks: adaTasks });
 		await openHomeWithUser(page);
 		await page.getByRole('button', { name: 'Edit Review', exact: true }).click();
-		const release = await slowRoute(page, 'PUT', '**/api/v1/tasks/*');
-		const save = page.getByRole('button', { name: 'Save' });
-		await save.focus();
+		const releaseUser = await slowRoute(page, 'POST', '**/api/v1/users');
+		const releaseTask = await slowRoute(page, 'POST', '**/api/v1/tasks');
+		const releaseSave = await slowRoute(page, 'PUT', '**/api/v1/tasks/*');
 
-		await page.keyboard.press('Enter');
-		await page.keyboard.press('Enter');
+		await test.step('Create User, pressed in the e-mail field', async () => {
+			await page.locator('#name').fill('Grace');
+			await page.locator('#email').fill('grace@example.com');
+			await page.locator('#email').press('Enter');
 
-		await expect(save).toHaveAttribute('aria-busy', 'true');
-		await expect(save).toBeEnabled();
-		await expect(save).toBeFocused();
-		await expect(save).toHaveText('Save');
-		release();
-		await expect(save).toHaveCount(0);
-		expect(calls(api, 'PUT /tasks/{id}')).toBe(1);
+			const busy = page.getByRole('button', { name: 'Creating…' });
+			await expect(busy).toHaveAttribute('aria-busy', 'true');
+			await expect(busy).toBeEnabled();
+		});
+
+		await test.step('Add Task, pressed twice from the keyboard', async () => {
+			await page.locator('#title').fill('Plan');
+			await page.getByRole('button', { name: 'Add Task' }).focus();
+			await page.keyboard.press('Enter');
+			const busy = page.getByRole('button', { name: 'Adding…' });
+			await expect(busy).toHaveAttribute('aria-busy', 'true');
+			await page.keyboard.press('Enter');
+
+			await expect(busy).toBeEnabled();
+			await expect(busy).toBeFocused();
+		});
+
+		await test.step('Save, pressed twice from the keyboard', async () => {
+			const save = page.getByRole('button', { name: 'Save' });
+			await save.focus();
+			await page.keyboard.press('Enter');
+			await page.keyboard.press('Enter');
+
+			await expect(save).toHaveAttribute('aria-busy', 'true');
+			await expect(save).toBeEnabled();
+			await expect(save).toBeFocused();
+			await expect(save).toHaveText('Save');
+		});
+
+		await test.step('the page with the three busy buttons', async () => {
+			await expectNoAxeViolations(page);
+			await page.setViewportSize({ width: 320, height: 800 });
+			expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
+		});
+
+		await test.step('the answers come: each button settles after one request', async () => {
+			releaseUser();
+			releaseTask();
+			releaseSave();
+
+			await expect(page.getByRole('button', { name: 'Create User' })).toBeVisible();
+			await expect(page.getByRole('button', { name: 'Add Task' })).toBeVisible();
+			await expect(page.getByRole('button', { name: 'Save' })).toHaveCount(0);
+			expect(calls(api, 'POST /users')).toBe(1);
+			expect(calls(api, 'POST /tasks')).toBe(1);
+			expect(calls(api, 'PUT /tasks/{id}')).toBe(1);
+		});
 	});
 });
 

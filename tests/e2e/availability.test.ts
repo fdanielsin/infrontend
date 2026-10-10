@@ -1,291 +1,189 @@
-import { readFileSync } from 'node:fs';
-import { AxeBuilder } from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { expectNoAxeViolations } from './support/axe';
 import { measure, worstContrast } from './support/contrast';
 import { nextFocusKey } from './support/keyboard';
+import { horizontalOverflow } from './support/layout';
+import { LOCALES, switchLanguage, text } from './support/locale';
 import { ada, adaTasks, mockApi, openHomeWithUser } from './support/mock-api';
 
 // The service-unavailable banner, the API version in the footer and the copyable reference of a
-// server error, with a mocked API. Time is the page's fake clock: no real wait.
+// server error, with a mocked API. What the state decides (which answer is an outage, the delays,
+// what each component says) is tested by the unit tests of availability, AvailabilityBanner,
+// ApiVersion, PagesAvailability and NotificationReference; kept here: the page as a whole (the
+// banner in the layout, the real requests, the focus on the real <main>), and what needs a browser
+// (contrast, width, order on the page, axe).
 
 const BANNER_TEXT = /service is currently unavailable/;
 
 // The clipboard is not the object of the test, and its permission differs per engine: a
 // double records what is written.
-async function recordClipboard(page: Page, behaviour: 'accept' | 'refuse' | 'absent' = 'accept') {
-	await page.addInitScript((mode) => {
+async function recordClipboard(page: Page) {
+	await page.addInitScript(() => {
 		const copied: string[] = [];
 		(window as unknown as { copied: string[] }).copied = copied;
-		const clipboard =
-			mode === 'absent'
-				? undefined
-				: {
-						writeText: (text: string) => {
-							if (mode === 'refuse')
-								return Promise.reject(new DOMException('no', 'NotAllowedError'));
-							copied.push(text);
-							return Promise.resolve();
-						}
-					};
-		Object.defineProperty(navigator, 'clipboard', { configurable: true, value: clipboard });
-	}, behaviour);
+		Object.defineProperty(navigator, 'clipboard', {
+			configurable: true,
+			value: {
+				writeText: (written: string) => {
+					copied.push(written);
+					return Promise.resolve();
+				}
+			}
+		});
+	});
 }
-
-const LOCALES = ['en', 'fr', 'es', 'de'] as const;
-const text = (locale: string, key: string) =>
-	(JSON.parse(readFileSync(`messages/${locale}.json`, 'utf8')) as Record<string, string>)[key]!;
-
-const horizontalOverflow = (page: Page) =>
-	page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 
 const copied = (page: Page) =>
 	page.evaluate(() => (window as unknown as { copied: string[] }).copied);
 
+// A clock that only the test moves: no timer of the page runs unless `runFor` is called.
+async function freezeClock(page: Page) {
+	await page.clock.install({ time: 0 });
+	await page.clock.pauseAt(1000);
+}
+
 test.describe('Service availability (mocked API)', () => {
 	test.describe('banner', () => {
-		test('an outage at load shows the banner and no list is requested (sad path)', async ({
+		test('an outage at load shows the banner and requests nothing; Retry then restores the lists once and puts the focus on main (happy path)', async ({
 			page
 		}) => {
 			// GIVEN: A database that does not answer.
-			await page.clock.install();
+			await freezeClock(page);
 			const api = await mockApi(page, { users: [ada] });
 			api.readiness = 503;
 
 			// WHEN: The home page is opened.
 			await page.goto('/');
 
-			// THEN: The banner is announced, nothing is requested, no error toast piles up.
-			await expect(page.getByRole('alert').filter({ hasText: BANNER_TEXT })).toBeVisible();
-			await expect(page.getByRole('button', { name: 'Retry' })).toBeVisible();
+			// THEN: The banner is announced, nothing is requested, and its button is outside the alert.
+			const alert = page.getByRole('alert').filter({ hasText: BANNER_TEXT });
+			const retry = page.getByRole('button', { name: 'Retry' });
+			await expect(alert).toBeVisible();
+			await expect(retry).toBeVisible();
 			expect(api.calls).toEqual([]);
 			await expect(page.getByRole('alert').getByRole('button')).toHaveCount(0);
-		});
 
-		test('the service coming back by itself reloads the list once and says so (happy path)', async ({
-			page
-		}) => {
-			// GIVEN: An outage at load.
-			await page.clock.install();
-			const api = await mockApi(page, { users: [ada] });
-			api.readiness = 503;
-			await page.goto('/');
-			await expect(page.getByText(BANNER_TEXT)).toBeVisible();
+			// WHEN: Retry is pressed from the keyboard while the service is still down.
+			await alert.evaluate((element) => element.setAttribute('data-announced', ''));
+			await retry.press('Enter');
 
-			// WHEN: The service is back and the first retry (5 s, 6 s at most) comes.
-			api.readiness = 'ready';
-			await page.clock.runFor(6_000);
-
-			// THEN: The banner goes, the list loads once, a status announces it.
-			await expect(page.getByText(BANNER_TEXT)).toHaveCount(0);
-			await expect(page.getByRole('button', { name: /Ada Lovelace/ })).toBeVisible();
-			await expect(page.getByRole('status').getByText('Service restored')).toBeVisible();
-			expect(api.calls.filter((call) => call === 'GET /users')).toHaveLength(1);
-		});
-
-		test('Retry checks at once and moves the focus to main when it works (happy path)', async ({
-			page
-		}) => {
-			// GIVEN: An outage at load, the focus on the Retry button.
-			await page.clock.install();
-			const api = await mockApi(page, { users: [ada] });
-			api.readiness = 503;
-			await page.goto('/');
-			const retry = page.getByRole('button', { name: 'Retry' });
-			await retry.focus();
+			// THEN: The alert is announced again (a new element), the banner stays, nothing is requested.
+			await expect(
+				page.locator('[data-availability] [role="alert"]:not([data-announced])')
+			).toBeVisible();
+			await expect(retry).toBeVisible();
+			expect(api.calls).toEqual([]);
 
 			// WHEN: The service is back and Retry is pressed from the keyboard.
 			api.readiness = 'ready';
 			await retry.press('Enter');
 
-			// THEN: The list is there and the focus is on main, not lost.
+			// THEN: The banner goes, the list loads once, a status announces it, and the focus is on
+			// main, not lost.
 			await expect(page.getByRole('button', { name: /Ada Lovelace/ })).toBeVisible();
 			await expect(page.getByText(BANNER_TEXT)).toHaveCount(0);
+			await expect(page.getByRole('status').getByText('Service restored')).toBeVisible();
 			await expect(page.getByRole('main')).toBeFocused();
+			expect(api.calls.filter((call) => call === 'GET /users')).toHaveLength(1);
 		});
 
-		test('Retry on a service still down keeps the banner and the lists untouched (sad path)', async ({
-			page
-		}) => {
-			// GIVEN: An outage at load.
-			await page.clock.install();
-			const api = await mockApi(page, { users: [ada] });
-			api.readiness = 503;
-			await page.goto('/');
-
-			// WHEN: Retry is pressed.
-			await page.getByRole('button', { name: 'Retry' }).click();
-
-			// THEN: The banner is still there and nothing was requested.
-			await expect(page.getByRole('alert').filter({ hasText: BANNER_TEXT })).toBeVisible();
-			expect(api.calls).toEqual([]);
-		});
-
-		test('the stats page waits too, and loads when the service is back (sad path)', async ({
+		test('the stats page waits too, says so, and loads once when the service is back by itself (sad path)', async ({
 			page
 		}) => {
 			// GIVEN: An outage at load on /stats.
-			await page.clock.install();
+			await freezeClock(page);
 			const api = await mockApi(page, { stats: { users: 3, tasks: 7 } });
 			api.readiness = 503;
+
+			// WHEN: The statistics page is opened.
 			await page.goto('/stats');
-			await expect(page.getByText(BANNER_TEXT)).toBeVisible();
+
+			// THEN: It explains the wait: no loading, no second Retry (the banner has the only one),
+			// and nothing is requested.
+			await expect(
+				page.getByText('Statistics will show as soon as the service is back.')
+			).toBeVisible();
+			await expect(page.getByText('Loading statistics…')).toHaveCount(0);
+			await expect(page.getByRole('button', { name: 'Retry' })).toHaveCount(1);
 			expect(api.calls).toEqual([]);
 
-			// WHEN: The service is back.
+			// WHEN: The service is back and the first retry (5 s, 6 s at most) comes.
 			api.readiness = 'ready';
 			await page.clock.runFor(6_000);
 
-			// THEN: The statistics load.
+			// THEN: The figures replace the wait, after one request, and a status announces it.
 			await expect(page.getByText('Average tasks per user')).toBeVisible();
+			await expect(
+				page.getByText('Statistics will show as soon as the service is back.')
+			).toHaveCount(0);
+			await expect(page.getByRole('status').getByText('Service restored')).toBeVisible();
 			expect(api.calls).toEqual(['GET /stats']);
 		});
 
-		test('an unreachable service (network error) shows the banner (exception)', async ({
+		test('the banner is readable and fits above the title at 320 px in every language, with its reference outside the alert (limit)', async ({
 			page
 		}) => {
-			// GIVEN: A connection that fails.
-			await page.clock.install();
-			const api = await mockApi(page);
-			api.readiness = 'unreachable';
-
-			// WHEN: The page is opened.
-			await page.goto('/');
-
-			// THEN: The banner is shown.
-			await expect(page.getByRole('alert').filter({ hasText: BANNER_TEXT })).toBeVisible();
-		});
-
-		test('a 4xx answer from /ready shows no banner and loads the lists (boundary)', async ({
-			page
-		}) => {
-			// GIVEN: A readiness probe answering 404.
-			const api = await mockApi(page, { users: [ada] });
-			api.readiness = 404;
-
-			// WHEN: The page is opened.
-			await page.goto('/');
-
-			// THEN: The list loads as before, without banner.
-			await expect(page.getByRole('button', { name: /Ada Lovelace/ })).toBeVisible();
-			await expect(page.getByText(BANNER_TEXT)).toHaveCount(0);
-		});
-
-		test('the banner has no accessibility violation (happy path)', async ({ page }) => {
-			// GIVEN: An outage at load, without animation.
+			// GIVEN: An outage whose answer carries a reference, on the narrowest screen, without animation.
+			await page.setViewportSize({ width: 320, height: 700 });
 			await page.emulateMedia({ reducedMotion: 'reduce' });
 			const api = await mockApi(page);
 			api.readiness = 503;
+			api.readinessRequestId = 'req-ready-503';
+
+			// WHEN: The home page is opened.
 			await page.goto('/');
-			await expect(page.getByText(BANNER_TEXT)).toBeVisible();
+			const alert = page
+				.getByRole('alert')
+				.filter({ hasText: text('en', 'availability_unavailable') });
+			await expect(alert).toBeVisible();
 
-			// WHEN / THEN: axe finds nothing.
-			const { violations } = await new AxeBuilder({ page }).analyze();
-			expect(violations.map((violation) => violation.id)).toEqual([]);
-		});
+			// THEN: The text reaches 4.5:1 on the banner, the page has no violation, and the reference
+			// is next to the alert, not in it (a retry that fails again does not read it again).
+			expect(worstContrast(await measure(alert, 'color'))).toBeGreaterThanOrEqual(4.5);
+			await expectNoAxeViolations(page);
+			await expect(page.getByText('Reference: req-ready-503')).toBeVisible();
+			await expect(alert.getByText('req-ready-503')).toHaveCount(0);
 
-		for (const locale of LOCALES) {
-			test(`${locale}: translated, readable, no axe violation, above the title, no overflow at 320 px (limit)`, async ({
-				page,
-				context
-			}) => {
-				// GIVEN: An outage, in each interface language, on the narrowest screen.
-				await context.addCookies([
-					{ name: 'PARAGLIDE_LOCALE', value: locale, url: 'http://localhost:4173' }
-				]);
-				await page.setViewportSize({ width: 320, height: 700 });
-				await page.emulateMedia({ reducedMotion: 'reduce' });
-				const api = await mockApi(page);
-				api.readiness = 503;
-				api.readinessRequestId = 'req-ready-503';
-				await page.goto('/');
-
-				// THEN: The texts come from the language file, are readable and fit.
-				const alert = page
-					.getByRole('alert')
-					.filter({ hasText: text(locale, 'availability_unavailable') });
-				await expect(alert).toBeVisible();
+			// THEN: In each language, chosen in the page, the banner speaks it, fits the screen and is
+			// above the title.
+			for (const locale of LOCALES) {
+				await switchLanguage(page, locale);
+				await expect(
+					page.getByRole('alert').filter({ hasText: text(locale, 'availability_unavailable') })
+				).toBeVisible();
 				await expect(
 					page.getByRole('button', { name: text(locale, 'availability_retry'), exact: true })
 				).toBeVisible();
-				expect(worstContrast(await measure(alert, 'color'))).toBeGreaterThanOrEqual(4.5);
-				expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
+				expect(await horizontalOverflow(page), `${locale}: sideways scroll`).toBeLessThanOrEqual(0);
 				const banner = await page.locator('[data-availability]').boundingBox();
 				const heading = await page.getByRole('heading', { level: 1 }).boundingBox();
-				expect(banner!.y + banner!.height).toBeLessThanOrEqual(heading!.y);
-				const { violations } = await new AxeBuilder({ page }).analyze();
-				expect(violations.map((violation) => violation.id)).toEqual([]);
-			});
-		}
-
-		test('shows the reference of the failed check outside the alert and copies it (happy path)', async ({
-			page
-		}) => {
-			// GIVEN: An outage whose answer carries X-Request-Id.
-			await recordClipboard(page);
-			const api = await mockApi(page);
-			api.readiness = 503;
-			api.readinessRequestId = 'req-ready-503';
-			await page.goto('/');
-
-			// WHEN: Copy is pressed.
-			await page.getByRole('button', { name: 'Copy reference req-ready-503' }).click();
-
-			// THEN: It was copied, and the reference is not inside the alert.
-			expect(await copied(page)).toEqual(['req-ready-503']);
-			await expect(page.getByRole('status').getByText('Reference copied')).toBeVisible();
-			await expect(page.getByRole('alert').getByText('req-ready-503')).toHaveCount(0);
-			await expect(page.getByText('Reference: req-ready-503')).toBeVisible();
-		});
-
-		test('an outage without X-Request-Id shows no reference (boundary)', async ({ page }) => {
-			const api = await mockApi(page);
-			api.readiness = 503;
-			await page.goto('/');
-
-			await expect(page.getByText(BANNER_TEXT)).toBeVisible();
-			await expect(page.getByRole('button', { name: /Copy reference/ })).toHaveCount(0);
-		});
-
-		test('the banner container takes no room while the service is up (limit)', async ({ page }) => {
-			// GIVEN: A service that is ready.
-			await mockApi(page, { users: [ada] });
-			await page.goto('/');
-
-			// THEN: No banner element takes room while the service is up.
-			await expect(page.getByRole('button', { name: /Ada Lovelace/ })).toBeVisible();
-			expect(await page.locator('[data-availability]').evaluate((e) => e.clientHeight)).toBe(0);
+				expect(banner!.y + banner!.height, `${locale}: banner above the title`).toBeLessThanOrEqual(
+					heading!.y
+				);
+			}
 		});
 	});
 
 	test.describe('footer', () => {
-		test('shows the version of the API (happy path)', async ({ page }) => {
-			await mockApi(page);
-			await page.goto('/');
-
-			await expect(page.getByRole('contentinfo')).toHaveText('API 1.2.0');
-		});
-
-		test('a 200-character version without space does not overflow at 320 px (limit)', async ({
+		test('the footer shows a 200-character version without widening the page, and the banner container takes no room while the service is up (limit)', async ({
 			page
 		}) => {
+			// GIVEN: A very long version, a service that is ready, the narrowest screen.
 			await page.setViewportSize({ width: 320, height: 700 });
-			const api = await mockApi(page);
-			api.version = '1.2.0-' + 'x'.repeat(194);
-			await page.goto('/');
-
-			await expect(page.getByRole('contentinfo')).toContainText('1.2.0-');
-			expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
-		});
-
-		test('a /health failure shows nothing and no error (sad path)', async ({ page }) => {
+			const version = '1.2.0-' + 'x'.repeat(194);
 			const api = await mockApi(page, { users: [ada] });
-			api.version = null;
+			api.version = version;
 
+			// WHEN: The home page is opened.
 			await page.goto('/');
-
 			await expect(page.getByRole('button', { name: /Ada Lovelace/ })).toBeVisible();
-			await expect(page.getByRole('contentinfo')).toHaveText('');
-			await expect(page.locator('[data-toast]')).toHaveCount(0);
+
+			// THEN: The footer shows it without widening the page, and no banner element takes room.
+			await expect(page.getByRole('contentinfo')).toHaveText(`API ${version}`);
+			expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
+			expect(
+				await page.locator('[data-availability]').evaluate((element) => element.clientHeight)
+			).toBe(0);
 		});
 	});
 
@@ -310,61 +208,25 @@ test.describe('Service availability (mocked API)', () => {
 			).toBeVisible();
 		}
 
-		test('shows the reference, copies it and confirms in the status region (happy path)', async ({
+		test('the reference of a server error is shown, has no violation, is copied and confirmed in the status region (happy path)', async ({
 			page
 		}) => {
-			// GIVEN: A 500 that carries X-Request-Id.
+			// GIVEN: A 500 that carries X-Request-Id; no entry animation, so that axe reads the toast
+			// where it rests.
+			await page.emulateMedia({ reducedMotion: 'reduce' });
 			await recordClipboard(page);
 			await serverError(page, REFERENCE);
+
+			// THEN: The reference is in the alert, and the page has no violation.
+			await expect(page.getByRole('alert').getByText(`Reference: ${REFERENCE}`)).toBeVisible();
+			await expectNoAxeViolations(page);
 
 			// WHEN: Copy is pressed.
 			await page.getByRole('button', { name: `Copy reference ${REFERENCE}` }).click();
 
 			// THEN: The reference was copied and the confirmation is a status.
-			await expect(page.getByRole('alert').getByText(`Reference: ${REFERENCE}`)).toBeVisible();
 			await expect(page.getByRole('status').getByText('Reference copied')).toBeVisible();
 			expect(await copied(page)).toEqual([REFERENCE]);
-		});
-
-		test('a refused clipboard says the copy is impossible (sad path)', async ({ page }) => {
-			await recordClipboard(page, 'refuse');
-			await serverError(page, REFERENCE);
-
-			await page.getByRole('button', { name: /Copy reference/ }).click();
-
-			await expect(
-				page.getByRole('status').getByText('Could not copy the reference')
-			).toBeVisible();
-			await expect(page.getByText(`Reference: ${REFERENCE}`)).toBeVisible();
-		});
-
-		test('no clipboard at all says the copy is impossible (exception)', async ({ page }) => {
-			await recordClipboard(page, 'absent');
-			await serverError(page, REFERENCE);
-
-			await page.getByRole('button', { name: /Copy reference/ }).click();
-
-			await expect(
-				page.getByRole('status').getByText('Could not copy the reference')
-			).toBeVisible();
-		});
-
-		test('a header that does not fit the contract shows neither reference nor button (limit)', async ({
-			page
-		}) => {
-			await serverError(page, 'not valid!');
-
-			await expect(page.getByText(/Reference:/)).toHaveCount(0);
-			await expect(page.getByRole('button', { name: /Copy/ })).toHaveCount(0);
-		});
-
-		test('an error without header shows neither reference nor button (boundary)', async ({
-			page
-		}) => {
-			await serverError(page);
-
-			await expect(page.getByText(/Reference:/)).toHaveCount(0);
-			await expect(page.getByRole('button', { name: /Copy/ })).toHaveCount(0);
 		});
 
 		test('Tab reaches Copy, then Dismiss: two stops, never a trap (happy path)', async ({
@@ -395,17 +257,6 @@ test.describe('Service availability (mocked API)', () => {
 			await dismiss.press('Enter');
 			await expect(message).toHaveCount(0);
 			await expect(lastControl).toBeFocused();
-		});
-
-		test('the toast with a reference has no accessibility violation (happy path)', async ({
-			page
-		}) => {
-			await page.emulateMedia({ reducedMotion: 'reduce' });
-			await serverError(page, REFERENCE);
-
-			const { violations } = await new AxeBuilder({ page }).analyze();
-
-			expect(violations.map((violation) => violation.id)).toEqual([]);
 		});
 	});
 });
