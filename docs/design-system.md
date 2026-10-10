@@ -535,15 +535,22 @@ Règles complémentaires ([form-validation-timing](https://designmotionhq.com/pa
 (`onblur`), pas pendant la première saisie ni au simple passage au Tab : un champ n'est
 « touché » qu'une fois sa valeur modifiée. Une fois l'erreur affichée, il est revalidé à chaque
 frappe et passe au succès dès qu'il est corrigé. Le succès dit « format valide » (jamais « e-mail
-disponible ») : un refus serveur `EMAIL_TAKEN` remet le champ en erreur jusqu'à la frappe suivante.
+disponible ») : un refus serveur `EMAIL_TAKEN` remet le champ en erreur, et l'erreur reste (blur, nouvel envoi) tant que la valeur refusée ne change pas.
 Un champ facultatif vide n'a pas de succès. À la soumission, tout est validé et le focus va au
 premier champ invalide ; après un envoi réussi, les champs reviennent au neutre. Les règles restent
 dans les schémas zod ; l'état est dans `lib/validation/field-validation.svelte.ts`
-(`createFieldValidation`, utilisé par `UserForm`, `TaskForm` et l'édition en ligne). Aucune
+(`createFieldValidation`, utilisé par `UserForm`, `TaskForm` et l'édition en ligne). Un appui souris ou tactile sur un
+bouton du même formulaire (Ajouter, Créer, Enregistrer, Annuler) ne valide pas le champ quitté :
+l'erreur insérée déplacerait le bouton entre l'appui et le relâchement, et le clic serait perdu ;
+le bouton valide ou annule lui-même. Compromis connu : vers un contrôle hors du formulaire (case
+à cocher d'une autre ligne, par exemple), l'erreur apparaît au blur et le premier clic peut être
+perdu. Le Tab clavier valide toujours. Un champ qui grandit avec son texte (titre en édition)
+garde en permanence la place de la coche (`pr-8`), pour ne pas être remesuré ni coupé quand elle
+apparaît. Aucune
 annonce à la frappe : le message n'est relié (`aria-describedby`) que lorsque l'erreur existe.
 Preuve : `tests/unit/validation/field-validation.test.ts`, `tests/unit/components/UserForm.test.ts`,
 `TaskForm.test.ts`, `TaskForm.list-behaviour.test.ts`, `tests/e2e/accessibility.test.ts`,
-`field-borders.test.ts`, `i18n.test.ts`.
+`field-borders.test.ts`, `i18n.test.ts`, `submit-buttons.test.ts`, `readable-lists.test.ts`.
 
 ### Toast, bandeau ou message en ligne
 
