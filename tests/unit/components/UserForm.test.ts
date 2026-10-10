@@ -351,3 +351,59 @@ describe('UserForm validation when a field is left', () => {
 		expect(check(emailInput)).toBeNull();
 	});
 });
+
+describe('UserForm blur while a button is pressed', () => {
+	beforeEach(() => {
+		vi.resetAllMocks();
+		app = new AppState();
+	});
+	afterEach(() => {
+		document.dispatchEvent(new Event('pointerup'));
+		cleanup();
+	});
+
+	const fire = (target: EventTarget, type: string) =>
+		target.dispatchEvent(new Event(type, { bubbles: true }));
+
+	async function typeBadEmail() {
+		const view = renderForm();
+		await fireEvent.input(view.emailInput, { target: { value: 'ada@' } });
+		return view;
+	}
+
+	it('does not validate the field left for a press on a button of its own form (boundary)', async () => {
+		const { emailInput, getByRole } = await typeBadEmail();
+
+		fire(getByRole('button', { name: 'Create User' }), 'pointerdown');
+		await fireEvent.blur(emailInput);
+
+		expect(emailInput.getAttribute('aria-invalid')).toBe('false');
+	});
+
+	it.each(['pointerup', 'pointercancel'])(
+		'validates again once the press ends with %s (limit)',
+		async (release) => {
+			const { emailInput, getByRole } = await typeBadEmail();
+			fire(getByRole('button', { name: 'Create User' }), 'pointerdown');
+			fire(document, release);
+
+			await fireEvent.blur(emailInput);
+
+			expect(emailInput.getAttribute('aria-invalid')).toBe('true');
+		}
+	);
+
+	it('validates the field left for a press on a button of another form (error)', async () => {
+		const { emailInput } = await typeBadEmail();
+		const other = document.createElement('form');
+		const button = document.createElement('button');
+		other.append(button);
+		document.body.append(other);
+
+		fire(button, 'pointerdown');
+		await fireEvent.blur(emailInput);
+		other.remove();
+
+		expect(emailInput.getAttribute('aria-invalid')).toBe('true');
+	});
+});
