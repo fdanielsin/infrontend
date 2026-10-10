@@ -4,6 +4,7 @@ import Check from '~icons/iconoir/check';
 import CheckCircle from '~icons/iconoir/check-circle';
 import Copy from '~icons/iconoir/copy';
 import EditPencil from '~icons/iconoir/edit-pencil';
+import Filter from '~icons/iconoir/filter';
 import GraphUp from '~icons/iconoir/graph-up';
 import Group from '~icons/iconoir/group';
 import InfoCircle from '~icons/iconoir/info-circle';
@@ -26,6 +27,7 @@ export const ICONS = {
 	'check-circle': CheckCircle,
 	copy: Copy,
 	'edit-pencil': EditPencil,
+	filter: Filter,
 	'graph-up': GraphUp,
 	group: Group,
 	'info-circle': InfoCircle,
