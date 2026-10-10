@@ -128,7 +128,7 @@ test.describe('Keyboard and focus (mocked API)', () => {
 			).toBeFocused();
 			await page.keyboard.press('Enter');
 
-			// THEN: The heading with the new count has the focus.
+			// THEN: The heading, which says what is left, has the focus.
 			await expect(page.getByRole('heading', { name: 'All done' })).toBeFocused();
 		});
 

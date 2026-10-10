@@ -430,18 +430,6 @@ test.describe('Statistics tiles (mocked API)', () => {
 		expect(after.transition).toBe('0s');
 	});
 
-	test('the empty statistics invitation has a 24 px icon (happy path)', async ({ page }) => {
-		await mockApi(page, { users: [], stats: { users: 0, tasks: 0 } });
-		await page.goto('/stats');
-
-		const text = page.getByText('Nothing to count yet.');
-		await expect(text).toBeVisible();
-		const icon = text.locator('xpath=..').locator('[data-icon="graph-up"]');
-		await expect(icon).toHaveCount(1);
-		const box = (await icon.boundingBox())!;
-		expect([box.width, box.height]).toEqual([24, 24]);
-	});
-
 	test('the figures share one neutral color: no meaning in blue versus indigo (happy path)', async ({
 		page
 	}) => {

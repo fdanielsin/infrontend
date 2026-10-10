@@ -247,12 +247,11 @@ describe('TaskForm', () => {
 	it('shows "No tasks yet" for an empty list (limit)', () => {
 		// GIVEN / WHEN: The user has no task.
 		app.tasks.tasks = [];
-		const { getByText, getByRole, container } = renderWithApp(app, TaskForm, { user });
+		const { getByText, getByRole } = renderWithApp(app, TaskForm, { user });
 
-		// THEN: The empty state and the plain title are shown, with an icon.
+		// THEN: The empty state and the plain title are shown.
 		expect(getByText('No tasks yet')).toBeTruthy();
 		expect(getByRole('heading', { name: 'Tasks' })).toBeTruthy();
-		expect(container.querySelector('[data-icon="list"]')?.getAttribute('aria-hidden')).toBe('true');
 	});
 
 	describe('list title says what is left', () => {

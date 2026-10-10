@@ -30,7 +30,6 @@
 		editErrors: FieldErrors;
 	} = $props();
 
-	// Derived: the list of the server is never reordered in place.
 	const remaining = $derived(tasks.tasks.filter((task) => !task.completed).length);
 	const heading = $derived(
 		tasks.tasks.length === 0
@@ -39,6 +38,7 @@
 				? m.tasks_all_done()
 				: m.tasks_progress({ remaining, total: tasks.tasks.length })
 	);
+	// Derived: the list of the server is never reordered in place.
 	const sortedTasks = $derived(sortTasks(tasks.tasks, taskOrder.current, locale.current));
 	const orderOptions = $derived([
 		{ value: 'created', label: m.tasks_order_created() },

@@ -224,44 +224,64 @@ test.describe('No user selected', () => {
 	});
 });
 
-test.describe('Empty lists', () => {
-	test('each shows a 24 px icon centered above its text (happy path)', async ({ page }) => {
-		// GIVEN: No user, then a user without task, on a wide screen.
-		await mockApi(page, { users: [], tasks: [] });
-		await page.setViewportSize({ width: 1280, height: 800 });
-		await page.goto('/');
+test.describe('Empty states', () => {
+	const STATES = [
+		{
+			name: 'no user',
+			text: 'No users yet',
+			icon: 'group',
+			open: async (page: Page) => {
+				await mockApi(page, { users: [], tasks: [] });
+				await page.goto('/');
+			}
+		},
+		{
+			name: 'no task',
+			text: 'No tasks yet',
+			icon: 'list',
+			open: async (page: Page) => {
+				await mockApi(page, { users: [ADA], tasks: [] });
+				await page.goto('/');
+				await page.getByRole('button', { name: /Ada Lovelace/ }).click();
+			}
+		},
+		{
+			name: 'nothing to count',
+			text: 'Nothing to count yet.',
+			icon: 'graph-up',
+			open: async (page: Page) => {
+				await mockApi(page, { users: [], stats: { users: 0, tasks: 0 } });
+				await page.goto('/stats');
+			}
+		}
+	];
 
-		// THEN: The users' empty state has an icon of 24 px, centered over its text.
-		const usersText = page.getByText('No users yet');
-		await expect(usersText).toBeVisible();
-		// The icon of the empty state itself (the page title has its own icon).
-		const usersIcon = usersText.locator('xpath=..').locator('[data-icon="group"]');
-		await expect(usersIcon).toHaveCount(1);
-		const iconBox = (await usersIcon.boundingBox())!;
-		const textBox = (await usersText.boundingBox())!;
-		expect([iconBox.width, iconBox.height]).toEqual([24, 24]);
-		expect(iconBox.y + iconBox.height).toBeLessThanOrEqual(textBox.y);
-		const textCenter = await page.getByText('No users yet').evaluate((element) => {
-			const box = element.parentElement!.getBoundingClientRect();
-			return box.x + box.width / 2;
+	for (const { name, text, icon, open } of STATES) {
+		test(`the "${name}" state has a hidden 24 px icon centered above its text (happy path)`, async ({
+			page
+		}) => {
+			// GIVEN: The state, on a wide screen.
+			await page.setViewportSize({ width: 1280, height: 800 });
+			await open(page);
+			const message = page.getByText(text);
+			await expect(message).toBeVisible();
+
+			// THEN: Its own icon (the page title has another one) is 24 px, hidden from assistive
+			// technology, above the text and centered on the block that holds both.
+			const block = message.locator('xpath=..');
+			const glyph = block.locator(`[data-icon="${icon}"]`);
+			await expect(glyph).toHaveCount(1);
+			await expect(glyph).toHaveAttribute('aria-hidden', 'true');
+			const [glyphBox, textBox, blockBox] = [
+				(await glyph.boundingBox())!,
+				(await message.boundingBox())!,
+				(await block.boundingBox())!
+			];
+			expect([glyphBox.width, glyphBox.height]).toEqual([24, 24]);
+			expect(glyphBox.y + glyphBox.height).toBeLessThanOrEqual(textBox.y);
+			expect(glyphBox.x + glyphBox.width / 2).toBeCloseTo(blockBox.x + blockBox.width / 2, 0);
 		});
-		expect(iconBox.x + iconBox.width / 2).toBeCloseTo(textCenter, 0);
-	});
-
-	test('the empty task list has the same icon motif (happy path)', async ({ page }) => {
-		await mockApi(page, { users: [ADA], tasks: [] });
-		await page.setViewportSize({ width: 1280, height: 800 });
-		await page.goto('/');
-		await page.getByRole('button', { name: /Ada Lovelace/ }).click();
-
-		const text = page.getByText('No tasks yet');
-		await expect(text).toBeVisible();
-		const icon = text.locator('xpath=..').locator('[data-icon="list"]');
-		await expect(icon).toHaveCount(1);
-		const box = (await icon.boundingBox())!;
-		expect([box.width, box.height]).toEqual([24, 24]);
-		await expect(icon).toHaveAttribute('aria-hidden', 'true');
-	});
+	}
 });
 
 test.describe('Task rows under the pointer', () => {

@@ -342,7 +342,7 @@ describe('TaskForm accessibility', () => {
 			await fireEvent.click(deleteButton);
 			await settle();
 
-			// THEN: The focus is on the list heading, with the new count.
+			// THEN: The focus is on the list heading, which says what is left.
 			expect(document.activeElement).toBe(view.getByRole('heading', { name: 'All done' }));
 		});
 
