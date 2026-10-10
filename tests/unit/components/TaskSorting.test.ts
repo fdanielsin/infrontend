@@ -511,6 +511,19 @@ describe('task filter in the list', () => {
 			expect(announced()).toBe('Banana: moved to Done');
 		});
 
+		it('moves the focus to the NEXT row, not the previous one, when a middle row leaves (boundary)', async () => {
+			app.tasks.tasks = [make(1, 'A'), make(2, 'B'), make(3, 'C')];
+			vi.mocked(api.updateTask).mockResolvedValue({ success: true, data: make(2, 'B', true) });
+			const view = render();
+			const checkbox = view.getByRole('checkbox', { name: 'B' }) as HTMLInputElement;
+			checkbox.focus();
+
+			await fireEvent.click(checkbox);
+
+			await waitFor(() => expect(idsShown(view)).toEqual(['task-1', 'task-3']));
+			await waitFor(() => expect(document.activeElement?.id).toBe('task-3'));
+		});
+
 		it('moves the focus to the previous row when it was the last one (boundary)', async () => {
 			vi.mocked(api.updateTask).mockResolvedValue({
 				success: true,
@@ -585,6 +598,9 @@ describe('task filter in the list', () => {
 			const view = render();
 			await fireEvent.click(view.getByRole('button', { name: 'Delete Banana' }));
 			await choose(view, 'done');
+			// Undo is pressed from a toast, so the focus is not on the heading when the row comes back.
+			view.getByLabelText('Show').focus();
+			expect(document.activeElement).not.toBe(heading(view));
 
 			app.notifications.runAction(app.notifications.items[0]!.id);
 
@@ -623,6 +639,39 @@ describe('task filter in the list', () => {
 			app.tasks.tasks = [make(7, 'x'), make(8, 'y')];
 
 			await waitFor(() => expect(idsShown(view)).toEqual([]));
+			expect(announced()).toBeNull();
+		});
+
+		it('says nothing when the first list holds one task that the filter hides (boundary)', () => {
+			app.taskFilter.set('todo');
+			app.tasks.tasks = [make(1, 'Done one', true)];
+
+			const view = render();
+
+			expect(idsShown(view)).toEqual([]);
+			expect(announced()).toBeNull();
+		});
+
+		it('says nothing when a list of one hidden task replaces another list (boundary)', async () => {
+			app.taskFilter.set('todo');
+			app.tasks.tasks = [make(1, 'A'), make(2, 'B')];
+			const view = render();
+
+			app.tasks.tasks = [make(9, 'Done other', true)];
+
+			await waitFor(() => expect(idsShown(view)).toEqual([]));
+			expect(announced()).toBeNull();
+		});
+
+		it('says nothing when two hidden tasks arrive at once next to a known one (limit)', async () => {
+			app.taskFilter.set('todo');
+			app.tasks.tasks = [make(1, 'A')];
+			const view = render();
+
+			app.tasks.tasks = [make(1, 'A'), make(7, 'x', true), make(8, 'y', true)];
+
+			await waitFor(() => expect(app.tasks.tasks).toHaveLength(3));
+			expect(idsShown(view)).toEqual(['task-1']);
 			expect(announced()).toBeNull();
 		});
 	});
