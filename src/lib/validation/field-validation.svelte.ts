@@ -16,14 +16,45 @@ interface FieldState {
 	armed: boolean;
 	status: FieldStatus;
 	error: string | undefined;
+	// What the server refused: kept, with its message, for as long as the value stays the same.
+	refused: { value: string; error: string } | undefined;
 }
 
 const clean = (): FieldState => ({
 	touched: false,
 	armed: false,
 	status: 'neutral',
-	error: undefined
+	error: undefined,
+	refused: undefined
 });
+
+// The button under a mouse or touch press. The focus leaves the field at the press, and an error
+// inserted then moves the button before the release: the click would be lost. A keyboard Tab has
+// no such gap, so only a press counts (`relatedTarget` is empty for a button clicked in Safari).
+let pressedButton: Element | null = null;
+if (typeof document !== 'undefined') {
+	document.addEventListener(
+		'pointerdown',
+		(event) => {
+			pressedButton = event.target instanceof Element ? event.target.closest('button') : null;
+		},
+		true
+	);
+	const release = () => (pressedButton = null);
+	document.addEventListener('pointerup', release, true);
+	document.addEventListener('pointercancel', release, true);
+}
+
+function leavesForPressedFormButton(event: FocusEvent) {
+	const field = event.currentTarget;
+	return (
+		pressedButton instanceof HTMLButtonElement &&
+		pressedButton.form !== null &&
+		field instanceof HTMLElement &&
+		'form' in field &&
+		pressedButton.form === field.form
+	);
+}
 
 // Validation when the field is left, then live once it shows an error. The rules stay in the
 // schemas: this only holds what each field shows.
@@ -39,6 +70,13 @@ export function createFieldValidation<Field extends string>({
 	>;
 
 	function validate(field: Field) {
+		const refused = state[field].refused;
+		if (refused && values()[field] === refused.value) {
+			state[field].error = refused.error;
+			state[field].status = 'invalid';
+			return;
+		}
+		state[field].refused = undefined;
 		const error = check()[field];
 		const empty = values()[field].trim() === '';
 		state[field].error = error;
@@ -57,7 +95,9 @@ export function createFieldValidation<Field extends string>({
 			state[field].touched = true;
 			if (state[field].armed) validate(field);
 		},
-		blur(field: Field) {
+		// `event` is the blur event of the field, when it comes from one.
+		blur(field: Field, event?: FocusEvent) {
+			if (event && leavesForPressedFormButton(event)) return;
 			if (state[field].touched) validate(field);
 		},
 		// Every field with an error shows it, touched or not; the others keep what they show.
@@ -74,6 +114,7 @@ export function createFieldValidation<Field extends string>({
 			state[field].armed = true;
 			state[field].error = error;
 			state[field].status = 'invalid';
+			state[field].refused = { value: values()[field], error };
 		},
 		reset() {
 			for (const field of fields) state[field] = clean();

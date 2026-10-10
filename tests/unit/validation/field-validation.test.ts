@@ -94,6 +94,19 @@ describe('field validation states', () => {
 		expect(fields.status('title')).toBe('valid');
 	});
 
+	it('keeps a server refusal through a blur or a submit while the value is unchanged (error)', () => {
+		values.title = 'Plan';
+		fields.input('title');
+		fields.blur('title');
+		fields.reject('title', 'taken');
+
+		fields.blur('title');
+		fields.submit();
+
+		expect(fields.status('title')).toBe('invalid');
+		expect(fields.error('title')).toBe('taken');
+	});
+
 	it('goes back to neutral after a reset (happy path)', () => {
 		values.title = 'Plan';
 		fields.input('title');

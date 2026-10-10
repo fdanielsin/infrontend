@@ -66,6 +66,22 @@ describe('user form: where a request error is shown', () => {
 		expect(app.notifications.items).toEqual([]);
 	});
 
+	it('keeps the message, without a check, when the field is left unchanged (error)', async () => {
+		// GIVEN: An email refused.
+		vi.mocked(api.createUser).mockResolvedValue(TAKEN);
+		const { submit, emailInput, findByText, getByText } = renderForm(app);
+		await submit('Ada', 'ada@example.com');
+		await findByText('Email already in use');
+
+		// WHEN: The field is left without any edit.
+		await fireEvent.blur(emailInput);
+
+		// THEN: The refusal stays, and the address the server refused gets no success mark.
+		expect(getByText('Email already in use')).toBeTruthy();
+		expect(emailInput.getAttribute('aria-invalid')).toBe('true');
+		expect(emailInput.parentElement?.querySelector('svg[data-icon="check"]')).toBeNull();
+	});
+
 	it('clears the message once the email is edited (limit)', async () => {
 		// GIVEN: An email refused.
 		vi.mocked(api.createUser).mockResolvedValue(TAKEN);

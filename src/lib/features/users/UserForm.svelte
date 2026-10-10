@@ -78,7 +78,7 @@
 					error={fieldError('name')}
 					valid={fields.status('name') === 'valid'}
 					oninput={() => fields.input('name')}
-					onblur={() => fields.blur('name')}
+					onblur={(event: FocusEvent) => fields.blur('name', event)}
 				/>
 			</div>
 
@@ -93,7 +93,7 @@
 					error={fieldError('email')}
 					valid={fields.status('email') === 'valid'}
 					oninput={() => fields.input('email')}
-					onblur={() => fields.blur('email')}
+					onblur={(event: FocusEvent) => fields.blur('email', event)}
 				/>
 			</div>
 
