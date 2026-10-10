@@ -64,7 +64,9 @@ export class TaskState {
 			{ fallbackMessage: m.error_create_task }
 		);
 		if (!result.success) return undefined;
-		if (this.#listOwnerId === null || this.#listOwnerId === userId) {
+		// A reload of the same user's list may already hold the task when the answer comes.
+		const listed = this.tasks.some((task) => task.id === result.data.id);
+		if (!listed && (this.#listOwnerId === null || this.#listOwnerId === userId)) {
 			this.tasks = [...this.tasks, result.data];
 		}
 		return result.data;

@@ -65,6 +65,8 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- A task created while the same user is selected again is no longer listed twice when the
+  answer to its creation arrives after the reload of the list (infrontend#78).
 - The e-mail check applies the server's rule: an international address such as
   `ivan@пример.рф` is accepted, and an address the server refuses (a hyphen at the end of a
   label, a part longer than allowed) is refused before the request is sent (infrontend#74).
