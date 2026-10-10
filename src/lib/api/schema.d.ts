@@ -528,6 +528,22 @@ export interface components {
                 "application/json": components["schemas"]["ErrorResponse"];
             };
         };
+        /**
+         * @description Corps invalide (`INVALID_BODY`), erreur de validation
+         *     (`VALIDATION_FAILED`) ou identifiant de tâche invalide (`INVALID_ID`) ;
+         *     le corps est vérifié avant l'identifiant, donc un corps invalide sur un
+         *     identifiant invalide donne `INVALID_BODY`
+         */
+        InvalidBodyOrTaskId: {
+            headers: {
+                "Content-Language": components["headers"]["ContentLanguage"];
+                Vary: components["headers"]["Vary"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
         /** @description Identifiant utilisateur invalide (`INVALID_ID`) */
         InvalidUserId: {
             headers: {
@@ -1179,7 +1195,7 @@ export interface operations {
                     };
                 };
             };
-            400: components["responses"]["BadRequest"];
+            400: components["responses"]["InvalidBodyOrTaskId"];
             404: components["responses"]["TaskNotFound"];
             413: components["responses"]["PayloadTooLarge"];
             500: components["responses"]["InternalServerError"];

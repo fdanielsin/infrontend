@@ -32,6 +32,8 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- The generated API types follow the contract's new 400 answer of the task update (invalid body,
+  validation error or invalid id); no change at run time (infrontend#80).
 - At most three toasts are shown at once, the others wait their turn (an undo window never
   waits); each toast type has its own left edge, and the close cross is a 44 px target on touch
   screens (infrontend#70).
