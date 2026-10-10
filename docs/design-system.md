@@ -175,7 +175,8 @@ même trait sur tout le jeu, la même boîte englobante, des tailles prises dans
 - **Où elles sont** : titre de page (`PageShell`, 24), actions (ajouter, modifier, réessayer,
   copier, retour, lien vers les statistiques : icône décorative + texte visible ; supprimer
   reste la croix d'`IconButton` ; Enregistrer et Annuler n'ont pas d'icône), libellé du tri,
-  tuiles de statistiques et rangées de `UserList` (20), un type par toast (`check-circle`,
+  tuiles de statistiques et rangées de `UserList` (20), états vides (24 : `group`, `list`,
+  `graph-up`), un type par toast (`check-circle`,
   `warning-circle`, `info-circle`, `warning-triangle`) et le bandeau d'indisponibilité. Un
   bouton d'action de toast prend l'icône donnée par `ToastAction.icon` (« Annuler » d'une
   suppression : `undo`).
@@ -686,8 +687,9 @@ Preuve : aucune ; règle à suivre.
 Le survol n'existe pas au toucher : aucune action principale n'est cachée derrière un
 survol, et toute information donnée au survol a un équivalent tactile ou clavier. Les
 styles de survol se déclarent sous `@media (hover: hover)` quand ils révèlent
-quelque chose ([hover-trap](https://designmotionhq.com/patterns/hover-trap)). Preuve : aucune ; règle à suivre (les survols actuels ne
-changent que la couleur ou l'ombre).
+quelque chose ([hover-trap](https://designmotionhq.com/patterns/hover-trap)). Aujourd'hui : fond de ligne et soulignement
+de « Modifier » sous `hover: hover`, rien au toucher ni sur les cartes. Preuve :
+`tests/e2e/readable-lists.test.ts` ; le reste de la règle est à suivre.
 
 ## 5. Contenu
 

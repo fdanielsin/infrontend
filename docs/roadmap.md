@@ -76,9 +76,10 @@ et un « GO » explicite.
 - [x] Lot 5 — doublon du job CI "component-tests" (relance exactement
       `bun run test`, déjà fait par "unit-tests").
 - [ ] Lot 8 — propositions d'amélioration : FP-01 (filtrer les tâches), FP-02
-      (compteur de tâches restantes), FP-04 (« tout marquer comme terminé »).
-      FP-03 (confirmation avant suppression d'une tâche) est remplacée par une
-      annulation de 6 s après la suppression (`UNDO_DURATION`, `tasks.svelte.ts`).
+      (compteur de tâches restantes : fait, titre de la liste), FP-04 (« tout
+      marquer comme terminé »). FP-03 (confirmation avant suppression d'une
+      tâche) est remplacée par une annulation de 6 s après la suppression
+      (`UNDO_DURATION`, `tasks.svelte.ts`).
 
 ## Hors périmètre actuel
 
