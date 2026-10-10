@@ -229,8 +229,8 @@ masqué au-dessus de la pile (WCAG 2.4.11). Preuve :
 
 Seule animation par keyframes : l'entrée des toasts (`slideIn`, 0,3 s), déclarée sous
 `@media (prefers-reduced-motion: no-preference)` dans `ToastItem.svelte`. Toute
-nouvelle animation suit la même règle (aucune transition de survol n'existe plus : les cartes ne réagissent pas au pointeur). Preuve : `tests/e2e/availability.test.ts`
-(émulation `reducedMotion: 'reduce'`).
+nouvelle animation suit la même règle (aucune transition de survol n'existe plus : les cartes ne réagissent pas au pointeur). Preuve : `tests/e2e/keyboard-focus.test.ts`
+(« the entry animation is off with reduced motion » : `animation-name` calculé avec et sans l'émulation `reducedMotion: 'reduce'`).
 
 Règles complémentaires :
 
@@ -591,8 +591,8 @@ l'accueil suit la même règle avec `UserState.loadState` (`idle`, `loading`, `l
 sans chargement réussi, ni compteur ni « No users yet » ; pendant une panne (bandeau) un texte
 neutre sans bouton, hors panne un échec avec « Réessayer » ; les utilisateurs déjà affichés
 restent affichés si un rechargement échoue. Preuve : `tests/unit/components/StatsPage.states.test.ts`,
-`tests/unit/components/UserList.load-state.test.ts`, `tests/e2e/truthful-states.test.ts`,
-`tests/e2e/user-list-states.test.ts`.
+`tests/unit/components/UserList.load-state.test.ts`, `tests/e2e/availability.test.ts` (la page des
+statistiques attend le service), `tests/e2e/truthful-states.test.ts`, `tests/e2e/user-list-states.test.ts`.
 
 Règles complémentaires ([loading-states-system](https://designmotionhq.com/patterns/loading-states-system), [skeleton-loading](https://designmotionhq.com/patterns/skeleton-loading), [empty-states](https://designmotionhq.com/patterns/empty-states)) :
 
