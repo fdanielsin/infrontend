@@ -1,3 +1,4 @@
+import './zod-config';
 import { z } from 'zod';
 import { m } from '$lib/paraglide/messages';
 import { isValidEmail } from './email';

@@ -1,3 +1,4 @@
+import '$lib/validation/zod-config';
 import createClient from 'openapi-fetch';
 import { PUBLIC_API_URL } from '$env/static/public';
 import { getLocale } from '$lib/paraglide/runtime';
