@@ -80,6 +80,9 @@ describe('TaskForm accessibility', () => {
 	});
 
 	afterEach(() => {
+		// A deletion waits 6 s behind its Undo toast: closing the toast as undone sends nothing, so a
+		// slow run cannot send it after the next test reset the mocks.
+		for (const toast of app.notifications.items) app.notifications.remove(toast.id, 'action');
 		cleanup();
 	});
 
