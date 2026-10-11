@@ -178,6 +178,34 @@ et `TaskList` dérive `visibleTasks` = tri(filtre(`tasks.tasks`)). Le filtre se 
 navigateur : l'API n'est pas appelée avec `?completed=` (son paramètre existe, il n'est pas
 utilisé par l'interface).
 
+## En-têtes de sécurité
+
+Règle SEC-R04 (`docs/security.md`) : ce que le navigateur a le droit de faire de la page.
+
+- La `Content-Security-Policy` vient de `kit.csp` (`svelte.config.js`, mode `auto` : un nonce par
+  requête sur les pages rendues dynamiquement) ; ses directives sont dans `svelte.csp.js`.
+  `Referrer-Policy: no-referrer` et `X-Content-Type-Options: nosniff` sont posés par
+  `src/hooks.server.ts` (`event.setHeaders`).
+- La politique est écrite dans le build : `vite build` exige `PUBLIC_API_URL`, dont l'origine est le
+  seul domaine externe de `connect-src`. Sans valeur par défaut : absente ou ce n'est pas une adresse
+  http(s), le build échoue. `vite dev` n'a pas de CSP (le rechargement à chaud injecte des styles en
+  ligne et ouvre un websocket) : elle se vérifie sur le build (`vite preview`, Docker).
+- Pour le code : pas d'attribut `style="…"` rendu côté serveur ni de `<style>` ajouté par un script
+  (écrire `element.style.x = …`, le CSSOM, est permis) ; pas de script ni de ressource externe ;
+  une nouvelle origine appelée depuis le navigateur se déclare dans `svelte.csp.js`. Une transition
+  Svelte qui crée un `<style>` en ligne demanderait de desserrer `style-src` : à discuter avant.
+- Deux exceptions, trouvées par le parcours des écrans : SvelteKit écrit côté client un attribut
+  `style` sur son annonceur de routes, autorisé seul par son hash (`style-src-attr 'unsafe-hashes'`,
+  `svelte.csp.js` ; un test compare ce hash au code de la version installée, à refaire après une mise
+  à jour de SvelteKit) ; zod sonde `new Function('')`, ce que le navigateur signale comme une
+  violation `unsafe-eval` : `z.config({ jitless: true })` (`lib/validation/zod-config.ts`, importé
+  avant toute création de schéma) évite la sonde sans autoriser `eval`.
+- Limites : les fichiers statiques (`/_app/immutable/*`, `robots.txt`) ne passent pas par `handle`
+  et n'ont pas ces en-têtes ; le HTML ne doit pas être mis en cache partagé (le nonce change à chaque
+  requête) ; SvelteKit 3 retire `svelte.config.js` : `csp` passera aux options du plugin Vite.
+- Preuve : `tests/e2e/security-headers.test.ts` (réponses réelles du build, parcours des écrans sans
+  violation), `tests/unit/security/csp.test.ts` (origine de l'API).
+
 ## Évolution future
 
 Un découpage en packages ou plusieurs applications ne sera envisagé que
