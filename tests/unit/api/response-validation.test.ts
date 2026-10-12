@@ -10,7 +10,7 @@ const task = { id: 10, title: 'Review', description: 'Review code', user_id: 1, 
 const updated = { id: 10, title: 'Review', description: 'Review code', completed: true };
 const HEALTH = { status: 'ok', version: '2.0.0', id: '3f2c1e6a-8b4d-4c2a-9e1f-5a6b7c8d9e0f' };
 
-type Call = () => Promise<ApiResult<unknown>>;
+type Call = () => Promise<ApiResult<unknown> | ApiResult<void>>;
 
 // The 7 validated operations, with a conforming `data` and the field each one may lose.
 const OPERATIONS: [string, Call, unknown, string][] = [
@@ -94,6 +94,56 @@ describe('validation of the API responses against the contract', () => {
 			answer({ success: true, data: list ? list[0] : [data] });
 
 			// WHEN / THEN: Invalid response.
+			await expect(call()).resolves.toEqual(INVALID);
+		}
+	);
+
+	// The client keeps no check of its own on the envelope: the schemas alone refuse these.
+	const ENVELOPES: [string, Call, Record<string, unknown>][] = [
+		...OPERATIONS.map(([name, call, data]): [string, Call, Record<string, unknown>] => [
+			name,
+			call,
+			{ data }
+		]),
+		['deleteTask', () => api.deleteTask(10), { message: 'Task deleted' }],
+		['health', () => api.health(), { message: 'ok', data: HEALTH }],
+		['ready', () => api.ready(), { message: 'ready', data: { status: 'ready' } }]
+	];
+
+	it.each(ENVELOPES)(
+		'%s refuses success: false sent with a 2xx status (sad path)',
+		async (_n, call, body) => {
+			// GIVEN: A complete body, but flagged as a failure.
+			answer({ ...body, success: false });
+
+			// WHEN / THEN: Invalid response, not data.
+			await expect(call()).resolves.toEqual(INVALID);
+		}
+	);
+
+	it.each(ENVELOPES)(
+		'%s refuses an error envelope sent with a 2xx status (sad path)',
+		async (_n, call) => {
+			// GIVEN / WHEN / THEN: What the backend sends on a failure, under a 200.
+			answer({ success: false, error: 'Boom', error_code: 'INTERNAL_ERROR' });
+			await expect(call()).resolves.toEqual(INVALID);
+		}
+	);
+
+	it.each(ENVELOPES)(
+		'%s refuses an envelope without success (sad path)',
+		async (_n, call, body) => {
+			// GIVEN / WHEN / THEN: The flag is missing.
+			answer(body);
+			await expect(call()).resolves.toEqual(INVALID);
+		}
+	);
+
+	it.each(ENVELOPES.filter(([, , body]) => 'data' in body))(
+		'%s refuses a success without data (sad path)',
+		async (_n, call, body) => {
+			// GIVEN / WHEN / THEN: Everything but `data`.
+			answer({ ...body, success: true, data: undefined });
 			await expect(call()).resolves.toEqual(INVALID);
 		}
 	);
