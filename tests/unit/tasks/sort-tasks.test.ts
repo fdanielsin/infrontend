@@ -20,15 +20,21 @@ const titles = (tasks: Task[]) => tasks.map((item) => item.title);
 describe('sort tasks', () => {
 	describe('creation order', () => {
 		it('is the id ascending whatever the input order (happy path)', () => {
-			const input = [task(30, 'c'), task(10, 'a'), task(20, 'b')];
+			const input = [task(30, 'a'), task(10, 'c'), task(20, 'b')];
 
 			expect(ids(sortTasks(input, 'created', 'en'))).toEqual([10, 20, 30]);
 		});
 
 		it('orders ids 0, 1 and very large ones as numbers, not as text (boundary)', () => {
-			const input = [task(9_007_199_254_740_000, 'z'), task(10, 'y'), task(1, 'x'), task(0, 'w')];
+			const input = [
+				task(9_007_199_254_740_000, 'z'),
+				task(10, 'y'),
+				task(2, 'x'),
+				task(1, 'w'),
+				task(0, 'v')
+			];
 
-			expect(ids(sortTasks(input, 'created', 'en'))).toEqual([0, 1, 10, 9_007_199_254_740_000]);
+			expect(ids(sortTasks(input, 'created', 'en'))).toEqual([0, 1, 2, 10, 9_007_199_254_740_000]);
 		});
 	});
 
@@ -40,7 +46,7 @@ describe('sort tasks', () => {
 		});
 
 		it('ignores the case: "a", "A" and "á" are equal and keep the creation order (boundary)', () => {
-			const input = [task(3, 'á'), task(1, 'A'), task(2, 'a'), task(4, 'b')];
+			const input = [task(2, 'á'), task(1, 'A'), task(3, 'a'), task(4, 'b')];
 
 			expect(ids(sortTasks(input, 'title', 'fr'))).toEqual([1, 2, 3, 4]);
 		});
