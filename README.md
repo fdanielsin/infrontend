@@ -7,9 +7,10 @@ Spanish.
 ## Requirements
 
 - [Bun](https://bun.sh) 1.3 (pinned in the `Dockerfile`)
-- The `inbackend` API on `http://localhost:8080`, started with `API_DOCS_ENABLED=true` (needed by
-  `api:generate` and `api:check`, which read its contract, and by the end-to-end tests that use a
-  real backend, see [`tests/README.md`](./tests/README.md))
+- The `inbackend` API of `develop` on `http://localhost:8081`, which serves the contract that
+  `api:generate` and `api:check` read; the end-to-end tests that use a real backend need a test
+  backend of their own (see [`tests/README.md`](./tests/README.md)). Never the API on `:8080`, which
+  belongs to the user.
 - Docker (optional, to build the image)
 
 ## Quick start
@@ -17,7 +18,7 @@ Spanish.
 ```bash
 bun install
 cp .env.example .env.local   # then set PUBLIC_API_URL if the API is elsewhere
-bun run dev                  # http://localhost:5173
+bun run dev -- --port <port of your worktree>   # see docs/workflow.md "Ports" of the workspace
 ```
 
 The message module `src/lib/paraglide/` is generated and git-ignored: `dev` and
@@ -43,27 +44,27 @@ git push origin v1.1.0
 
 ## Environment variables
 
-| Variable         | Used by                                            | Required                          | Notes                                                                                                                                                                                                                                                                                                                                          |
-| ---------------- | -------------------------------------------------- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `PUBLIC_API_URL` | `dev`, `build`, `verify`, `test:e2e`, Docker build | yes (not set in a fresh worktree) | Backend URL, read at build time and baked into the bundle: a running container cannot change it. Its origin is also the only external address the Content-Security-Policy allows (`connect-src`), so the build fails if it is missing or not an http(s) URL. `test:e2e` builds the app too, so it needs it as well. Example in `.env.example`. |
-| `OPENAPI_URL`    | `api:generate`, `api:check`                        | no                                | URL of the backend contract. Default: `http://localhost:8080/openapi.yaml`.                                                                                                                                                                                                                                                                    |
+| Variable         | Used by                                                    | Required                          | Notes                                                                                                                                                                                                                                                                                                                                                                 |
+| ---------------- | ---------------------------------------------------------- | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PUBLIC_API_URL` | `dev`, `build`, `verify`, `test:e2e:backend`, Docker build | yes (not set in a fresh worktree) | Backend URL, read at build time and baked into the bundle: a running container cannot change it. Its origin is also the only external address the Content-Security-Policy allows (`connect-src`), so the build fails if it is missing or not an http(s) URL. `test:e2e:backend` builds the app too, and takes the URL of the test backend. Example in `.env.example`. |
+| `OPENAPI_URL`    | `api:generate`, `api:check`                                | yes                               | URL of the backend contract, for instance `http://localhost:8081/openapi.yaml`. No default: the scripts refuse to run without it, and refuse `:8080` and `:5173`.                                                                                                                                                                                                     |
 
 ## Commands
 
-| Command                                                                         | What it does                                                                                                    |
-| ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `bun run dev`                                                                   | Dev server with hot reload                                                                                      |
-| `bun run build` / `bun run preview`                                             | Production build / serve the build                                                                              |
-| `bun run verify`                                                                | Format, lint, types, tests with coverage thresholds, build (the CI runs the same)                               |
-| `bun run test`                                                                  | Unit and component tests                                                                                        |
-| `bun run test:e2e:mocked -- --project=chromium`                                 | End-to-end tests with a mocked API, no backend needed (what the CI runs)                                        |
-| `bun run test:e2e -- --project=chromium`                                        | All end-to-end tests; needs the backend on `http://localhost:8080` (see [`tests/README.md`](./tests/README.md)) |
-| `docker build --build-arg PUBLIC_API_URL=http://localhost:8080 -t infrontend .` | Build the image (fails without `PUBLIC_API_URL`)                                                                |
-| `docker run --rm -p 3000:3000 infrontend`                                       | Run the image on `http://localhost:3000`                                                                        |
+| Command                                                                          | What it does                                                                                                      |
+| -------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `bun run dev`                                                                    | Dev server with hot reload                                                                                        |
+| `bun run build` / `bun run preview`                                              | Production build / serve the build                                                                                |
+| `bun run verify`                                                                 | Format, lint, types, tests with coverage thresholds, build (the CI runs the same)                                 |
+| `bun run test`                                                                   | Unit and component tests                                                                                          |
+| `bun run test:e2e:mocked -- --project=chromium`                                  | End-to-end tests with a mocked API, no backend needed (what the CI runs)                                          |
+| `PUBLIC_API_URL=http://localhost:<test port> bun run test:e2e:backend`           | End-to-end tests with a real test backend, never `:8080` nor `:8081` (see [`tests/README.md`](./tests/README.md)) |
+| `docker build --build-arg PUBLIC_API_URL=http://localhost:59999 -t infrontend .` | Build the image (fails without `PUBLIC_API_URL`)                                                                  |
+| `docker run --rm -p 3000:3000 infrontend`                                        | Run the image on `http://localhost:3000`                                                                          |
 
 In a fresh worktree, give the variable on the command line:
-`PUBLIC_API_URL=http://localhost:8080 bun run verify`. Without a call to a real backend
-(`verify`, `test`, `test:e2e:mocked`), any URL works, for instance `http://localhost:59999`;
+`PUBLIC_API_URL=http://localhost:59999 bun run verify`. Without a call to a real backend
+(`verify`, `test`, `test:e2e:mocked`), any URL works;
 the lint fails when the variable is unset.
 
 ## Documentation

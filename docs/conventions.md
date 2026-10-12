@@ -199,9 +199,9 @@ différences de navigateur sont attendues et gérées dans les tests, jamais par
 
 Les types de `src/lib/api/schema.d.ts` sont générés depuis le contrat du backend
 (servi par le backend sur `GET /openapi.yaml`) et committés : `bun run api:generate`
-les régénère, `bun run api:check` échoue s'ils ne sont plus à jour. Le contrat est lu par HTTP, par défaut
-sur `http://localhost:8080/openapi.yaml` (backend lancé avec
-`API_DOCS_ENABLED=true`) ; ailleurs, fournir `OPENAPI_URL`. Le frontend ne lit
+les régénère, `bun run api:check` échoue s'ils ne sont plus à jour. Le contrat est lu par HTTP, sur l'URL donnée par `OPENAPI_URL` (obligatoire,
+sans défaut ; `:8080` et `:5173` sont interdits) : `http://localhost:8081/openapi.yaml`
+pour `develop`, le port du backend de branche sinon. Le frontend ne lit
 aucun fichier du backend. La CI ne contacte pas le backend : `api:check` se lance en local avant
 chaque merge, contre un backend qui tourne ; une URL de backend déployé le
 remplacera en CI plus tard.

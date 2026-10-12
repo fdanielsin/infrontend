@@ -22,10 +22,11 @@ Tous les tests du frontend vivent sous `tests/`.
 - `tests/e2e/` contient les scénarios Playwright de bout en bout contre
   l'application et l'API `inbackend` (jamais ses fichiers).
 
-Les E2E de `tests/e2e/backend/` nécessitent un backend `inbackend` disponible sur
-`http://localhost:8080`. La CI ne les lance pas
+Les E2E de `tests/e2e/backend/` nécessitent un backend `inbackend` de test, dont l'URL est donnée par
+`PUBLIC_API_URL` (obligatoire, sans défaut ; `:8080`, `:5173` et `:8081` sont interdits), lancés par
+`PUBLIC_API_URL=http://localhost:<port> E2E_PORT=<port> bun run test:e2e:backend`. La CI ne les lance pas
 (`bun run test:e2e:mocked`) et ils se vérifient en local avant chaque merge, comme
-`bun run api:check`. Une URL de backend déployé les remplacera en CI plus tard.
+`OPENAPI_URL=http://localhost:8081/openapi.yaml bun run api:check`. Une URL de backend déployé les remplacera en CI plus tard.
 
 Les E2E d'accessibilité (`accessibility.test.ts`, axe avec les règles par
 défaut), de clavier (`keyboard-focus.test.ts`), de langues (`i18n.test.ts`), de
@@ -34,7 +35,7 @@ focus et d'erreurs (`focus-and-errors.test.ts`), de bordures de champs
 (`page-stability.test.ts`) mockent l'API avec `page.route` (`e2e/support/mock-api.ts`)
 et tournent sans backend ; `focus-and-errors.test.ts`, `field-borders.test.ts` et
 `icons.test.ts` mesurent le style calculé avec `e2e/support/contrast.ts` :
-`PUBLIC_API_URL=http://localhost:8080 bun x playwright test accessibility keyboard-focus i18n focus-and-errors field-borders icons page-stability --project=chromium`.
+`E2E_PORT=<port> bun run test:e2e:mocked -- accessibility keyboard-focus i18n focus-and-errors field-borders icons page-stability --project=chromium`.
 Aides communes des E2E (`tests/e2e/support/`) : `mock-api.ts` (API simulée), `contrast.ts`
 (contrastes calculés), `keyboard.ts` (touche de tabulation par moteur), `announcement.ts` (région
 d'annonce), `axe.ts` (`expectNoAxeViolations`), `layout.ts` (`horizontalOverflow`) et `locale.ts`

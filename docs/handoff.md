@@ -90,7 +90,7 @@ regroupe les dépendances) et tourne sous l'utilisateur `bun`.
   passed ») et `.github/workflows/mutation.yml` (mutation, hors agrégat, voir
   `conventions.md`). `ci.yml` se lance sur les pull requests vers `main` ou `develop`, sur
   les push vers `main` ou `develop` et à la demande : le push d'une branche de travail seule ne
-  lance rien, sa pull request la vérifie (une seule exécution, pas deux). Aucun job ne contacte le backend : le job `e2e` ne lance que les E2E à API mockée (`test:e2e:mocked`), sur Chromium, Firefox et WebKit (une jambe de matrice chacune ; différences de navigateur dans `conventions.md`, « Tests et portes »). Le contrat (`api:check`) et les E2E réels (`tests/e2e/backend/`) sont vérifiés en local avant chaque merge, contre un backend qui tourne sur `http://localhost:8080` ; une URL de backend déployé les remplacera en CI plus tard.
+  lance rien, sa pull request la vérifie (une seule exécution, pas deux). Aucun job ne contacte le backend : le job `e2e` ne lance que les E2E à API mockée (`test:e2e:mocked`), sur Chromium, Firefox et WebKit (une jambe de matrice chacune ; différences de navigateur dans `conventions.md`, « Tests et portes »). Le contrat (`api:check`) et les E2E réels (`tests/e2e/backend/`) sont vérifiés en local avant chaque merge, contre `OPENAPI_URL=http://localhost:8081/openapi.yaml` pour `api:check` et un backend de test (`PUBLIC_API_URL`, jamais `:8080`) pour les E2E réels ; une URL de backend déployé les remplacera en CI plus tard.
 - `tests/unit/components/` existe désormais (premier fichier :
   `TaskForm.test.ts`), en plus de `tests/unit/api/` et `tests/unit/stores/`.
   Le rendu de composants Svelte sous Vitest exige
