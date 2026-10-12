@@ -270,6 +270,18 @@ describe('API client', () => {
 		}
 	);
 
+	it('fails with the status when the error body is JSON but not an object (exception)', async () => {
+		// GIVEN: An error answer whose body is the JSON value null.
+		stubFetch(jsonResponse('null', 500));
+
+		// WHEN / THEN: No message and no code to read: the failure falls back to the status.
+		await expect(api.getUsers()).resolves.toEqual({
+			success: false,
+			error: 'HTTP 500',
+			status: 500
+		});
+	});
+
 	it('returns a failure without status when the network is down (exception)', async () => {
 		// GIVEN: fetch rejects as browsers do when the backend is unreachable.
 		stubFetch(() => Promise.reject(new TypeError('Failed to fetch')));
