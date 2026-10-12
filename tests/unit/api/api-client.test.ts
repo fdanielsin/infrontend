@@ -293,6 +293,20 @@ describe('API client', () => {
 			kind: 'unknown'
 		});
 	});
+
+	it('turns an aborted request into an ordinary failure, not a timeout (exception)', async () => {
+		// GIVEN: fetch rejecting with an AbortError, as a cancelled request does. Browsers raise a
+		// DOMException, which is an Error there; jsdom's is not, hence an Error named AbortError.
+		stubFetch(() =>
+			Promise.reject(Object.assign(new Error('The operation was aborted.'), { name: 'AbortError' }))
+		);
+
+		// WHEN / THEN: A failure with the message, no kind, no exception.
+		await expect(api.getUsers()).resolves.toStrictEqual({
+			success: false,
+			error: 'The operation was aborted.'
+		});
+	});
 });
 
 describe('readiness probe', () => {
