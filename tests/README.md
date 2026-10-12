@@ -24,7 +24,7 @@ Tous les tests du frontend vivent sous `tests/`.
 
 Les E2E de `tests/e2e/backend/` nécessitent un backend `inbackend` de test, dont l'URL est donnée par
 `PUBLIC_API_URL` (obligatoire, sans défaut ; `:8080`, `:5173` et `:8081` sont interdits), lancés par
-`PUBLIC_API_URL=http://localhost:<port> E2E_PORT=<port> bun run test:e2e:backend`. La CI ne les lance pas
+`PUBLIC_API_URL=http://localhost:<port du backend> E2E_PORT=<port du worktree> bun run test:e2e:backend`. La CI ne les lance pas
 (`bun run test:e2e:mocked`) et ils se vérifient en local avant chaque merge, comme
 `OPENAPI_URL=http://localhost:8081/openapi.yaml bun run api:check`. Une URL de backend déployé les remplacera en CI plus tard.
 
@@ -44,8 +44,8 @@ page). Un texte lu dans `messages/` prouve le câblage du message, jamais sa tra
 que seul un E2E garde est écrit en toutes lettres dans le test.
 
 Ces E2E tournent contre un build de production (`vite build` puis `vite preview`,
-port 4173 par défaut, ou `E2E_PORT` (un port par worktree, par exemple
-`E2E_PORT=4104 bun x playwright test i18n --project=chromium`), jamais réutilisé : un serveur
+le port `E2E_PORT`, obligatoire avec `test:e2e:mocked` et `test:e2e:backend` (un port par
+worktree, par exemple `E2E_PORT=4104 bun run test:e2e:mocked -- i18n --project=chromium`), jamais réutilisé : un serveur
 déjà présent sur ce port fait échouer le lancement), pas contre `vite dev` : le client de développement recharge la page
 quand sa websocket HMR est perdue (par exemple quand la machine se fige), ce qui
 efface l'état d'un test en cours (`page-stability.test.ts` le vérifie). Le
