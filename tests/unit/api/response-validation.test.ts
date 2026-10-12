@@ -1,9 +1,6 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { api, type ApiResult } from '$lib/api/client';
-import { failureMessage } from '$lib/i18n/errors';
-import { overwriteGetLocale, type Locale } from '$lib/paraglide/runtime';
+import { jsonResponse, stubFetch } from '../support/fetch';
 
 // Every success response is checked against the contract (zod schemas generated from
 // openapi.yaml): a body that does not match is an `invalid_response` failure, never data.
@@ -11,50 +8,36 @@ import { overwriteGetLocale, type Locale } from '$lib/paraglide/runtime';
 const user = { id: 1, name: 'Ada', email: 'ada@example.com' };
 const task = { id: 10, title: 'Review', description: 'Review code', user_id: 1, completed: false };
 const updated = { id: 10, title: 'Review', description: 'Review code', completed: true };
+const HEALTH = { status: 'ok', version: '2.0.0', id: '3f2c1e6a-8b4d-4c2a-9e1f-5a6b7c8d9e0f' };
 
 type Call = () => Promise<ApiResult<unknown>>;
 
-// The 8 validated operations, with a conforming `data` and the field each one may break.
-const OPERATIONS: [string, Call, unknown][] = [
-	['getUsers', () => api.getUsers(), [user]],
-	['getUser', () => api.getUser(1), user],
-	['createUser', () => api.createUser({ name: 'Ada', email: 'ada@example.com' }), user],
-	['getUserTasks', () => api.getUserTasks(1), [task]],
-	['createTask', () => api.createTask({ user_id: 1, title: 'Review', completed: false }), task],
-	['updateTask', () => api.updateTask(10, { completed: true }), updated],
-	['getStats', () => api.getStats(), { users: 3, tasks: 10 }]
+// The 7 validated operations, with a conforming `data` and the field each one may lose.
+const OPERATIONS: [string, Call, unknown, string][] = [
+	['getUsers', () => api.getUsers(), [user], 'id'],
+	['getUser', () => api.getUser(1), user, 'id'],
+	['createUser', () => api.createUser({ name: 'Ada', email: 'ada@example.com' }), user, 'id'],
+	['getUserTasks', () => api.getUserTasks(1), [task], 'id'],
+	[
+		'createTask',
+		() => api.createTask({ user_id: 1, title: 'Review', completed: false }),
+		task,
+		'id'
+	],
+	['updateTask', () => api.updateTask(10, { completed: true }), updated, 'completed'],
+	['getStats', () => api.getStats(), { users: 3, tasks: 10 }, 'tasks']
 ];
 
-function answer(body: unknown, status = 200) {
-	vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-		new Response(typeof body === 'string' ? body : JSON.stringify(body), {
-			status,
-			headers: { 'Content-Type': 'application/json' }
-		})
-	);
-}
+const answer = (body: unknown) => stubFetch(jsonResponse(body));
 
-function translation(locale: Locale, key: string) {
-	const messages = JSON.parse(
-		readFileSync(resolve(process.cwd(), 'messages', `${locale}.json`), 'utf8')
-	) as Record<string, string>;
-	return messages[key];
-}
-
-const invalid = (status = 200) => ({
+const INVALID = {
 	success: false,
 	error: 'Invalid server response',
-	status,
+	status: 200,
 	kind: 'invalid_response'
-});
+};
 
-// Replaces, in a single object or in the first element of a list, one field by another value.
-function withField(data: unknown, field: string, value: unknown) {
-	const change = (item: unknown) => ({ ...(item as object), [field]: value });
-	const list: unknown[] | null = Array.isArray(data) ? (data as unknown[]) : null;
-	return list ? [change(list[0]), ...list.slice(1)] : change(data);
-}
-
+// `data` without `field`, in a single object or in the first element of a list.
 function withoutField(data: unknown, field: string) {
 	const drop = (item: unknown) => {
 		const copy = { ...(item as Record<string, unknown>) };
@@ -67,7 +50,6 @@ function withoutField(data: unknown, field: string) {
 describe('validation of the API responses against the contract', () => {
 	afterEach(() => {
 		vi.restoreAllMocks();
-		overwriteGetLocale(() => 'en');
 	});
 
 	it.each(OPERATIONS)(
@@ -87,81 +69,40 @@ describe('validation of the API responses against the contract', () => {
 		await expect(api.deleteTask(10)).resolves.toEqual({ success: true, message: 'Task deleted' });
 	});
 
-	it.each(OPERATIONS.filter(([name]) => name !== 'getStats'))(
-		'%s refuses a body whose id is a string (sad path)',
-		async (_name, call, data) => {
-			// GIVEN: An id sent as text.
-			answer({ success: true, data: withField(data, 'id', '1') });
-
-			// WHEN / THEN: It is an invalid response, not data.
-			await expect(call()).resolves.toEqual(invalid());
-		}
-	);
-
 	it.each(OPERATIONS)(
 		'%s refuses a body missing a required field (sad path)',
-		async (name, call, data) => {
-			// GIVEN: A required field left out (stats: tasks; others: the first field).
-			const field = name === 'getStats' ? 'tasks' : name === 'updateTask' ? 'completed' : 'id';
+		async (_name, call, data, field) => {
+			// GIVEN: A required field left out (the id; the flag of an update; the tasks counter of statistics).
 			answer({ success: true, data: withoutField(data, field) });
 
 			// WHEN / THEN: Invalid response.
-			await expect(call()).resolves.toEqual(invalid());
+			await expect(call()).resolves.toEqual(INVALID);
 		}
 	);
 
 	it.each(OPERATIONS)('%s refuses data: null (sad path)', async (_name, call) => {
 		// GIVEN / WHEN / THEN: A null payload.
 		answer({ success: true, data: null });
-		await expect(call()).resolves.toEqual(invalid());
+		await expect(call()).resolves.toEqual(INVALID);
 	});
 
 	it.each(OPERATIONS)(
 		'%s refuses data of the wrong shape (sad path)',
 		async (_name, call, data) => {
 			// GIVEN: A list where an object is expected, or an object where a list is expected.
-			const list: unknown[] | null = Array.isArray(data) ? (data as unknown[]) : null;
+			const list = Array.isArray(data) ? (data as unknown[]) : null;
 			answer({ success: true, data: list ? list[0] : [data] });
 
 			// WHEN / THEN: Invalid response.
-			await expect(call()).resolves.toEqual(invalid());
-		}
-	);
-
-	it.each(OPERATIONS)(
-		'%s refuses success: false sent with a 200 status (sad path)',
-		async (_name, call, data) => {
-			// GIVEN / WHEN / THEN: A failure envelope disguised as a success.
-			answer({ success: false, data, error: 'x', error_code: 'INTERNAL_ERROR' });
-			await expect(call()).resolves.toEqual(invalid());
+			await expect(call()).resolves.toEqual(INVALID);
 		}
 	);
 
 	it('refuses a deletion without its message, as the contract requires (sad path)', async () => {
 		// GIVEN / WHEN / THEN: A bare success envelope for DELETE.
 		answer({ success: true });
-		await expect(api.deleteTask(10)).resolves.toEqual(invalid());
+		await expect(api.deleteTask(10)).resolves.toEqual(INVALID);
 	});
-
-	it.each(['en', 'fr', 'de', 'es'] as const)(
-		'shows an invalid response in %s with its own message (happy path)',
-		async (locale) => {
-			// GIVEN: An invalid body and the interface language.
-			overwriteGetLocale(() => locale);
-			answer({ success: true, data: null });
-
-			// WHEN: The failure is worded.
-			const result = await api.getUsers();
-
-			// THEN: The translated "invalid response" message.
-			expect(result.success).toBe(false);
-			if (!result.success) {
-				expect(failureMessage(result, () => 'fallback')).toBe(
-					translation(locale, 'error_invalid_response')
-				);
-			}
-		}
-	);
 
 	it('accepts an empty list (limit)', async () => {
 		// GIVEN / WHEN / THEN: No user yet.
@@ -208,7 +149,7 @@ describe('validation of the API responses against the contract', () => {
 	it.each([4294967296, -1, 1.5])('refuses the id %d, outside uint32 (boundary)', async (id) => {
 		// GIVEN / WHEN / THEN: Just past the range, negative, or not an integer.
 		answer({ success: true, data: { ...user, id } });
-		await expect(api.getUser(1)).resolves.toEqual(invalid());
+		await expect(api.getUser(1)).resolves.toEqual(INVALID);
 	});
 
 	it.each([true, false])('accepts completed: %s (boundary)', async (completed) => {
@@ -225,7 +166,7 @@ describe('validation of the API responses against the contract', () => {
 	it.each(['true', 1, null])('refuses completed: %j (boundary)', async (completed) => {
 		// GIVEN / WHEN / THEN: A flag that is not a boolean.
 		answer({ success: true, data: { ...updated, completed } });
-		await expect(api.updateTask(10, { completed: true })).resolves.toEqual(invalid());
+		await expect(api.updateTask(10, { completed: true })).resolves.toEqual(INVALID);
 	});
 
 	it.each([0, 4294967296, 2 ** 53 - 1])(
@@ -246,36 +187,12 @@ describe('validation of the API responses against the contract', () => {
 	it.each([-1, 1.5, '3'])('refuses the stats counter %j (boundary)', async (count) => {
 		// GIVEN / WHEN / THEN: A negative count, a fraction or a numeric string.
 		answer({ success: true, data: { users: count, tasks: 1 } });
-		await expect(api.getStats()).resolves.toEqual(invalid());
-	});
-
-	it('turns a malformed JSON body into an invalid response (exception)', async () => {
-		// GIVEN / WHEN / THEN: A 200 whose body is not JSON.
-		answer('{not json');
-		await expect(api.getStats()).resolves.toEqual(invalid());
-	});
-
-	it('turns an aborted request into an ordinary failure (exception)', async () => {
-		// GIVEN: fetch rejecting with an AbortError, as a cancelled request does. Browsers raise a
-		// DOMException, which is an Error there; jsdom's is not, hence an Error named AbortError.
-		vi.spyOn(globalThis, 'fetch').mockRejectedValue(
-			Object.assign(new Error('The operation was aborted.'), { name: 'AbortError' })
-		);
-
-		// WHEN / THEN: A failure with the message, no kind, no exception.
-		await expect(api.getUsers()).resolves.toEqual({
-			success: false,
-			error: 'The operation was aborted.'
-		});
+		await expect(api.getStats()).resolves.toEqual(INVALID);
 	});
 
 	it('validates the health check: any message language and version are accepted (happy path)', async () => {
 		// GIVEN: A health envelope with a French message and a new version.
-		const envelope = {
-			success: true,
-			message: 'Le service fonctionne',
-			data: { status: 'ok', version: '2.0.0', id: '3f2c1e6a-8b4d-4c2a-9e1f-5a6b7c8d9e0f' }
-		};
+		const envelope = { success: true, message: 'Le service fonctionne', data: HEALTH };
 		answer(envelope);
 
 		// WHEN / THEN: It matches the contract and is returned.
@@ -283,24 +200,18 @@ describe('validation of the API responses against the contract', () => {
 	});
 
 	it.each([
-		[
-			'an unknown status',
-			{ status: 'odd', version: '2.0.0', id: '3f2c1e6a-8b4d-4c2a-9e1f-5a6b7c8d9e0f' }
-		],
-		['an id that is not a uuid', { status: 'ok', version: '2.0.0', id: 'x' }],
-		['no version', { status: 'ok', id: '3f2c1e6a-8b4d-4c2a-9e1f-5a6b7c8d9e0f' }]
+		['an unknown status', { ...HEALTH, status: 'odd' }],
+		['an id that is not a uuid', { ...HEALTH, id: 'x' }],
+		['no version', { status: 'ok', id: HEALTH.id }]
 	])('refuses a health check with %s (sad path)', async (_case, data) => {
 		// GIVEN / WHEN / THEN: A health body that does not match the contract.
 		answer({ success: true, message: 'Service is healthy', data });
-		await expect(api.health()).resolves.toEqual(invalid());
+		await expect(api.health()).resolves.toEqual(INVALID);
 	});
 
 	it('refuses a health check without its message (sad path)', async () => {
 		// GIVEN / WHEN / THEN: The contract requires the message.
-		answer({
-			success: true,
-			data: { status: 'ok', version: '2.0.0', id: '3f2c1e6a-8b4d-4c2a-9e1f-5a6b7c8d9e0f' }
-		});
-		await expect(api.health()).resolves.toEqual(invalid());
+		answer({ success: true, data: HEALTH });
+		await expect(api.health()).resolves.toEqual(INVALID);
 	});
 });

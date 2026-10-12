@@ -10,7 +10,8 @@ Tous les tests du frontend vivent sous `tests/`.
   - `tests/unit/i18n/` pour les langues : parité des fichiers `messages/*.json`,
     traduction des `ErrorCode` du contrat, nombres, langue d'une requête et
     hook serveur, règles de validation du serveur couvertes par le client ;
-  - `tests/unit/support/` pour les aides partagées (hôte de contexte).
+  - `tests/unit/support/` pour les aides partagées (hôte de contexte, `fetch` simulé :
+    `support/fetch.ts`, lecture de `messages/<langue>.json` : `support/messages.ts`).
 - `tests/shared/` contient les données de test communes aux tests unitaires et aux E2E :
   la table des adresses e-mail du contrat (`email-cases.ts`), passée par `UserSchema` en
   unitaire et envoyée à un vrai serveur par `tests/e2e/backend/email-rule.test.ts`.
@@ -107,7 +108,7 @@ Le client valide chaque réponse contre le contrat : une réponse simulée doit
 Pour tester le délai, instancier `new ApiClient({ timeoutMs })` avec un fetch
 qui ne répond jamais et rejette sur `request.signal`. `AbortSignal.timeout`
 tourne sur un minuteur natif que les faux minuteurs de Vitest ne pilotent pas :
-`api/timeout.test.ts` le double par un équivalent sur le `setTimeout` simulé.
+`timeoutOnFakeTimers` (`support/fetch.ts`) le double par un équivalent sur le `setTimeout` simulé.
 
 Chaque test construit son propre `new AppState()` (ou `NotificationState`,
 `RequestStatus`) : aucun état de module n'est partagé, il n'y a rien à remettre

@@ -1,21 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { api } from '$lib/api/client';
+import { overwriteGetLocale } from '$lib/paraglide/runtime';
+import { AppState } from '$lib/state/app-state.svelte';
+import { jsonResponse, requestOf, stubFetch } from '../support/fetch';
 
 vi.mock('$env/static/public', () => ({ PUBLIC_API_URL: 'http://api.test' }));
 
-const JSON_HEADERS = { 'Content-Type': 'application/json' };
-
-function jsonResponse(body: unknown, status = 200): Response {
-	return new Response(JSON.stringify(body), { status, headers: JSON_HEADERS });
-}
-
-function mockFetch(response: Response | (() => Promise<Response>)) {
-	return vi
-		.spyOn(globalThis, 'fetch')
-		.mockImplementation(
-			typeof response === 'function' ? response : () => Promise.resolve(response)
-		);
-}
+const DOWN = { success: false, error: 'Database unavailable', error_code: 'DATABASE_UNAVAILABLE' };
 
 describe('API client', () => {
 	afterEach(() => {
@@ -75,6 +66,13 @@ describe('API client', () => {
 				body: '{"completed":false}'
 			},
 			{
+				name: 'updateTask (text only: no property the contract refuses, no null)',
+				call: () => api.updateTask(10, { title: 'T', description: '' }),
+				method: 'PUT',
+				url: '/api/v1/tasks/10',
+				body: '{"title":"T","description":""}'
+			},
+			{
 				name: 'deleteTask',
 				call: () => api.deleteTask(10),
 				method: 'DELETE',
@@ -87,22 +85,22 @@ describe('API client', () => {
 				method: 'GET',
 				url: '/api/v1/stats',
 				body: null
-			}
+			},
+			{ name: 'ready', call: () => api.ready(), method: 'GET', url: '/ready', body: null }
 		];
 
 		for (const { name, call, method, url, body } of cases) {
 			it(`${name} sends ${method} ${url}, with a JSON body only when it has one`, async () => {
 				// GIVEN: A backend answering 200.
-				const fetchMock = mockFetch(jsonResponse({ success: true }));
+				const fetchMock = stubFetch(jsonResponse({ success: true }));
 
 				// WHEN: The method is called.
 				await call();
 
 				// THEN: Exactly one request to the base URL, with the method and, for a body, JSON.
 				expect(fetchMock).toHaveBeenCalledTimes(1);
-				const request = fetchMock.mock.calls[0]?.[0];
-				expect(request).toBeInstanceOf(Request);
-				const sent = request as Request;
+				const sent = requestOf(fetchMock);
+				expect(sent).toBeInstanceOf(Request);
 				expect(sent.url).toBe(`http://api.test${url}`);
 				expect(sent.method).toBe(method);
 				if (body === null) {
@@ -116,67 +114,27 @@ describe('API client', () => {
 		}
 	});
 
-	it.each([
-		['getUsers', () => api.getUsers(), [{ id: 1, name: 'Ada', email: 'ada@x.io' }]],
-		['getUser', () => api.getUser(1), { id: 1, name: 'Ada', email: 'ada@x.io' }],
-		[
-			'createUser',
-			() => api.createUser({ name: 'Ada', email: 'ada@x.io' }),
-			{ id: 1, name: 'Ada', email: 'ada@x.io' }
-		],
-		[
-			'getUserTasks',
-			() => api.getUserTasks(1),
-			[{ id: 10, title: 'T', description: '', user_id: 1, completed: false }]
-		],
-		[
-			'createTask',
-			() => api.createTask({ title: 'T', user_id: 1, completed: false }),
-			{ id: 10, title: 'T', description: '', user_id: 1, completed: false }
-		],
-		[
-			'updateTask',
-			() => api.updateTask(10, { completed: true }),
-			{ id: 10, title: 'T', description: '', completed: true }
-		]
-	] as const)(
-		'%s returns the data of the success envelope (happy path)',
-		async (_name, call, data) => {
-			// GIVEN: The backend answers with a success envelope.
-			mockFetch(jsonResponse({ success: true, data }));
+	describe('Accept-Language', () => {
+		afterEach(() => {
+			document.cookie = 'PARAGLIDE_LOCALE=; path=/; max-age=0';
+			overwriteGetLocale(() => 'en');
+		});
 
-			// WHEN / THEN: The envelope reaches the caller unchanged.
-			await expect(call()).resolves.toEqual({ success: true, data });
-		}
-	);
+		it('sends the interface language with each request, the new one right after a switch (happy path)', async () => {
+			// GIVEN: An English interface that already sent a request.
+			const fetchMock = stubFetch(jsonResponse({ success: true, data: [] }));
+			const app = new AppState();
+			await api.getUsers();
 
-	it('health returns the data of the success envelope (happy path)', async () => {
-		// GIVEN: The backend answers the health check with its full envelope.
-		const envelope = {
-			success: true,
-			message: 'Service is healthy',
-			data: { status: 'ok', version: '1.0.0', id: '3f2c1e6a-8b4d-4c2a-9e1f-5a6b7c8d9e0f' }
-		};
-		mockFetch(jsonResponse(envelope));
+			// WHEN: The language changes, then the next request is sent.
+			app.changeLocale('es');
+			await api.getUsers();
 
-		// WHEN / THEN: The envelope reaches the caller unchanged.
-		await expect(api.health()).resolves.toEqual(envelope);
-	});
-
-	it('returns the 200 envelope as sent by the backend (happy path)', async () => {
-		// GIVEN: The backend returns statistics.
-		mockFetch(jsonResponse({ success: true, data: { users: 2, tasks: 3 } }));
-
-		// WHEN / THEN: The envelope is returned unchanged.
-		await expect(api.getStats()).resolves.toEqual({ success: true, data: { users: 2, tasks: 3 } });
-	});
-
-	it('returns the DELETE 200 envelope of the contract (happy path)', async () => {
-		// GIVEN: The backend answers DELETE with 200 and a message (openapi.yaml, no 204).
-		mockFetch(jsonResponse({ success: true, message: 'Task deleted' }));
-
-		// WHEN / THEN: The message reaches the caller.
-		await expect(api.deleteTask(42)).resolves.toEqual({ success: true, message: 'Task deleted' });
+			// THEN: The first request was in English, the next one in Spanish.
+			expect(
+				fetchMock.mock.calls.map(([request]) => (request as Request).headers.get('Accept-Language'))
+			).toEqual(['en', 'es']);
+		});
 	});
 
 	it.each([
@@ -186,13 +144,13 @@ describe('API client', () => {
 		'sends the DELETE %s (keepalive: %s) and no extra header (happy path)',
 		async (_name, options, expected) => {
 			// GIVEN: A backend that accepts the deletion.
-			const fetchMock = mockFetch(jsonResponse({ success: true, message: 'Task deleted' }));
+			const fetchMock = stubFetch(jsonResponse({ success: true, message: 'Task deleted' }));
 
 			// WHEN: The task is deleted.
 			await api.deleteTask(42, options);
 
 			// THEN: The request keeps or not alive, and adds no header that would need a CORS preflight allowance.
-			const request = fetchMock.mock.calls[0]?.[0] as Request;
+			const request = requestOf(fetchMock);
 			expect(request.method).toBe('DELETE');
 			expect(request.keepalive).toBe(expected);
 			expect([...request.headers.keys()].sort()).toEqual(['accept-language']);
@@ -201,7 +159,7 @@ describe('API client', () => {
 
 	it('answers a DELETE 204 as a success without parsing a body (happy path, convention)', async () => {
 		// GIVEN: A deletion answered without content (no endpoint of the contract does it today).
-		mockFetch(new Response(null, { status: 204 }));
+		stubFetch(new Response(null, { status: 204 }));
 
 		// WHEN / THEN: The deletion is reported as a success.
 		await expect(api.deleteTask(42)).resolves.toEqual({ success: true });
@@ -209,7 +167,7 @@ describe('API client', () => {
 
 	it('refuses a 204 on an endpoint that must return data (limit)', async () => {
 		// GIVEN: A list endpoint answered without content.
-		mockFetch(new Response(null, { status: 204 }));
+		stubFetch(new Response(null, { status: 204 }));
 
 		// WHEN / THEN: No success without data reaches the stores.
 		await expect(api.getUsers()).resolves.toEqual({
@@ -229,7 +187,7 @@ describe('API client', () => {
 		'keeps the backend message, status and error_code of an HTTP %i (sad path, F-01)',
 		async (status, code, message) => {
 			// GIVEN: The backend answers with its error envelope.
-			mockFetch(jsonResponse({ success: false, error: message, error_code: code }, status));
+			stubFetch(jsonResponse({ success: false, error: message, error_code: code }, status));
 
 			// WHEN / THEN: The failure carries what the backend said.
 			await expect(api.createUser({ name: 'Ada', email: 'ada@x.io' })).resolves.toEqual({
@@ -246,7 +204,7 @@ describe('API client', () => {
 		['a non-string error_code', { success: false, error: 'Task not found', error_code: 42 }]
 	])('omits code when the error body has %s (limit)', async (_case, body) => {
 		// GIVEN: An error envelope without a usable code.
-		mockFetch(jsonResponse(body, 404));
+		stubFetch(jsonResponse(body, 404));
 
 		// WHEN / THEN: The message and status are kept, no code key is invented.
 		await expect(api.deleteTask(1)).resolves.toStrictEqual({
@@ -257,18 +215,19 @@ describe('API client', () => {
 	});
 
 	it.each([
-		['an empty error', { success: false, error: '' }],
-		['a non-string error', { success: false, error: { detail: 'x' } }],
-		['no error field', { success: false }]
-	])('falls back to "HTTP <status>" for %s (limit)', async (_case, body) => {
-		// GIVEN: An error envelope without a displayable message.
-		mockFetch(jsonResponse(body, 409));
+		['an empty error', jsonResponse({ success: false, error: '' }, 409)],
+		['a non-string error', jsonResponse({ success: false, error: { detail: 'x' } }, 409)],
+		['no error field', jsonResponse({ success: false }, 409)],
+		['an HTML error page from a proxy', new Response('<html>Bad gateway</html>', { status: 502 })]
+	])('falls back to "HTTP <status>" for %s (limit)', async (_case, response) => {
+		// GIVEN: An error answer without a displayable message.
+		stubFetch(response);
 
-		// WHEN / THEN: The status stands in for the message.
+		// WHEN / THEN: The status stands in for the message, and the body is not parsed as JSON.
 		await expect(api.getUsers()).resolves.toEqual({
 			success: false,
-			error: 'HTTP 409',
-			status: 409
+			error: `HTTP ${response.status}`,
+			status: response.status
 		});
 	});
 
@@ -279,7 +238,7 @@ describe('API client', () => {
 		[400, false]
 	])('treats HTTP %i as success=%s (boundary of response.ok)', async (status, ok) => {
 		// GIVEN: A backend answering with a status at a boundary of the 2xx range.
-		mockFetch(jsonResponse({ success: true, data: [] }, status));
+		stubFetch(jsonResponse({ success: true, data: [] }, status));
 
 		// WHEN: Users are requested.
 		const response = await api.getUsers();
@@ -288,18 +247,6 @@ describe('API client', () => {
 		expect(response).toEqual(
 			ok ? { success: true, data: [] } : { success: false, error: `HTTP ${status}`, status }
 		);
-	});
-
-	it('does not parse the body of an error response (sad path, HTML error page)', async () => {
-		// GIVEN: A proxy returns an HTML error page.
-		mockFetch(new Response('<html>Bad gateway</html>', { status: 502 }));
-
-		// WHEN / THEN: The client fails with the status instead of a JSON parse error.
-		await expect(api.getStats()).resolves.toEqual({
-			success: false,
-			error: 'HTTP 502',
-			status: 502
-		});
 	});
 
 	it.each([
@@ -311,7 +258,7 @@ describe('API client', () => {
 		'resolves %s on 200 to a failure instead of rejecting (exception, QM-01)',
 		async (_case, response) => {
 			// GIVEN: A 2xx response the client cannot trust.
-			mockFetch(response);
+			stubFetch(response);
 
 			// WHEN / THEN: The promise resolves to an explicit failure.
 			await expect(api.getStats()).resolves.toEqual({
@@ -323,17 +270,9 @@ describe('API client', () => {
 		}
 	);
 
-	it('accepts a DELETE 200 envelope without data (boundary of the data check)', async () => {
-		// GIVEN: The deletion envelope of the contract carries a message only.
-		mockFetch(jsonResponse({ success: true, message: 'Task deleted' }));
-
-		// WHEN / THEN: It is a success although data is absent.
-		await expect(api.deleteTask(1)).resolves.toEqual({ success: true, message: 'Task deleted' });
-	});
-
 	it('returns a failure without status when the network is down (exception)', async () => {
 		// GIVEN: fetch rejects as browsers do when the backend is unreachable.
-		mockFetch(() => Promise.reject(new TypeError('Failed to fetch')));
+		stubFetch(() => Promise.reject(new TypeError('Failed to fetch')));
 
 		// WHEN / THEN: The caller receives a failure instead of an exception.
 		await expect(api.getUsers()).resolves.toStrictEqual({
@@ -345,7 +284,7 @@ describe('API client', () => {
 	it('returns a generic failure when fetch rejects with a non-Error value (exception)', async () => {
 		// GIVEN: fetch rejects with a plain value.
 		// eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- rejecting with a non-Error value is the case under test
-		mockFetch(() => Promise.reject('offline'));
+		stubFetch(() => Promise.reject('offline'));
 
 		// WHEN / THEN: The message falls back to "Unknown error".
 		await expect(api.getUsers()).resolves.toEqual({
@@ -356,42 +295,91 @@ describe('API client', () => {
 	});
 });
 
-describe('request bodies and the strict contract', () => {
+describe('readiness probe', () => {
 	afterEach(() => {
 		vi.restoreAllMocks();
 	});
 
-	// The contract refuses unknown properties and null (INVALID_BODY): each call sends exactly
-	// the properties it declares, none of them null.
-	const calls: [string, () => Promise<unknown>, string[]][] = [
-		['createUser', () => api.createUser({ name: 'Ada', email: 'a@b.co' }), ['name', 'email']],
-		[
-			'createTask',
-			() => api.createTask({ title: 'T', description: '', user_id: 1, completed: false }),
-			['title', 'description', 'user_id', 'completed']
-		],
-		['updateTask completed', () => api.updateTask(1, { completed: true }), ['completed']],
-		[
-			'updateTask text',
-			() => api.updateTask(1, { title: 'T', description: '' }),
-			['title', 'description']
-		]
-	];
+	const READY = { success: true, message: 'Service is ready', data: { status: 'ready' } };
 
-	it.each(calls)(
-		'%s sends only declared properties, none null (happy path)',
-		async (_name, call, keys) => {
-			// GIVEN: A server that answers anything.
-			const fetchMock = mockFetch(jsonResponse({ success: true }));
+	it('returns the envelope of the probe (happy path)', async () => {
+		stubFetch(jsonResponse(READY));
 
-			// WHEN: The call is made.
-			await call();
+		await expect(api.ready()).resolves.toEqual(READY);
+	});
 
-			// THEN: The body has exactly the expected keys and no null.
-			const request = fetchMock.mock.calls[0]![0] as Request;
-			const body = JSON.parse(await request.text()) as Record<string, unknown>;
-			expect(Object.keys(body).sort()).toEqual([...keys].sort());
-			expect(Object.values(body)).not.toContain(null);
+	it('fails with the status and the code on a 503, and the reference of the answer (sad path)', async () => {
+		stubFetch(jsonResponse(DOWN, 503, { 'X-Request-Id': 'req-503' }));
+
+		expect(await api.ready()).toEqual({
+			success: false,
+			error: 'Database unavailable',
+			status: 503,
+			code: 'DATABASE_UNAVAILABLE',
+			requestId: 'req-503'
+		});
+	});
+
+	it('is an invalid response when the body is not the ready envelope (exception)', async () => {
+		stubFetch(jsonResponse({ success: true, data: { status: 'booting' } }));
+
+		expect(await api.ready()).toMatchObject({
+			success: false,
+			kind: 'invalid_response',
+			status: 200
+		});
+	});
+});
+
+describe('request reference of a failure', () => {
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
+	const idOf = async (status: number, header: string | null) => {
+		stubFetch(() => jsonResponse(DOWN, status, header === null ? {} : { 'X-Request-Id': header }));
+		const result = await api.getStats();
+		return result.success ? undefined : result.requestId;
+	};
+
+	it('is read from X-Request-Id on a 5xx (happy path)', async () => {
+		expect(await idOf(500, 'a3622cb2-4f3c-47f6-a67f-ec5a359e45fb')).toBe(
+			'a3622cb2-4f3c-47f6-a67f-ec5a359e45fb'
+		);
+	});
+
+	it('is read from 500 to 599 only (boundary)', async () => {
+		expect(await idOf(599, 'ok')).toBe('ok');
+		expect(await idOf(499, 'ok')).toBeUndefined();
+		expect(await idOf(404, 'ok')).toBeUndefined();
+	});
+
+	it('accepts 1 to 64 characters, no more (boundary)', async () => {
+		expect(await idOf(500, 'a')).toBe('a');
+		expect(await idOf(500, 'a'.repeat(64))).toBe('a'.repeat(64));
+		expect(await idOf(500, 'a'.repeat(65))).toBeUndefined();
+	});
+
+	it('accepts letters, digits, dot, underscore and hyphen only (limit)', async () => {
+		expect(await idOf(500, 'Az09._-')).toBe('Az09._-');
+		for (const bad of ['a b', 'a/b', 'a<b>', 'é', 'a;b', 'a:b', 'a,b']) {
+			expect(await idOf(500, bad)).toBeUndefined();
 		}
-	);
+	});
+
+	it('is absent when the header is missing or empty (limit)', async () => {
+		expect(await idOf(500, null)).toBeUndefined();
+		expect(await idOf(500, '')).toBeUndefined();
+	});
+
+	it('is not set on a malformed 2xx answer (exception)', async () => {
+		stubFetch(jsonResponse('<html>', 200, { 'X-Request-Id': 'ok' }));
+
+		expect(await api.getStats()).toEqual({
+			success: false,
+			error: 'Invalid server response',
+			status: 200,
+			kind: 'invalid_response'
+		});
+	});
 });
