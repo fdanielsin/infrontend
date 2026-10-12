@@ -59,7 +59,11 @@ export interface ApiFailure {
 
 export type ApiResult<T> = ApiSuccess<T> | ApiFailure;
 
-const API_BASE = PUBLIC_API_URL || 'http://localhost:8080';
+// No default backend: a missing URL must fail loudly, not reach a service that belongs to someone
+// else. The build already refuses an unset variable; this catches an empty one.
+if (!PUBLIC_API_URL)
+	throw new Error('PUBLIC_API_URL is empty: the API client has no backend to call.');
+const API_BASE = PUBLIC_API_URL;
 const INVALID_RESPONSE = 'Invalid server response';
 
 // Longest wait for an answer. The backend cuts its own readiness probe at 2 s, so this leaves room
