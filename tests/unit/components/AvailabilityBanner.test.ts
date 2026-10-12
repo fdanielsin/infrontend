@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, within } from '@testing-library/svelte';
+import { tick } from 'svelte';
 import { api } from '$lib/api/client';
 import { overwriteGetLocale, type Locale } from '$lib/paraglide/runtime';
 import { AppState } from '$lib/state/app-state.svelte';
@@ -47,11 +48,12 @@ describe('availability banner', () => {
 		expect(view.container.querySelector('[data-availability]')).not.toBeNull();
 	});
 
-	it('does not flash while a first check is pending (boundary)', () => {
+	it('does not flash while a first check is pending (boundary)', async () => {
 		ready().mockReturnValue(new Promise(() => {}));
 		const view = renderWithApp(app, AvailabilityBanner);
 
 		void app.availability.check();
+		await tick();
 
 		expect(view.queryByRole('alert')).toBeNull();
 		expect(view.queryByRole('button')).toBeNull();
