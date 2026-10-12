@@ -4,7 +4,7 @@ Tous les tests du frontend vivent sous `tests/`.
 
 - `tests/unit/` contient les tests unitaires et les tests de composants,
   organisés par domaine :
-  - `tests/unit/api/` pour le client et les façades API ;
+  - `tests/unit/api/` pour le client API et les contrats de ses réponses ;
   - `tests/unit/stores/` pour l'état de l'application (`src/lib/state/`) ;
   - `tests/unit/components/` pour les composants lorsque nécessaire ;
   - `tests/unit/i18n/` pour les langues : parité des fichiers `messages/*.json`,
