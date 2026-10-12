@@ -196,6 +196,18 @@ describe('validation of the API responses against the contract', () => {
 		await expect(api.getUser(id)).resolves.toEqual({ success: true, data: { ...user, id } });
 	});
 
+	it.each(OPERATIONS.filter(([name]) => name !== 'getStats'))(
+		'%s refuses a body whose id is a string (sad path)',
+		async (_name, call, data) => {
+			// GIVEN: An id sent as text, in a single object or in the first element of a list.
+			const change = (item: unknown) => ({ ...(item as object), id: '1' });
+			answer({ success: true, data: Array.isArray(data) ? [change(data[0])] : change(data) });
+
+			// WHEN / THEN: It is an invalid response, not data.
+			await expect(call()).resolves.toEqual(INVALID);
+		}
+	);
+
 	it.each([4294967296, -1, 1.5])('refuses the id %d, outside uint32 (boundary)', async (id) => {
 		// GIVEN / WHEN / THEN: Just past the range, negative, or not an integer.
 		answer({ success: true, data: { ...user, id } });
