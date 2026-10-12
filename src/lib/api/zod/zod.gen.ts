@@ -61,6 +61,20 @@ export const zStats = z.object({
     tasks: z.int().gte(0)
 });
 
+export const zApiSummaryResponse = zSuccessResponse.and(z.object({
+    message: z.string(),
+    data: z.object({
+        name: z.literal('InDrive Backend API'),
+        version: z.string(),
+        links: z.object({
+            docs: z.literal('/docs').optional(),
+            openapi: z.literal('/openapi.yaml').optional(),
+            health: z.literal('/health'),
+            ready: z.literal('/ready')
+        })
+    })
+}));
+
 export const zHealthResponse = zSuccessResponse.and(z.object({
     message: z.string(),
     data: z.object({
@@ -128,6 +142,11 @@ export const zId = z.int().gte(0).max(4294967295, { error: 'Invalid value: Expec
  *
  */
 export const zCompletedFilter = z.boolean();
+
+/**
+ * Sommaire de l'API
+ */
+export const zGetApiSummaryResponse = zApiSummaryResponse;
 
 /**
  * Service disponible

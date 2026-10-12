@@ -4,6 +4,49 @@
  */
 
 export interface paths {
+    "/": {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Langue des messages : le français pour `fr` et ses variantes, l'anglais
+                 *     sinon. Chaque élément doit respecter la RFC 9110 (plage de langue avec
+                 *     tirets, `q` de 0 à 1) : un élément invalide, un en-tête absent ou de plus
+                 *     de 1024 octets donnent l'anglais, jamais une erreur. Voir la description
+                 *     de l'API.
+                 */
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Afficher le sommaire de l'API
+         * @description Accueille et oriente : renvoie le nom de l'API, sa version et des liens
+         *     vers les routes publiques. Ne lit pas la base de données : elle répond
+         *     même quand `/ready` répond `503`.
+         *     Les liens sont des chemins depuis la racine, jamais construits à partir
+         *     de la requête (`Host`, `X-Forwarded-*`). `docs` et `openapi` sont
+         *     absents quand la documentation est désactivée (`API_DOCS_ENABLED`),
+         *     pour ne jamais pointer vers une `404`. Les paramètres de requête sont
+         *     ignorés. Seul le `message` dépend de `Accept-Language` ; `data` est
+         *     identique dans toutes les langues. `data` ne contient aucun autre champ
+         *     que ceux du schéma. Les chemins `/api` et `/api/v1` restent `404`.
+         *     La réponse n'est jamais mise en cache (`Cache-Control: no-store`).
+         */
+        get: operations["getApiSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        /**
+         * Afficher le sommaire de l'API, sans corps
+         * @description Répond comme `GET /`, sans corps (RFC 9110, section 9.3.2).
+         */
+        head: operations["getApiSummaryHead"];
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -420,6 +463,35 @@ export interface components {
             users: number;
             tasks: number;
         };
+        ApiSummaryResponse: components["schemas"]["SuccessResponse"] & {
+            /** @example Welcome to the InDrive Backend API */
+            message: string;
+            data: {
+                /** @constant */
+                name: "InDrive Backend API";
+                /**
+                 * @description Même valeur que `data.version` de `/health` et `info.version` de ce contrat.
+                 * @example 1.2.0
+                 */
+                version: string;
+                links: {
+                    /**
+                     * @description Absent quand la documentation est désactivée.
+                     * @constant
+                     */
+                    docs?: "/docs";
+                    /**
+                     * @description Absent quand la documentation est désactivée.
+                     * @constant
+                     */
+                    openapi?: "/openapi.yaml";
+                    /** @constant */
+                    health: "/health";
+                    /** @constant */
+                    ready: "/ready";
+                };
+            };
+        };
         HealthResponse: components["schemas"]["SuccessResponse"] & {
             /** @example Service is healthy */
             message: string;
@@ -714,13 +786,75 @@ export interface components {
         Vary: "Accept-Language";
         /** @description Interdit au navigateur de deviner le type du contenu. */
         ContentTypeOptionsNoSniff: "nosniff";
-        /** @description Interdit toute mise en cache de la réponse (sondes). */
+        /** @description Interdit toute mise en cache de la réponse (sondes et sommaire de la racine). */
         CacheControlNoStore: "no-store";
     };
     pathItems: never;
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    getApiSummary: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Langue des messages : le français pour `fr` et ses variantes, l'anglais
+                 *     sinon. Chaque élément doit respecter la RFC 9110 (plage de langue avec
+                 *     tirets, `q` de 0 à 1) : un élément invalide, un en-tête absent ou de plus
+                 *     de 1024 octets donnent l'anglais, jamais une erreur. Voir la description
+                 *     de l'API.
+                 */
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sommaire de l'API */
+            200: {
+                headers: {
+                    "Content-Language": components["headers"]["ContentLanguage"];
+                    Vary: components["headers"]["Vary"];
+                    "Cache-Control": components["headers"]["CacheControlNoStore"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiSummaryResponse"];
+                };
+            };
+        };
+    };
+    getApiSummaryHead: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Langue des messages : le français pour `fr` et ses variantes, l'anglais
+                 *     sinon. Chaque élément doit respecter la RFC 9110 (plage de langue avec
+                 *     tirets, `q` de 0 à 1) : un élément invalide, un en-tête absent ou de plus
+                 *     de 1024 octets donnent l'anglais, jamais une erreur. Voir la description
+                 *     de l'API.
+                 */
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sommaire de l'API (sans corps) */
+            200: {
+                headers: {
+                    "Content-Language": components["headers"]["ContentLanguage"];
+                    Vary: components["headers"]["Vary"];
+                    "Cache-Control": components["headers"]["CacheControlNoStore"];
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     healthCheck: {
         parameters: {
             query?: never;
