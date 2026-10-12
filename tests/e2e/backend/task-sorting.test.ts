@@ -1,8 +1,9 @@
 import { expect, request as playwrightRequest, test, type Page } from '@playwright/test';
+import { API } from '../support/api-url';
 
 // Needs the real backend. The test creates its own "E2E sorting" user (the API cannot delete a
 // user, so it stays) and deletes every task it created at the end, even when it fails.
-const API = process.env.PUBLIC_API_URL || 'http://localhost:8080';
+
 const suffix = `${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
 const userName = `E2E sorting ${suffix}`;
 const CREATION_ORDER = ['b', 'a', '10'];

@@ -1,7 +1,7 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
+import { API } from '../support/api-url';
 
 // Needs the real backend: these journeys complete what the other real-backend files do not cover.
-const API = process.env.PUBLIC_API_URL || 'http://localhost:8080';
 
 interface UserRecord {
 	id: number;

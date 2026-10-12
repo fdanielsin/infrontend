@@ -1,8 +1,8 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
+import { API } from '../support/api-url';
 
 // Needs a real backend: the point is that the client rules and the server rules coincide.
 
-const API = process.env.PUBLIC_API_URL || 'http://localhost:8080';
 const EMOJI = '\u{1F600}';
 
 interface UserRecord {

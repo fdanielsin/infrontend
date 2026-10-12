@@ -1,12 +1,11 @@
 import { expect, test } from '@playwright/test';
 import { isValidEmail } from '../../../src/lib/validation/email';
 import { EMAIL_CASES } from '../../shared/email-cases';
+import { API } from '../support/api-url';
 
 // Needs a real backend: the point is that the e-mail rule of the client and the one of the server
 // coincide on every address of the shared table. The check goes through the API, so one browser
 // is enough.
-
-const API = process.env.PUBLIC_API_URL || 'http://localhost:8080';
 
 test.describe('E-mail rule, client and server together', () => {
 	test.skip(

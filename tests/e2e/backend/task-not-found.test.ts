@@ -1,7 +1,5 @@
 import { expect, test, type APIRequestContext } from '@playwright/test';
-
-// The backend the browser talks to (PUBLIC_API_URL baked into the build under test).
-const API = process.env.PUBLIC_API_URL ?? 'http://localhost:8080';
+import { API } from '../support/api-url';
 
 async function createUserWithTask(request: APIRequestContext, title: string) {
 	const stamp = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
