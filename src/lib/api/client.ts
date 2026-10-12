@@ -91,15 +91,14 @@ function createHttp(timeoutMs: number) {
 }
 
 interface Outcome {
-	data?: unknown;
+	data?: string;
 	error?: unknown;
 	response: Response;
 }
 
-function parseJson(text: unknown): unknown {
-	if (typeof text !== 'string') return undefined;
+function parseJson(text: string | undefined): unknown {
 	try {
-		return JSON.parse(text);
+		return JSON.parse(text ?? '');
 	} catch {
 		return undefined;
 	}
@@ -118,8 +117,8 @@ function readRequestId(response: Response): string | undefined {
 function toFailure(error: unknown, response: Response): ApiFailure {
 	const status = response.status;
 	const requestId = readRequestId(response);
-	const body = (typeof error === 'string' ? parseJson(error) : error) as
-		{ error?: unknown; error_code?: unknown } | null | undefined;
+	// openapi-fetch has already parsed a JSON error body; any other text yields no field below.
+	const body = error as { error?: unknown; error_code?: unknown } | null | undefined;
 	const message = typeof body?.error === 'string' ? body.error : '';
 	return {
 		success: false,
@@ -130,12 +129,13 @@ function toFailure(error: unknown, response: Response): ApiFailure {
 	};
 }
 
-// `schema` is the contract's schema of the success response: a body that does not match it is an
-// invalid response, whatever its status. `hasData` is false for endpoints whose 200 envelope
-// carries only a message. Failure bodies are not checked: the contract lets the server add codes.
+// `schema` is the contract's schema of the success response: a body that does not match it (not
+// a success envelope, no data, not JSON) is an invalid response, whatever its status. `hasData` is
+// false for an endpoint whose 204, without content, is a success. Failure bodies are not checked: the contract
+// lets the server add codes.
 async function toResult<T>(
 	send: () => Promise<Outcome>,
-	{ schema, hasData = true }: { schema?: ZodType; hasData?: boolean } = {}
+	{ schema, hasData = true }: { schema: ZodType; hasData?: boolean }
 ): Promise<ApiResult<T>> {
 	try {
 		const { data, error, response } = await send();
@@ -143,12 +143,7 @@ async function toResult<T>(
 		if (response.status === 204) {
 			return hasData ? invalidResponse(204) : ({ success: true } as ApiSuccess<T>);
 		}
-		const body = parseJson(data) as { success?: unknown; data?: unknown } | null | undefined;
-		if (body?.success !== true || (hasData && body.data === undefined)) {
-			return invalidResponse(response.status);
-		}
-		if (!schema) return body as ApiSuccess<T>;
-		const checked = schema.safeParse(body);
+		const checked = schema.safeParse(parseJson(data));
 		return checked.success ? (checked.data as ApiSuccess<T>) : invalidResponse(response.status);
 	} catch (error) {
 		return failureFromThrown(error);
