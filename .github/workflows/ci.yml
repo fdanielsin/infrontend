@@ -14,7 +14,7 @@ permissions:
 
 env:
   BUN_VERSION: '1.3.0'
-  PUBLIC_API_URL: 'http://localhost:8080'
+  PUBLIC_API_URL: 'http://localhost:59999'
 
 jobs:
   # Same command as locally: format, lint, types, tests with coverage thresholds, build.
@@ -87,6 +87,8 @@ jobs:
         run: bun x playwright install --with-deps ${{ matrix.browser }}
 
       - name: 'Run E2E tests'
+        env:
+          E2E_PORT: '4173'
         run: bun run test:e2e:mocked -- --project=${{ matrix.browser }}
 
   summary:
