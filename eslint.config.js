@@ -16,7 +16,7 @@ export default defineConfig(
 	{ ignores: ['src/lib/api/schema.d.ts', 'src/lib/api/zod/**'] },
 	...ts.configs.recommendedTypeChecked.map((config) => ({
 		...config,
-		files: ['src/**/*.{ts,svelte}', 'tests/**/*.ts']
+		files: ['src/**/*.{ts,svelte}', 'tests/**/*.ts', 'scripts/**/*.ts']
 	})),
 	svelte.configs.recommended,
 	prettier,
@@ -33,6 +33,7 @@ export default defineConfig(
 		files: [
 			'src/**/*.{ts,svelte}',
 			'tests/**/*.ts',
+			'scripts/**/*.ts',
 			'**/*.svelte',
 			'**/*.svelte.ts',
 			'**/*.svelte.js'

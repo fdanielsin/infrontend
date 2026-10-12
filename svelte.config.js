@@ -16,7 +16,14 @@ const config = {
 	},
 	kit: {
 		adapter: adapter(),
-		...(building && { csp: { mode: 'auto', directives: cspDirectives(apiUrl) } })
+		...(building && { csp: { mode: 'auto', directives: cspDirectives(apiUrl) } }),
+		typescript: {
+			// The scripts of `package.json` are type-checked with the rest of the project.
+			config: (config) => {
+				config.include.push('../scripts/**/*.ts');
+				return config;
+			}
+		}
 	}
 };
 
