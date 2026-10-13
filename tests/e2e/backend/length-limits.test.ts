@@ -115,12 +115,12 @@ test.describe('Length limits, client and server together', () => {
 		await submitUser(page, name, email);
 
 		// THEN: The server accepted both and stores them unchanged.
-		await expect(page.getByRole('button', { name: new RegExp(prefix) })).toBeVisible();
+		await expect(page.getByRole('button', { name: new RegExp(`^${prefix}`) })).toBeVisible();
 		const stored = (await users(request)).find((user) => user.email === email);
 		expect(stored?.name).toBe(name);
 
 		// WHEN: A task with a 200-point title and a 2000-point description is added.
-		await page.getByRole('button', { name: new RegExp(prefix) }).click();
+		await page.getByRole('button', { name: new RegExp(`^${prefix}`) }).click();
 		const title = 'T'.repeat(199) + EMOJI;
 		const description = 'd'.repeat(1999) + EMOJI;
 		await page.getByLabel('Task Title').fill(title);

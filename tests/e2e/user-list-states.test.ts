@@ -37,7 +37,7 @@ test.describe('User list states (mocked API)', () => {
 		await retry.click();
 
 		// THEN: The users are listed.
-		await expect(page.getByRole('button', { name: /Ada Lovelace/ })).toBeVisible();
+		await expect(page.getByRole('button', { name: /^Ada Lovelace [^(]/ })).toBeVisible();
 		await expect(page.getByText('Users (1)')).toBeVisible();
 	});
 

@@ -124,5 +124,10 @@
 	"users_undo_delete": "Undo",
 	"users_gone": "User already deleted",
 	"error_delete_user": "We couldn't delete the user.",
-	"error_update_user": "We couldn't save the name."
+	"error_update_user": "We couldn't save the name.",
+	"users_edit": "Edit",
+	"users_edit_named": "Edit {name} ({email})",
+	"users_delete_named": "Delete {name} ({email})",
+	"users_save": "Save",
+	"users_cancel": "Cancel"
 }

@@ -17,7 +17,7 @@ async function selectUser(page: Page, userName: string): Promise<void> {
 	const tasksLoaded = page.waitForResponse(
 		(response) => /\/api\/v1\/users\/\d+\/tasks$/.test(response.url()) && response.ok()
 	);
-	await page.getByRole('button', { name: new RegExp(userName) }).click();
+	await page.getByRole('button', { name: new RegExp(`^${userName} [^(]`) }).click();
 	await tasksLoaded;
 	await expect(page.getByRole('heading', { name: `Tasks for ${userName}` })).toBeVisible();
 }

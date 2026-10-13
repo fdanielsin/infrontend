@@ -240,11 +240,13 @@ describe('UserForm', () => {
 		);
 		vi.mocked(api.getUserTasks).mockResolvedValue({ success: true, data: [] });
 		const view = renderForm();
-		const adaButton = view.getByRole('button', { name: /Ada/ });
-		const graceButton = view.getByRole('button', { name: /Grace/ });
+		const adaButton = view.getByRole('button', { name: /^Ada/ });
+		const graceButton = view.getByRole('button', { name: /^Grace/ });
 		const highlight = ['bg-surface-selected', 'border-l-4', 'border-primary'];
+		// The row (the item) carries the fill and the bar.
+		const rowOf = (button: HTMLElement) => button.closest('li') as HTMLElement;
 		const isHighlighted = (button: HTMLElement) =>
-			highlight.every((name) => button.classList.contains(name));
+			highlight.every((name) => rowOf(button).classList.contains(name));
 		expect(adaButton.getAttribute('aria-pressed')).toBe('false');
 		expect(graceButton.getAttribute('aria-pressed')).toBe('false');
 
@@ -255,7 +257,7 @@ describe('UserForm', () => {
 		await waitFor(() => expect(graceButton.getAttribute('aria-pressed')).toBe('true'));
 		expect(isHighlighted(graceButton)).toBe(true);
 		expect(adaButton.getAttribute('aria-pressed')).toBe('false');
-		expect(highlight.some((name) => adaButton.classList.contains(name))).toBe(false);
+		expect(highlight.some((name) => rowOf(adaButton).classList.contains(name))).toBe(false);
 
 		// WHEN: The selection moves to the first user.
 		await fireEvent.click(adaButton);
@@ -264,7 +266,7 @@ describe('UserForm', () => {
 		await waitFor(() => expect(adaButton.getAttribute('aria-pressed')).toBe('true'));
 		expect(isHighlighted(adaButton)).toBe(true);
 		expect(graceButton.getAttribute('aria-pressed')).toBe('false');
-		expect(highlight.some((name) => graceButton.classList.contains(name))).toBe(false);
+		expect(highlight.some((name) => rowOf(graceButton).classList.contains(name))).toBe(false);
 	});
 
 	it('shows only the length message for an email over 254 characters, without sending (limit)', async () => {

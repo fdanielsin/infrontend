@@ -45,7 +45,7 @@ describe('home page: a task created while the same user is selected again', () =
 		// GIVEN: Ada is selected, with no task, and "Buy milk" is being added (slow answer).
 		vi.mocked(api.getUserTasks).mockResolvedValueOnce({ success: true, data: [] });
 		const view = renderWithApp(app, HomePage);
-		await fireEvent.click(await view.findByRole('button', { name: /Ada Lovelace/ }));
+		await fireEvent.click(await view.findByRole('button', { name: /^Ada Lovelace/ }));
 		await view.findByRole('heading', { name: 'Tasks for Ada Lovelace' });
 		const creation = deferred<ApiResult<Task>>();
 		vi.mocked(api.createTask).mockReturnValueOnce(creation.promise);
@@ -55,7 +55,7 @@ describe('home page: a task created while the same user is selected again', () =
 		// WHEN: Ada's row is clicked again (the reload already lists the stored task), then the
 		// slow answer to the creation arrives.
 		vi.mocked(api.getUserTasks).mockResolvedValueOnce({ success: true, data: [created] });
-		await fireEvent.click(view.getByRole('button', { name: /Ada Lovelace/ }));
+		await fireEvent.click(view.getByRole('button', { name: /^Ada Lovelace/ }));
 		await view.findByText('Buy milk');
 		creation.resolve({ success: true, data: created });
 		await waitFor(() => expect(vi.mocked(api.createTask)).toHaveBeenCalledTimes(1));

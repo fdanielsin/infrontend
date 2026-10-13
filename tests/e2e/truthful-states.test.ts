@@ -63,13 +63,13 @@ test.describe('Changing the selected user (mocked API)', () => {
 		// GIVEN: Ada's tasks sorted by title.
 		await mockApi(page, { users: [ada, grace], tasks: [...adaTasks, ...graceTasks] });
 		await page.goto('/');
-		await page.getByRole('button', { name: /Ada Lovelace/ }).click();
+		await page.getByRole('button', { name: /^Ada Lovelace [^(]/ }).click();
 		await page.getByRole('heading', { name: 'Tasks for Ada Lovelace' }).waitFor();
 		await page.getByLabel('Sort by', { exact: true }).selectOption('title');
 		await expect(page.locator('li label')).toHaveText(['Apple', 'Zebra']);
 
 		// WHEN: Grace is selected from the keyboard (Safari does not focus a clicked button).
-		const graceRow = page.getByRole('button', { name: /Grace Hopper/ });
+		const graceRow = page.getByRole('button', { name: /^Grace Hopper [^(]/ });
 		await graceRow.focus();
 		await graceRow.press('Enter');
 		await page.getByRole('heading', { name: 'Tasks for Grace Hopper' }).waitFor();

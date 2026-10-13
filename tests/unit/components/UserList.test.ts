@@ -35,26 +35,28 @@ describe('UserList', () => {
 	});
 	afterEach(cleanup);
 
-	it('makes the button the whole row, with no padding left on the item (happy path)', () => {
+	it('makes the selection button the whole text area of the row, the actions its siblings (happy path)', () => {
 		// GIVEN / WHEN: Two listed users.
 		const view = renderWithApp(app, UserForm);
-		const button = view.getByRole('button', { name: /Ada/ });
+		const button = view.getByRole('button', { name: /^Ada/ });
 		const item = button.closest('li') as HTMLElement;
 
-		// THEN: The button is the only child of the row and carries the padding and the full width.
-		expect(item.children).toHaveLength(1);
+		// THEN: The row holds the button, then the actions beside it, never inside it; the row carries
+		// the fill and the hover, the button the padding and the full width of its column.
+		expect(item.children).toHaveLength(2);
 		expect(item.firstElementChild).toBe(button);
+		expect(button.querySelector('button')).toBeNull();
 		expect(item.classList.contains('p-3')).toBe(false);
+		expect(item.classList.contains('hover:bg-surface-hover')).toBe(true);
 		expect(button.classList.contains('w-full')).toBe(true);
 		expect(button.classList.contains('p-3')).toBe(true);
 		expect(button.classList.contains('min-h-11')).toBe(true);
-		expect(button.classList.contains('hover:bg-surface-hover')).toBe(true);
 	});
 
 	it('selects a user from a click on any part of the row (happy path)', async () => {
 		// GIVEN: A listed user.
 		const view = renderWithApp(app, UserForm);
-		const button = view.getByRole('button', { name: /Grace/ });
+		const button = view.getByRole('button', { name: /^Grace/ });
 
 		// WHEN: The email line, inside the row, is clicked.
 		await fireEvent.click(view.getByText('grace@example.com'));
@@ -67,8 +69,8 @@ describe('UserList', () => {
 	it('shows a chevron on a free row and a check on the selected one, never both (happy path)', async () => {
 		// GIVEN: Two unselected users.
 		const view = renderWithApp(app, UserForm);
-		const adaButton = view.getByRole('button', { name: /Ada/ });
-		const graceButton = view.getByRole('button', { name: /Grace/ });
+		const adaButton = view.getByRole('button', { name: /^Ada/ });
+		const graceButton = view.getByRole('button', { name: /^Grace/ });
 		const icon = (button: HTMLElement) =>
 			[...button.querySelectorAll('svg[data-icon]')].map((svg) => svg.getAttribute('data-icon'));
 		expect(icon(adaButton)).toEqual(['nav-arrow-right']);
@@ -86,23 +88,25 @@ describe('UserList', () => {
 	it('draws the selection with a fill and a bar, never with the focus ring (happy path)', async () => {
 		// GIVEN / WHEN: A selected user.
 		const view = renderWithApp(app, UserForm);
-		const button = view.getByRole('button', { name: /Ada/ });
+		const button = view.getByRole('button', { name: /^Ada/ });
 		await fireEvent.click(button);
 		await waitFor(() => expect(button.getAttribute('aria-pressed')).toBe('true'));
 
-		// THEN: The row has no ring, no raw hue, and the item itself is not boxed inside.
+		// THEN: The row (the item) has the fill and the bar, no ring and no raw hue.
+		const item = button.closest('li') as HTMLElement;
 		for (const name of ['ring-2', 'ring-primary', 'ring-inset', 'bg-blue-100']) {
 			expect(button.classList.contains(name)).toBe(false);
+			expect(item.classList.contains(name)).toBe(false);
 		}
-		expect(button.classList.contains('bg-surface-selected')).toBe(true);
-		expect(button.classList.contains('border-l-4')).toBe(true);
+		expect(item.classList.contains('bg-surface-selected')).toBe(true);
+		expect(item.classList.contains('border-l-4')).toBe(true);
 	});
 
 	it('keeps the selection in the tree for assistive technology after a failed selection (sad path)', async () => {
 		// GIVEN: An API that refuses the user.
 		vi.mocked(api.getUser).mockResolvedValue({ success: false, error: 'Boom' });
 		const view = renderWithApp(app, UserForm);
-		const button = view.getByRole('button', { name: /Ada/ });
+		const button = view.getByRole('button', { name: /^Ada/ });
 
 		// WHEN: The row is clicked.
 		await fireEvent.click(button);

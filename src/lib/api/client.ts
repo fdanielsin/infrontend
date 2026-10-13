@@ -92,7 +92,9 @@ function createHttp(timeoutMs: number) {
 				typeof AbortSignal.any === 'function'
 					? AbortSignal.any([request.signal, timeout])
 					: timeout;
-			return globalThis.fetch(new Request(request, { signal }));
+			// `keepalive` is repeated: Firefox drops it when a Request is copied, and the deletion sent
+			// as the page is left would then be cut off with the page.
+			return globalThis.fetch(new Request(request, { signal, keepalive: request.keepalive }));
 		}
 	});
 }

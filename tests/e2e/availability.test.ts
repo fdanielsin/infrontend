@@ -80,7 +80,7 @@ test.describe('Service availability (mocked API)', () => {
 
 			// THEN: The banner goes, the list loads once, a status announces it, and the focus is on
 			// main, not lost.
-			await expect(page.getByRole('button', { name: /Ada Lovelace/ })).toBeVisible();
+			await expect(page.getByRole('button', { name: /^Ada Lovelace [^(]/ })).toBeVisible();
 			await expect(page.getByText(BANNER_TEXT)).toHaveCount(0);
 			await expect(page.getByRole('status').getByText('Service restored')).toBeVisible();
 			await expect(page.getByRole('main')).toBeFocused();
@@ -176,7 +176,7 @@ test.describe('Service availability (mocked API)', () => {
 
 			// WHEN: The home page is opened.
 			await page.goto('/');
-			await expect(page.getByRole('button', { name: /Ada Lovelace/ })).toBeVisible();
+			await expect(page.getByRole('button', { name: /^Ada Lovelace [^(]/ })).toBeVisible();
 
 			// THEN: The footer shows it without widening the page, and no banner element takes room.
 			await expect(page.getByRole('contentinfo')).toHaveText(`API ${version}`);

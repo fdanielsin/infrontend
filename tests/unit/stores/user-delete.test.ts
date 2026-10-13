@@ -219,9 +219,20 @@ describe('deleting a user', () => {
 				await vi.advanceTimersByTimeAsync(6000);
 
 				expect(names()).toEqual(['Ada', 'Bob', 'Cleo']);
+				expect(toasts()).toEqual(["We couldn't delete the user."]);
 				expect(app.notifications.items.at(-1)?.type).toBe('error');
 			}
 		);
+
+		it('says the same thing whatever the code, since the user is back in the list (critère 35)', async () => {
+			vi.mocked(api.deleteUser).mockResolvedValue(NO_ROUTE);
+			app.users.remove(ada.id);
+
+			await vi.advanceTimersByTimeAsync(6000);
+
+			expect(toasts()).not.toContain('Resource not found');
+			expect(toasts()).toEqual(["We couldn't delete the user."]);
+		});
 
 		it('words a refusal with no message of its own as "We couldn\'t delete the user." (critère 35)', async () => {
 			vi.mocked(api.deleteUser).mockResolvedValue({ success: false, error: '', status: 502 });

@@ -79,7 +79,7 @@ test.describe('Focus and errors (computed style, mocked API)', () => {
 				['name field', page.getByLabel('Name', { exact: true })],
 				['email field', page.getByLabel('Email', { exact: true })],
 				['create user button', page.getByRole('button', { name: 'Create User' })],
-				['user button', page.getByRole('button', { name: /Ada Lovelace/ })],
+				['user button', page.getByRole('button', { name: /^Ada Lovelace [^(]/ })],
 				['title field', page.getByLabel('Task Title').first()],
 				['description field', page.getByLabel('Description').first()],
 				['add task button', page.getByRole('button', { name: 'Add Task' })],
@@ -190,9 +190,9 @@ test.describe('Focus and errors (computed style, mocked API)', () => {
 			await form('title').fill('   ');
 			await form('title').press('Enter');
 			await page
-				.locator('li button[type="button"]')
+				.locator('li', { has: page.locator('#task-10') })
+				.locator('button[type="button"]')
 				.filter({ hasText: /^\s*(Edit|Modifier|Bearbeiten|Editar)\s*$/ })
-				.first()
 				.click();
 			await page.locator('#edit-title-10').fill('');
 			await page.locator('#edit-title-10').press('Enter');
@@ -222,7 +222,7 @@ test.describe('Focus and errors (computed style, mocked API)', () => {
 		// GIVEN: A creation refused for an email already taken: the error is under the email field.
 		const api = await mockApi(page, { users: [ada], tasks: adaTasks });
 		await page.goto('/');
-		await page.getByRole('button', { name: /Ada Lovelace/ }).waitFor();
+		await page.getByRole('button', { name: /^Ada Lovelace [^(]/ }).waitFor();
 		api.failNext('POST /users', { status: 409, error: 'Email taken', code: 'EMAIL_TAKEN' });
 		await page.locator('#name').fill('Grace');
 		await page.locator('#email').fill('grace@example.com');

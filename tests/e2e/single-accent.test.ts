@@ -42,7 +42,7 @@ async function openHome(page: Page, width = 1280) {
 	await page.setViewportSize({ width, height: 900 });
 	const api = await mockApi(page, { users: [ada], tasks: adaTasks });
 	await page.goto('/');
-	await page.getByRole('button', { name: /Ada Lovelace/ }).click();
+	await page.getByRole('button', { name: /^Ada Lovelace [^(]/ }).click();
 	await page.getByRole('heading', { name: 'Tasks for Ada Lovelace' }).waitFor();
 	return api;
 }

@@ -124,5 +124,10 @@
 	"users_undo_delete": "Deshacer",
 	"users_gone": "Usuario ya eliminado",
 	"error_delete_user": "No se pudo eliminar al usuario.",
-	"error_update_user": "No se pudo guardar el nombre."
+	"error_update_user": "No se pudo guardar el nombre.",
+	"users_edit": "Editar",
+	"users_edit_named": "Editar {name} ({email})",
+	"users_delete_named": "Eliminar {name} ({email})",
+	"users_save": "Guardar",
+	"users_cancel": "Cancelar"
 }

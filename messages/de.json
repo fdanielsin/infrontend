@@ -124,5 +124,10 @@
 	"users_undo_delete": "Rückgängig",
 	"users_gone": "Benutzer bereits gelöscht",
 	"error_delete_user": "Der Benutzer konnte nicht gelöscht werden.",
-	"error_update_user": "Der Name konnte nicht gespeichert werden."
+	"error_update_user": "Der Name konnte nicht gespeichert werden.",
+	"users_edit": "Bearbeiten",
+	"users_edit_named": "{name} ({email}) bearbeiten",
+	"users_delete_named": "{name} ({email}) löschen",
+	"users_save": "Speichern",
+	"users_cancel": "Abbrechen"
 }

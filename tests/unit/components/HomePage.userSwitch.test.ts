@@ -51,7 +51,7 @@ describe('home page: changing the selected user', () => {
 	function open() {
 		const view = renderWithApp(app, HomePage);
 		const select = async (name: string) => {
-			await fireEvent.click(await view.findByRole('button', { name: new RegExp(name) }));
+			await fireEvent.click(await view.findByRole('button', { name: new RegExp(`^${name}`) }));
 			await view.findByRole('heading', { name: `Tasks for ${name}` });
 		};
 		return { view, select };

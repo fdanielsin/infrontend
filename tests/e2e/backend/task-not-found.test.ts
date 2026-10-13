@@ -25,7 +25,7 @@ test.describe('Task already deleted elsewhere', () => {
 		const title = `Gone task ${Date.now()}`;
 		const { userName, taskId } = await createUserWithTask(request, title);
 		await page.goto('/');
-		await page.getByRole('button', { name: new RegExp(userName) }).click();
+		await page.getByRole('button', { name: new RegExp(`^${userName} [^(]`) }).click();
 		await expect(page.getByText(title)).toBeVisible();
 
 		// WHEN: The task is deleted through the API, then deleted again from the interface.
@@ -55,7 +55,7 @@ test.describe('Task already deleted elsewhere', () => {
 		const title = `Gone toggle ${Date.now()}`;
 		const { userName, taskId } = await createUserWithTask(request, title);
 		await page.goto('/');
-		await page.getByRole('button', { name: new RegExp(userName) }).click();
+		await page.getByRole('button', { name: new RegExp(`^${userName} [^(]`) }).click();
 		await expect(page.getByText(title)).toBeVisible();
 
 		// WHEN: The task is deleted through the API, then checked in the interface.

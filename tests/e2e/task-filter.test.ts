@@ -32,7 +32,7 @@ test.describe('Task filter (mocked API)', () => {
 
 		// WHEN: The page is reloaded and the user selected again.
 		await page.reload();
-		await page.getByRole('button', { name: /Ada Lovelace/ }).click();
+		await page.getByRole('button', { name: /^Ada Lovelace [^(]/ }).click();
 
 		// THEN: The choice and its list are back, and nothing is announced.
 		await expect(filterSelect(page)).toHaveValue('done');

@@ -44,7 +44,7 @@ async function openHomeWithAda(page: Page, locale: Locale) {
 	const usersLoaded = page.waitForResponse((response) => response.url().endsWith('/api/v1/users'));
 	await page.goto('/');
 	await usersLoaded;
-	await page.getByRole('button', { name: new RegExp(ada.name) }).click();
+	await page.getByRole('button', { name: new RegExp(`^${ada.name} [^(]`) }).click();
 	await expect(
 		page.getByRole('heading', { name: t(locale, 'tasks_for_user', { name: ada.name }) })
 	).toBeVisible();

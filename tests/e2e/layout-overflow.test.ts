@@ -227,7 +227,7 @@ test.describe('Layout without sideways scroll (mocked API)', () => {
 			// WHEN: The task is listed.
 			await openHomeWithUser(page);
 			const label = await page.getByText(TITLE, { exact: true }).boundingBox();
-			const edit = await page.getByRole('button', { name: /^Edit/ }).boundingBox();
+			const edit = await page.getByRole('button', { name: `Edit ${TITLE}` }).boundingBox();
 
 			// THEN: The text keeps most of the width (it was 110 px) and the actions are below it.
 			expect(label && edit).toBeTruthy();
@@ -251,7 +251,7 @@ test.describe('Layout without sideways scroll (mocked API)', () => {
 			// WHEN: It is listed.
 			await openHomeWithUser(page);
 			const label = await page.getByText(TITLE, { exact: true }).boundingBox();
-			const edit = await page.getByRole('button', { name: /^Edit/ }).boundingBox();
+			const edit = await page.getByRole('button', { name: `Edit ${TITLE}` }).boundingBox();
 
 			// THEN: "Edit" is on the line of the title.
 			expect(label && edit).toBeTruthy();

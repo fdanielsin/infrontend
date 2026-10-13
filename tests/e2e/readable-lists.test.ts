@@ -32,7 +32,7 @@ test.describe('User rows', () => {
 		await mockApi(page, { users: [ADA, GRACE] });
 		await page.setViewportSize({ width: 1280, height: 800 });
 		await page.goto('/');
-		const row = page.getByRole('button', { name: /Grace Hopper/ });
+		const row = page.getByRole('button', { name: /^Grace Hopper [^(]/ });
 		const box = (await row.boundingBox())!;
 
 		// WHEN: The padding at the right end of the row is clicked.
@@ -53,8 +53,8 @@ test.describe('User rows', () => {
 		await mockApi(page, { users: [ADA, GRACE] });
 		await page.setViewportSize({ width: 1280, height: 800 });
 		await page.goto('/');
-		const selected = page.getByRole('button', { name: /Ada Lovelace/ });
-		const other = page.getByRole('button', { name: /Grace Hopper/ });
+		const selected = page.getByRole('button', { name: /^Ada Lovelace [^(]/ });
+		const other = page.getByRole('button', { name: /^Grace Hopper [^(]/ });
 		await selected.click();
 		await expect(selected).toHaveAttribute('aria-pressed', 'true');
 		const next = nextFocusKey(browserName);
@@ -63,19 +63,23 @@ test.describe('User rows', () => {
 		await expect(selected).toBeFocused();
 
 		// THEN: The focus is an outline outside the row; the selection is a fill and a bar.
+		// The row (the item) carries the fill and the bar; the button inside it carries the focus ring.
 		const style = await selected.evaluate((element) => {
 			const css = getComputedStyle(element);
+			const row = getComputedStyle(element.closest('li')!);
 			return {
 				outlineStyle: css.outlineStyle,
 				outlineWidth: css.outlineWidth,
-				barWidth: css.borderLeftWidth,
-				fill: css.backgroundColor
+				barWidth: row.borderLeftWidth,
+				fill: row.backgroundColor
 			};
 		});
 		expect(style.outlineStyle).toBe('solid');
 		expect(style.outlineWidth).toBe('2px');
 		expect(style.barWidth).toBe('4px');
-		const otherFill = await other.evaluate((element) => getComputedStyle(element).backgroundColor);
+		const otherFill = await other.evaluate(
+			(element) => getComputedStyle(element.closest('li')!).backgroundColor
+		);
 		expect(style.fill).not.toBe(otherFill);
 
 		// THEN: The name and the e-mail reach 4.5:1 on the selected row, the bar and the check 3:1.
@@ -100,7 +104,7 @@ test.describe('User rows', () => {
 		await mockApi(page, { users: [ADA, GRACE] });
 		await page.setViewportSize({ width: 1280, height: 800 });
 		await page.goto('/');
-		const row = page.getByRole('button', { name: /Grace Hopper/ });
+		const row = page.getByRole('button', { name: /^Grace Hopper [^(]/ });
 		await row.hover();
 		const name = row.getByText('Grace Hopper');
 		const mail = row.getByText('grace@example.com');
@@ -120,12 +124,12 @@ test.describe('User rows', () => {
 		await page.emulateMedia({ forcedColors: 'active' });
 		await page.setViewportSize({ width: 1280, height: 800 });
 		await page.goto('/');
-		const selected = page.getByRole('button', { name: /Ada Lovelace/ });
+		const selected = page.getByRole('button', { name: /^Ada Lovelace [^(]/ });
 		await selected.click();
 		await expect(selected.locator('[data-icon="check"]')).toBeVisible();
-		expect(await selected.evaluate((element) => getComputedStyle(element).borderLeftWidth)).toBe(
-			'4px'
-		);
+		expect(
+			await selected.evaluate((element) => getComputedStyle(element.closest('li')!).borderLeftWidth)
+		).toBe('4px');
 	});
 });
 
@@ -145,7 +149,7 @@ test.describe('Showing the tasks after a selection', () => {
 			await page.goto('/');
 
 			// WHEN: A user in the list is chosen.
-			await page.getByRole('button', { name: /User 3\b/ }).click();
+			await page.getByRole('button', { name: /^User 3 [^(]/ }).click();
 
 			// THEN: The tasks heading is in the window and focused.
 			const heading = page.getByRole('heading', { name: 'Tasks', exact: true });
@@ -158,7 +162,7 @@ test.describe('Showing the tasks after a selection', () => {
 		await mockApi(page, { users: [ADA, GRACE], tasks: [task(10)] });
 		await page.setViewportSize({ width: 1280, height: 800 });
 		await page.goto('/');
-		const row = page.getByRole('button', { name: /Ada Lovelace/ });
+		const row = page.getByRole('button', { name: /^Ada Lovelace [^(]/ });
 		await row.focus();
 		await page.keyboard.press('Enter');
 		await expect(page.getByRole('heading', { name: '1 to do of 1' })).toBeVisible();
@@ -171,7 +175,7 @@ test.describe('Showing the tasks after a selection', () => {
 		await mockApi(page, { users: [ADA], tasks: [task(10)] });
 		await page.setViewportSize({ width: 768, height: 800 });
 		await page.goto('/');
-		const row = page.getByRole('button', { name: /Ada Lovelace/ });
+		const row = page.getByRole('button', { name: /^Ada Lovelace [^(]/ });
 		await row.focus();
 		await page.keyboard.press('Enter');
 		await expect(page.getByRole('heading', { name: '1 to do of 1' })).toBeVisible();
@@ -179,7 +183,7 @@ test.describe('Showing the tasks after a selection', () => {
 
 		await page.setViewportSize({ width: 767, height: 800 });
 		await page.goto('/');
-		await page.getByRole('button', { name: /Ada Lovelace/ }).focus();
+		await page.getByRole('button', { name: /^Ada Lovelace [^(]/ }).focus();
 		await page.keyboard.press('Enter');
 		await expect(page.getByRole('heading', { name: '1 to do of 1' })).toBeFocused();
 	});
@@ -214,7 +218,7 @@ test.describe('No user selected', () => {
 		expect(panelBox.height).toBeLessThan(leftColumn.y + leftColumn.height - panelBox.y);
 
 		// WHEN: A user is chosen.
-		await page.getByRole('button', { name: /Ada Lovelace/ }).click();
+		await page.getByRole('button', { name: /^Ada Lovelace [^(]/ }).click();
 		await expect(page.getByRole('heading', { name: 'Tasks for Ada Lovelace' })).toBeVisible();
 
 		// THEN: The left column did not move.
@@ -242,7 +246,7 @@ test.describe('Empty states', () => {
 			open: async (page: Page) => {
 				await mockApi(page, { users: [ADA], tasks: [] });
 				await page.goto('/');
-				await page.getByRole('button', { name: /Ada Lovelace/ }).click();
+				await page.getByRole('button', { name: /^Ada Lovelace [^(]/ }).click();
 			}
 		},
 		{
@@ -289,7 +293,7 @@ test.describe('Task rows under the pointer', () => {
 		await mockApi(page, { users: [ADA], tasks: [task(10)] });
 		await page.setViewportSize({ width: 1280, height: 800 });
 		await page.goto('/');
-		await page.getByRole('button', { name: /Ada Lovelace/ }).click();
+		await page.getByRole('button', { name: /^Ada Lovelace [^(]/ }).click();
 		const edit = page.getByRole('button', { name: 'Edit Task 10' });
 		const row = page.locator('li', { has: edit });
 		return { edit, row };
@@ -340,7 +344,7 @@ test.describe('Task rows under the pointer', () => {
 		const page = await context.newPage();
 		await mockApi(page, { users: [ADA], tasks: [task(10)] });
 		await page.goto('/');
-		await page.getByRole('button', { name: /Ada Lovelace/ }).tap();
+		await page.getByRole('button', { name: /^Ada Lovelace [^(]/ }).tap();
 		const edit = page.getByRole('button', { name: 'Edit Task 10' });
 		const row = page.locator('li', { has: edit });
 		const before = await look(row);
@@ -366,7 +370,7 @@ test.describe('Long descriptions', () => {
 				await mockApi(page, { users: [ADA], tasks: [task(10, { description }), task(11)] });
 				await page.setViewportSize({ width, height: 800 });
 				await page.goto('/');
-				await page.getByRole('button', { name: /Ada Lovelace/ }).click();
+				await page.getByRole('button', { name: /^Ada Lovelace [^(]/ }).click();
 				const text = page.locator('#task-description-10');
 				const more = page.getByRole('button', { name: 'Show more: Task 10' });
 
@@ -402,7 +406,7 @@ test.describe('Long descriptions', () => {
 		await mockApi(page, { users: [ADA], tasks: [task(10, { description: 'Three\nlines\nonly' })] });
 		await page.setViewportSize({ width: 1280, height: 800 });
 		await page.goto('/');
-		await page.getByRole('button', { name: /Ada Lovelace/ }).click();
+		await page.getByRole('button', { name: /^Ada Lovelace [^(]/ }).click();
 		await expect(page.locator('#task-description-10')).toBeVisible();
 		await expect(page.getByRole('button', { name: /Show more/ })).toHaveCount(0);
 	});
@@ -413,7 +417,7 @@ test.describe('Long descriptions', () => {
 		await mockApi(page, { users: [ADA], tasks: [task(10, { description: PROSE.slice(0, 110) })] });
 		await page.setViewportSize({ width: 1280, height: 800 });
 		await page.goto('/');
-		await page.getByRole('button', { name: /Ada Lovelace/ }).click();
+		await page.getByRole('button', { name: /^Ada Lovelace [^(]/ }).click();
 		await expect(page.locator('#task-description-10')).toBeVisible();
 		await expect(page.getByRole('button', { name: /Show more/ })).toHaveCount(0);
 		await page.setViewportSize({ width: 320, height: 800 });
@@ -432,7 +436,7 @@ test.describe('Editing a task', () => {
 		const api = await mockApi(page, { users: [ADA], tasks: [task(10, { title })] });
 		await page.setViewportSize({ width: 320, height: 800 });
 		await page.goto('/');
-		await page.getByRole('button', { name: /Ada Lovelace/ }).click();
+		await page.getByRole('button', { name: /^Ada Lovelace [^(]/ }).click();
 
 		// WHEN: The task is edited.
 		await page.getByRole('button', { name: `Edit ${title}` }).click();
@@ -487,7 +491,7 @@ test.describe('Editing a task', () => {
 			tasks: [task(10, { description: 'D'.repeat(2000) })]
 		});
 		await page.goto('/');
-		await page.getByRole('button', { name: /Ada Lovelace/ }).tap();
+		await page.getByRole('button', { name: /^Ada Lovelace [^(]/ }).tap();
 		for (const name of ['Edit Task 10', 'Delete Task 10', 'Show more: Task 10']) {
 			const box = (await page.getByRole('button', { name }).boundingBox())!;
 			expect.soft(box.height, name).toBeGreaterThanOrEqual(44);
@@ -539,7 +543,7 @@ test.describe('Editing a task', () => {
 		await mockApi(page, { users: [ADA], tasks: [task(10)] });
 		await page.setViewportSize({ width: 1280, height: 800 });
 		await page.goto('/');
-		await page.getByRole('button', { name: /Ada Lovelace/ }).click();
+		await page.getByRole('button', { name: /^Ada Lovelace [^(]/ }).click();
 
 		const box = (await page.getByRole('checkbox', { name: 'Task 10' }).boundingBox())!;
 		const hitAside = await page.evaluate(

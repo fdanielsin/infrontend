@@ -41,6 +41,8 @@ export interface MockApi {
 	version: string | null;
 	// Every call to the API (`/api/v1/**`), in order: "GET /users".
 	calls: string[];
+	// The same calls with the JSON body they carried (null without one).
+	requests: { operation: string; body: unknown }[];
 }
 
 const corsHeaders = {
@@ -75,6 +77,7 @@ export async function mockApi(
 		readinessRequestId: null,
 		version: '1.2.0',
 		calls: [],
+		requests: [],
 		failNext: (operation, failure) => failures.set(operation, failure)
 	};
 	let nextId = 1000;
@@ -122,6 +125,7 @@ export async function mockApi(
 		const resource = path.replace(/\/\d+/g, '/{id}');
 		const operation = `${method} ${resource}`;
 		state.calls.push(operation);
+		state.requests.push({ operation, body: request.postDataJSON() as unknown });
 		const failure = failures.get(operation);
 		if (failure) {
 			failures.delete(operation);
@@ -157,6 +161,38 @@ export async function mockApi(
 							error: 'User not found',
 							error_code: 'USER_NOT_FOUND'
 						});
+			}
+			case 'PUT /users/{id}': {
+				// Like the server: the name alone, and it must be there (USER-R17, USER-R18).
+				if (!body || Object.keys(body).some((key) => key !== 'name')) {
+					return json(route, 400, {
+						success: false,
+						error: 'Invalid body',
+						error_code: 'INVALID_BODY'
+					});
+				}
+				const user = state.users.find((candidate) => candidate.id === id);
+				if (!user) {
+					return json(route, 404, {
+						success: false,
+						error: 'User not found',
+						error_code: 'USER_NOT_FOUND'
+					});
+				}
+				user.name = textOf(body.name).trim();
+				return json(route, 200, { success: true, data: user, message: 'User updated' });
+			}
+			case 'DELETE /users/{id}': {
+				if (!state.users.some((candidate) => candidate.id === id)) {
+					return json(route, 404, {
+						success: false,
+						error: 'User not found',
+						error_code: 'USER_NOT_FOUND'
+					});
+				}
+				state.users = state.users.filter((user) => user.id !== id);
+				state.tasks = state.tasks.filter((task) => task.user_id !== id);
+				return json(route, 200, { success: true, message: 'User deleted' });
 			}
 			case 'GET /users/{id}/tasks':
 				return json(route, 200, {
@@ -224,6 +260,6 @@ export const adaTasks: MockTask[] = [
 
 export async function openHomeWithUser(page: Page, userName = ada.name) {
 	await page.goto('/');
-	await page.getByRole('button', { name: new RegExp(userName) }).click();
+	await page.getByRole('button', { name: new RegExp(`^${userName} [^(]`) }).click();
 	await page.getByRole('heading', { name: `Tasks for ${userName}` }).waitFor();
 }

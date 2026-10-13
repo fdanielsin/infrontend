@@ -73,6 +73,7 @@ export class UserState {
 			message: (user) => m.users_deleted_named({ name: user.name }),
 			undoLabel: m.users_undo_delete,
 			failureMessage: m.error_delete_user,
+			fixedFailureMessage: true,
 			putBack: (user) => this.#putBack(user),
 			whenHidden: 'pause'
 		});
@@ -168,6 +169,13 @@ export class UserState {
 	// Sends every waiting deletion and closes its toast. Safe to call again: a deletion is sent once.
 	commitPending(options: CommitOptions<User> = {}) {
 		return this.#deletes.commitPending(options);
+	}
+
+	// The screen takes the notice once: it places the focus where the action came from.
+	consumeGone(from: GoneNotice['from']): boolean {
+		if (this.gone?.from !== from) return false;
+		this.gone = null;
+		return true;
 	}
 
 	onHidden() {

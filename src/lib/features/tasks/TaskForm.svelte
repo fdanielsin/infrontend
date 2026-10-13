@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount, tick } from 'svelte';
 	import { ref } from '$lib/ui/attachments';
 	import Button from '$lib/ui/Button.svelte';
 	import Card from '$lib/ui/Card.svelte';
@@ -12,7 +13,7 @@
 	import { focusFirstInvalidField, taskFieldValidation } from './task-fields';
 	import TaskList from './TaskList.svelte';
 
-	const { tasks } = getAppState();
+	const { tasks, users } = getAppState();
 	let { user = null }: { user: User | null } = $props();
 
 	let submitting = $state(false);
@@ -34,7 +35,14 @@
 		return key ? validationMessage(key) : undefined;
 	};
 
-	const refs: Partial<Record<'titleInput' | 'descriptionInput', HTMLElement>> = {};
+	const refs: Partial<Record<'titleInput' | 'descriptionInput' | 'invitation', HTMLElement>> = {};
+
+	// A task was added for a user found deleted: the panel went back to its invitation, and the focus
+	// goes to its title (USER-R23).
+	onMount(() => {
+		if (user || !users.consumeGone('panel')) return;
+		void tick().then(() => refs.invitation?.focus());
+	});
 
 	async function handleAddTask() {
 		if (user && !submitting) {
@@ -68,7 +76,9 @@
 {#if !user}
 	<Card padding="lg" class="text-center sm:py-12">
 		<Icon icon="group" size={24} class="mx-auto text-subtle" />
-		<h2 class="mt-3 text-xl font-bold">{m.tasks_select_user()}</h2>
+		<h2 {@attach ref(refs, 'invitation')} tabindex="-1" class="mt-3 text-xl font-bold">
+			{m.tasks_select_user()}
+		</h2>
 		<p class="mt-1 text-sm text-subtle">{m.tasks_select_user_hint()}</p>
 	</Card>
 {:else}

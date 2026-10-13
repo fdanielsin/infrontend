@@ -211,4 +211,33 @@ describe('initial application state', () => {
 		expect(app.users.status.loading).toBe(false);
 		expect(app.tasks.status.loading).toBe(false);
 	});
+
+	describe('a fixed message', () => {
+		beforeEach(() => {
+			notifications = new NotificationState();
+		});
+
+		const refused = { success: false as const, error: '', status: 404, code: 'ROUTE_NOT_FOUND' };
+
+		it("says the action's own words for any code when asked to (happy path)", async () => {
+			const status = new RequestStatus(notifications);
+
+			await status.run(() => Promise.resolve(refused), {
+				fallbackMessage: () => 'We could not do it',
+				fixedMessage: true
+			});
+
+			expect(notifications.items.map((toast) => toast.message)).toEqual(['We could not do it']);
+		});
+
+		it('keeps the message of the code by default, as before (boundary)', async () => {
+			const status = new RequestStatus(notifications);
+
+			await status.run(() => Promise.resolve(refused), {
+				fallbackMessage: () => 'We could not do it'
+			});
+
+			expect(notifications.items.map((toast) => toast.message)).toEqual(['Resource not found']);
+		});
+	});
 });

@@ -20,6 +20,8 @@ export interface UndoableDeletesOptions<T extends { id: number }> {
 	message: (item: T) => string;
 	undoLabel: () => string;
 	failureMessage: () => string;
+	// Says `failureMessage` for any failure, not the message of its code: the item is back in the list.
+	fixedFailureMessage?: boolean;
 	// Puts a restored or refused item back where it was; the owner of the list decides if it fits.
 	putBack: (item: T, index: number) => void;
 	whenHidden: WhenHidden;
@@ -152,10 +154,11 @@ export class UndoableDeletes<T extends { id: number }> {
 		if (!pending) return;
 		this.#pending.delete(id);
 		this.#inFlight.add(id);
-		const { status, send, isGone, failureMessage } = this.#options;
+		const { status, send, isGone, failureMessage, fixedFailureMessage } = this.#options;
 		const result = await status
 			.run(() => send(id, { keepalive }), {
 				fallbackMessage: failureMessage,
+				fixedMessage: fixedFailureMessage,
 				tracksLoading: false,
 				isHandled: isGone
 			})

@@ -6,6 +6,9 @@ import type { NotificationState } from './notification.svelte';
 
 interface RunOptions {
 	fallbackMessage: () => string;
+	// Says `fallbackMessage` for any failure, instead of the message of its code: for an action that
+	// is undone on failure, where "not found" would make the user believe the item is gone.
+	fixedMessage?: boolean | undefined;
 	// False for background actions (toggle, delete) that must not disable forms.
 	tracksLoading?: boolean;
 	// A superseded request leaves `loading` and `error` to the newer one.
@@ -29,6 +32,7 @@ export class RequestStatus {
 		action: () => Promise<ApiResult<T>>,
 		{
 			fallbackMessage,
+			fixedMessage = false,
 			tracksLoading = true,
 			isCurrent = () => true,
 			isHandled = () => false
@@ -46,10 +50,13 @@ export class RequestStatus {
 		}
 		if (isCurrent()) {
 			if (!result.success && !isHandled(result)) {
-				this.#notifications.notifyError(failureMessage(result, fallbackMessage), {
-					reference: result.requestId,
-					persistent: isPersistentFailure(result)
-				});
+				this.#notifications.notifyError(
+					fixedMessage ? fallbackMessage() : failureMessage(result, fallbackMessage),
+					{
+						reference: result.requestId,
+						persistent: isPersistentFailure(result)
+					}
+				);
 			}
 			if (tracksLoading) this.loading = false;
 		}

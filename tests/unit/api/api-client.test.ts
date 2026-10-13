@@ -206,6 +206,35 @@ describe('API client', () => {
 		});
 	});
 
+	it('keeps keepalive when the request is copied to get its timeout, as Firefox does not (limit, critère 32)', async () => {
+		// GIVEN: A runtime where copying a Request into a new one drops `keepalive` unless the new init
+		// says it (Firefox 155 does: `new Request(request, {}).keepalive` is false).
+		const NativeRequest = globalThis.Request;
+		class CopyDropsKeepalive extends NativeRequest {
+			constructor(input: RequestInfo | URL, init?: RequestInit) {
+				super(
+					input,
+					input instanceof NativeRequest && init?.keepalive === undefined
+						? { ...init, keepalive: false }
+						: init
+				);
+			}
+		}
+		vi.stubGlobal('Request', CopyDropsKeepalive);
+		const fetchMock = stubFetch(jsonResponse({ success: true, message: 'User deleted' }));
+
+		// WHEN: A deletion is sent as the page is left.
+		await api.deleteUser(42, { keepalive: true });
+		await api.deleteTask(43, { keepalive: true });
+
+		// THEN: Both requests that reach fetch still outlive the page.
+		expect(fetchMock.mock.calls.map(([request]) => (request as Request).keepalive)).toEqual([
+			true,
+			true
+		]);
+		vi.unstubAllGlobals();
+	});
+
 	it('answers a DELETE 204 as a success without parsing a body (happy path, convention)', async () => {
 		// GIVEN: A deletion answered without content (no endpoint of the contract does it today).
 		stubFetch(new Response(null, { status: 204 }));

@@ -22,7 +22,7 @@ test.describe('Task management', () => {
 
 		// THEN: The new user is displayed and can be selected.
 		await expect(page.getByText(userEmail)).toBeVisible();
-		await page.getByRole('button', { name: new RegExp(userName) }).click();
+		await page.getByRole('button', { name: new RegExp(`^${userName} [^(]`) }).click();
 		await expect(page.getByRole('heading', { name: `Tasks for ${userName}` })).toBeVisible();
 
 		// WHEN: Create a task for the selected user.

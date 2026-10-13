@@ -76,7 +76,7 @@ test.describe('Task sorting (mocked API)', () => {
 			if (order === 'created') await orderSelect(page).selectOption('created');
 
 			await page.reload();
-			await page.getByRole('button', { name: /Ada Lovelace/ }).click();
+			await page.getByRole('button', { name: /^Ada Lovelace [^(]/ }).click();
 
 			await expect(orderSelect(page)).toHaveValue(order);
 			await expect(page.getByRole('status').filter({ hasText: /sorted/ })).toHaveCount(0);
@@ -207,7 +207,7 @@ test.describe('Task sorting (mocked API)', () => {
 			tasks: [task(1, 'Ñu'), task(2, 'Nz'), task(3, 'Nube'), task(4, 'Oso')]
 		});
 		await page.goto('/');
-		await page.getByRole('button', { name: /Ada Lovelace/ }).click();
+		await page.getByRole('button', { name: /^Ada Lovelace [^(]/ }).click();
 
 		await orderSelect(page, text('es', 'tasks_order_label')).selectOption('title');
 
@@ -230,7 +230,7 @@ test.describe('Task sorting (mocked API)', () => {
 				tasks: [task(1, 'x'.repeat(200)), task(2, 'b'), task(3, 'a', true)]
 			});
 			await page.goto('/');
-			await page.getByRole('button', { name: /Ada Lovelace/ }).click();
+			await page.getByRole('button', { name: /^Ada Lovelace [^(]/ }).click();
 			const select = orderSelect(page, text(locale, 'tasks_order_label'));
 
 			// WHEN: The title order is chosen.
