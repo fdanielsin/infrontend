@@ -229,6 +229,20 @@ describe('API client', () => {
 		expect([...sentOf(fetchMock, 0).headers.keys()]).toEqual(['accept-language']);
 	});
 
+	it('gives a request that must outlive the page the timeout of the platform, so that a silent server does not hold it (limit)', async () => {
+		// GIVEN: A backend that accepts the deletion, and a spy on the timeout signal.
+		const timeout = vi.spyOn(AbortSignal, 'timeout');
+		const fetchMock = stubFetch(jsonResponse({ success: true, message: 'User deleted' }));
+
+		// WHEN: A deletion is sent as the page is left.
+		await api.deleteUser(42, { keepalive: true });
+
+		// THEN: The URL-and-init path carries the 10 s signal.
+		expect(timeout).toHaveBeenCalledWith(10_000);
+		const init = fetchMock.mock.calls[0]![1] as RequestInit;
+		expect(init.signal).toBeInstanceOf(AbortSignal);
+	});
+
 	it('answers a DELETE 204 as a success without parsing a body (happy path, convention)', async () => {
 		// GIVEN: A deletion answered without content (no endpoint of the contract does it today).
 		stubFetch(new Response(null, { status: 204 }));
