@@ -96,6 +96,10 @@ export const zCreateUserRequest = z.object({
     email: z.string().min(1).max(254)
 });
 
+export const zUpdateUserRequest = z.object({
+    name: z.string().min(1).max(100)
+});
+
 export const zCreateTaskRequest = z.object({
     user_id: z.int().gte(1).lte(4294967295),
     title: z.string().min(1).max(200),
@@ -173,9 +177,23 @@ export const zCreateUserResponse = zSuccessResponse.and(z.object({
 }));
 
 /**
+ * Utilisateur et tâches supprimés
+ */
+export const zDeleteUserResponse = zSuccessResponse.and(z.object({
+    message: z.string()
+}));
+
+/**
  * Utilisateur trouvé
  */
 export const zGetUserResponse = zSuccessResponse.and(z.object({
+    data: zUser
+}));
+
+/**
+ * Utilisateur modifié ; la réponse reflète l'état réellement persisté.
+ */
+export const zUpdateUserResponse = zSuccessResponse.and(z.object({
     data: zUser
 }));
 

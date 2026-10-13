@@ -175,9 +175,28 @@ export interface paths {
         };
         /** Récupérer un utilisateur */
         get: operations["getUser"];
-        put?: never;
+        /**
+         * Modifier le nom d'un utilisateur
+         * @description Remplace le nom d'un utilisateur existant, avec les règles de la
+         *     création (espaces de début et de fin retirés, non vide, 100 caractères
+         *     au plus comptés avant le retrait). `name` est obligatoire : un corps
+         *     `{}` ou `{"name": null}` répond `400` `VALIDATION_FAILED`. L'e-mail
+         *     et l'identifiant ne sont pas modifiables : une propriété autre que
+         *     `name` (dont `email` et `id`, quelle qu'en soit la casse) répond `400`
+         *     `INVALID_BODY` avant tout accès à la base. Le corps est vérifié avant
+         *     l'identifiant. Un utilisateur absent n'est jamais recréé : `404`.
+         */
+        put: operations["updateUser"];
         post?: never;
-        delete?: never;
+        /**
+         * Supprimer un utilisateur et ses tâches
+         * @description Supprime l'utilisateur et toutes ses tâches en une seule opération de
+         *     la base : ou bien tout disparaît, ou bien rien ne change. Répond `404`
+         *     si l'utilisateur n'existe pas ou a déjà été supprimé : la suppression
+         *     n'est donc pas idempotente côté statut HTTP. Le message ne contient ni
+         *     nom ni e-mail.
+         */
+        delete: operations["deleteUser"];
         options?: never;
         /**
          * Récupérer un utilisateur, sans corps
@@ -547,6 +566,10 @@ export interface components {
              */
             email: string;
         };
+        UpdateUserRequest: {
+            /** @description Espaces de début et de fin retirés ; un nom vide ou fait d'espaces est refusé (400 `VALIDATION_FAILED`). */
+            name: string;
+        };
         CreateTaskRequest: {
             /**
              * Format: uint32
@@ -618,6 +641,22 @@ export interface components {
         };
         /** @description Identifiant utilisateur invalide (`INVALID_ID`) */
         InvalidUserId: {
+            headers: {
+                "Content-Language": components["headers"]["ContentLanguage"];
+                Vary: components["headers"]["Vary"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /**
+         * @description Corps invalide (`INVALID_BODY`), erreur de validation
+         *     (`VALIDATION_FAILED`) ou identifiant utilisateur invalide
+         *     (`INVALID_ID`) ; le corps est vérifié avant l'identifiant, donc un
+         *     corps invalide sur un identifiant invalide donne `INVALID_BODY`
+         */
+        InvalidBodyOrUserId: {
             headers: {
                 "Content-Language": components["headers"]["ContentLanguage"];
                 Vary: components["headers"]["Vary"];
@@ -1117,6 +1156,89 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["SuccessResponse"] & {
                         data: components["schemas"]["User"];
+                    };
+                };
+            };
+            400: components["responses"]["InvalidUserId"];
+            404: components["responses"]["UserNotFound"];
+            500: components["responses"]["InternalServerError"];
+        };
+    };
+    updateUser: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Langue des messages : le français pour `fr` et ses variantes, l'anglais
+                 *     sinon. Chaque élément doit respecter la RFC 9110 (plage de langue avec
+                 *     tirets, `q` de 0 à 1) : un élément invalide, un en-tête absent ou de plus
+                 *     de 1024 octets donnent l'anglais, jamais une erreur. Voir la description
+                 *     de l'API.
+                 */
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
+            path: {
+                /** @description Identifiant numérique non négatif */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateUserRequest"];
+            };
+        };
+        responses: {
+            /** @description Utilisateur modifié ; la réponse reflète l'état réellement persisté. */
+            200: {
+                headers: {
+                    "Content-Language": components["headers"]["ContentLanguage"];
+                    Vary: components["headers"]["Vary"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data: components["schemas"]["User"];
+                    };
+                };
+            };
+            400: components["responses"]["InvalidBodyOrUserId"];
+            404: components["responses"]["UserNotFound"];
+            413: components["responses"]["PayloadTooLarge"];
+            500: components["responses"]["InternalServerError"];
+        };
+    };
+    deleteUser: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Langue des messages : le français pour `fr` et ses variantes, l'anglais
+                 *     sinon. Chaque élément doit respecter la RFC 9110 (plage de langue avec
+                 *     tirets, `q` de 0 à 1) : un élément invalide, un en-tête absent ou de plus
+                 *     de 1024 octets donnent l'anglais, jamais une erreur. Voir la description
+                 *     de l'API.
+                 */
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
+            path: {
+                /** @description Identifiant numérique non négatif */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Utilisateur et tâches supprimés */
+            200: {
+                headers: {
+                    "Content-Language": components["headers"]["ContentLanguage"];
+                    Vary: components["headers"]["Vary"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        message: string;
                     };
                 };
             };

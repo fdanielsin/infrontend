@@ -35,6 +35,8 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- The generated API types follow the contract's new user update (`PUT /users/{id}`) and delete
+  (`DELETE /users/{id}`) operations; no change at run time (infrontend#86).
 - `test:e2e` is removed: `test:e2e:mocked` (mocked API) and the new `test:e2e:backend` (real test
   backend) replace it. `E2E_PORT` and `OPENAPI_URL` are now required (no default backend for
   `api:generate` and `api:check`), and the scripts refuse `:8080` and `:5173`, plus `:8081` for the
