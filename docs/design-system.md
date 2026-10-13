@@ -375,15 +375,61 @@ champ est neutre, en erreur ou en succès, jamais deux à la fois (l'état vient
 ### UserList
 
 Carte de la liste des utilisateurs, à part du formulaire de création (`UserForm` rend deux
-cartes), titre `h2`. Toute la ligne est un `button` (`aria-pressed`, `min-h-11`) : un clic sur
-sa marge sélectionne. Au repos un chevron, sélectionnée une coche (formes, pas seulement des
-couleurs) ; survol `surface-hover` (sous `@media (hover: hover)`). Sélectionnée = fond
-`surface-selected`, barre gauche de 4 px `primary` qui prend la place de 4 px de marge (le texte
-ne bouge pas) et coche. Ce n'est jamais un anneau : le contour de focus (voir « Focus ») reste
-le seul trait entourant la ligne, donc « sélectionné » et « focalisé » se distinguent. Ni pagination
-ni défilement interne pour l'instant (voir « Motifs à venir »). Les icônes sont des SVG en ligne,
-**temporaires** : à remplacer par `ui/Icon` (lot Iconoir). Preuve :
-`tests/unit/components/UserList.test.ts`, `tests/e2e/readable-lists.test.ts`.
+cartes), titre `h2`. Chaque ligne (`UserRow`, un `li`) porte le fond, la barre de sélection et le
+survol, et trois contrôles frères (jamais l'un dans l'autre), dans cet ordre de tabulation :
+
+1. le bouton de sélection (`aria-pressed`, `min-h-11`) : nom, e-mail, chevron au repos, coche
+   si sélectionnée (des formes, pas seulement des couleurs) ;
+2. « Edit » : `Button` de type lien, icône `edit-pencil` (16) et texte visible ;
+3. « Delete » : `IconButton` à croix `xmark`, ton `danger`.
+
+Noms accessibles : `Edit {name} ({email})` et `Delete {name} ({email})`. Sur pointeur grossier,
+« Edit » et « Delete » ont une cible de 44 px (même règle que `TaskItem`). Les icônes viennent de
+`ui/Icon`.
+
+- **Largeur.** Dans une container query : dès `@md` (28 rem), le texte à gauche et les actions à
+  droite, centrées ; en dessous (320 px compris), les actions passent sous le texte, alignées à la
+  fin. Le texte garde la largeur de sa colonne et se coupe n'importe où (`wrap-anywhere`, `min-w-0`).
+- **Survol.** Fond `surface-hover` (`group` sur le `li`, sous `@media (hover: hover)`) et « Edit »
+  souligné ; rien sur écran tactile, où les actions restent toujours visibles.
+- **Sélection.** Fond `surface-selected`, barre gauche de 4 px `primary` qui prend la place de 4 px
+  de marge (le texte ne bouge pas), coche. Ce n'est jamais un anneau : le contour de focus (voir
+  « Focus ») reste le seul trait entourant la ligne, donc « sélectionné » et « focalisé » se
+  distinguent.
+- **Édition en ligne** (renommer). « Edit » remplace le bouton de sélection par un champ « Name »
+  (`TextField` compact, libellé caché mais présent, 100 caractères au plus), l'e-mail en texte
+  simple dessous, puis « Save » et « Cancel ». Sous `@md`, la croix « Delete » (désactivée) reste
+  sur la rangée de « Save » et « Cancel », alignée à la fin : pas de bande vide dessous. Dès `@md`,
+  elle garde sa place à droite. Une ligne sélectionnée garde sa barre et son fond pendant
+  l'édition. Entrée enregistre (hors composition IME), Échap annule sans appel. « Save » garde son
+  libellé et passe `aria-busy` pendant l'envoi. Nom inchangé : fermeture sans appel. Nom vide ou
+  trop long : message sous le champ, focus dans le champ. Refus du serveur : le formulaire reste
+  ouvert, saisie gardée, notification d'erreur.
+- **États désactivés.** Pendant une édition, « Delete » de la ligne éditée et « Edit » des autres
+  lignes sont `disabled` (restent dans l'arbre d'accessibilité avec leur nom), avec les jetons
+  `disabled` (texte du lien, croix grisée), sans opacité réduite ; les autres lignes se
+  sélectionnent encore.
+- **Suppression.** Pas de confirmation (voir [Action destructive](#action-destructive)) : la
+  ligne sort aussitôt, le compteur baisse, un toast de succès « User and their tasks deleted:
+  {name} » offre « Undo » pendant 6 s (pause au survol et au focus). Tout échec de suppression
+  remet la ligne à sa place avec « We couldn't delete the user. », quel que soit le code d'erreur.
+- **Focus.** « Delete » : « Undo » de son toast, contour visible. « Undo » : le bouton de sélection
+  de la ligne restaurée (jamais « Delete » : une seconde touche Entrée ne doit pas supprimer à
+  nouveau), sans resélection. Fermeture du toast avec le focus dedans : le titre « Users (n) »
+  (`tabindex="-1"`). « Edit » : le champ, texte sélectionné. « Save » réussi, Entrée, « Cancel » ou
+  Échap : « Edit » de la même ligne. Saisie invalide : le champ.
+- **Pendant 500 ms** après une suppression, les autres boutons « Delete » ignorent les clics (la
+  ligne voisine a pris la place du pointeur).
+
+Point connu (mineur) : le contour de focus du bouton de sélection déborde de la ligne de quelques
+pixels à gauche et touche l'icône « Edit » à droite (`r2-1280-en-focus-selection`) ; non corrigé.
+Le contour de la ligne restaurée après « Undo » au clavier est prouvé : `tests/e2e/user-delete.test.ts`
+(« made with the keyboard », assertion `:focus-visible`, trois moteurs).
+
+Ni pagination ni défilement interne pour l'instant (voir « Motifs à venir »). Preuve :
+`tests/unit/components/UserList.test.ts`, `tests/e2e/readable-lists.test.ts`,
+`tests/e2e/user-delete.test.ts`, `tests/e2e/user-rename.test.ts`,
+`tests/e2e/user-actions-layout.test.ts`, `tests/e2e/backend/user-delete.test.ts`.
 
 ### TaskItem et ClampedText
 
