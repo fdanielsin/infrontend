@@ -54,3 +54,91 @@ test.describe('User rows at 320 px (mocked API)', () => {
 		});
 	}
 });
+
+test.describe('User row while edited, at 320 px (mocked API)', () => {
+	test.use({ viewport: { width: 320, height: 800 } });
+
+	test('the delete cross, inactive, stays on the row of Save and Cancel, with no empty band under it', async ({
+		page
+	}) => {
+		// GIVEN: A user whose row is open for editing on a 320 px screen.
+		await mockApi(page, { users: [{ id: 1, name: 'Ada Lovelace', email: 'ada@example.com' }] });
+		await page.goto('/');
+		await page.getByRole('button', { name: 'Edit Ada Lovelace (ada@example.com)' }).click();
+		const save = (await page.getByRole('button', { name: 'Save', exact: true }).boundingBox())!;
+		const cross = (await page
+			.getByRole('button', { name: 'Delete Ada Lovelace (ada@example.com)' })
+			.boundingBox())!;
+		const row = (await page.locator('li').first().boundingBox())!;
+
+		// THEN: The cross is centred on the buttons row, and the row ends right under that row.
+		expect(Math.abs(cross.y + cross.height / 2 - (save.y + save.height / 2))).toBeLessThanOrEqual(
+			6
+		);
+		expect(row.y + row.height - (save.y + save.height)).toBeLessThanOrEqual(16);
+	});
+});
+
+test.describe('User row under the pointer (mocked API)', () => {
+	test.use({ viewport: { width: 1280, height: 800 } });
+
+	test('Edit is underlined while the pointer is anywhere on its row, and only then (critère 22 du designer)', async ({
+		page
+	}) => {
+		await mockApi(page, {
+			users: [
+				{ id: 1, name: 'Ada Lovelace', email: 'ada@example.com' },
+				{ id: 2, name: 'Grace Hopper', email: 'grace@example.com' }
+			]
+		});
+		await page.goto('/');
+		const edit = page.getByRole('button', { name: 'Edit Ada Lovelace (ada@example.com)' });
+		const underline = () => edit.evaluate((el) => getComputedStyle(el).textDecorationLine);
+		await page.mouse.move(0, 0);
+		expect(await underline()).toBe('none');
+
+		await page
+			.locator('li')
+			.first()
+			.hover({ position: { x: 40, y: 10 } });
+
+		expect(await underline()).toContain('underline');
+		await page
+			.locator('li')
+			.nth(1)
+			.hover({ position: { x: 40, y: 10 } });
+		expect(await underline()).toBe('none');
+	});
+
+	test('inactive Edit and cross use the disabled tokens, with no opacity (designer)', async ({
+		page
+	}) => {
+		await mockApi(page, {
+			users: [
+				{ id: 1, name: 'Ada Lovelace', email: 'ada@example.com' },
+				{ id: 2, name: 'Grace Hopper', email: 'grace@example.com' }
+			]
+		});
+		await page.goto('/');
+		await page.getByRole('button', { name: 'Edit Ada Lovelace (ada@example.com)' }).click();
+		const colours = (name: string) =>
+			page.getByRole('button', { name }).evaluate((el) => {
+				const css = getComputedStyle(el);
+				return { opacity: css.opacity, color: css.color };
+			});
+		const probe = await page.evaluate(() => {
+			const el = document.createElement('span');
+			el.className = 'text-disabled';
+			document.body.append(el);
+			const colour = getComputedStyle(el).color;
+			el.remove();
+			return colour;
+		});
+
+		const editOther = await colours('Edit Grace Hopper (grace@example.com)');
+		const cross = await colours('Delete Ada Lovelace (ada@example.com)');
+
+		expect(editOther).toEqual({ opacity: '1', color: probe });
+		expect(cross).toEqual({ opacity: '1', color: probe });
+	});
+});

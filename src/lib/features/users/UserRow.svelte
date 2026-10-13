@@ -101,7 +101,7 @@
 
 <li
 	class={[
-		'grid grid-cols-1 items-center rounded-control @md:grid-cols-[minmax(0,1fr)_auto]',
+		'group relative grid grid-cols-1 items-center rounded-control @md:grid-cols-[minmax(0,1fr)_auto]',
 		selected ? 'border-l-4 border-primary bg-surface-selected' : 'bg-surface-muted',
 		!selected && !editing && 'hover:bg-surface-hover'
 	]}
@@ -134,7 +134,8 @@
 				{@attach ref(refs, 'input')}
 			/>
 			<span class="block text-sm wrap-anywhere text-muted">{user.email}</span>
-			<div class="flex flex-wrap gap-2 pt-1">
+			<!-- The inactive cross sits at the end of this row, under the narrow layout: room is kept for it. -->
+			<div class="flex flex-wrap gap-2 pt-1 pr-12 @md:pr-0">
 				<Button type="submit" size="sm" aria-busy={saving ? 'true' : undefined}>
 					{m.users_save()}
 				</Button>
@@ -163,7 +164,16 @@
 			<Icon icon={selected ? 'check' : 'nav-arrow-right'} class="text-muted" />
 		</button>
 	{/if}
-	<div class="flex items-center justify-end gap-2 px-3 pb-3 @md:py-3 @md:pl-0">
+	<!-- A sibling of the form, never inside it. While the row is edited and narrow, it is laid over the
+	     row of Save and Cancel instead of making a band of its own under them. -->
+	<div
+		class={[
+			'flex items-center justify-end gap-2',
+			editing
+				? 'absolute right-3 bottom-3 @md:static @md:px-3 @md:py-3 @md:pl-0'
+				: 'px-3 pb-3 @md:py-3 @md:pl-0'
+		]}
+	>
 		{#if !editing}
 			<Button
 				variant="link"
@@ -171,10 +181,7 @@
 				onclick={startEditing}
 				disabled={editLocked}
 				aria-label={m.users_edit_named({ name: user.name, email: user.email })}
-				class={[
-					TOUCH_TARGET,
-					'group-hover:underline disabled:cursor-not-allowed disabled:opacity-50'
-				]}
+				class={[TOUCH_TARGET, 'group-hover:underline disabled:cursor-not-allowed']}
 			>
 				<Icon icon="edit-pencil" size={16} class="mr-1 inline align-text-bottom" />
 				{m.users_edit()}
@@ -184,7 +191,7 @@
 			label={m.users_delete_named({ name: user.name, email: user.email })}
 			onclick={ondelete}
 			disabled={editing}
-			class="disabled:cursor-not-allowed disabled:opacity-50"
+			class="disabled:cursor-not-allowed disabled:text-disabled disabled:hover:text-disabled"
 		/>
 	</div>
 </li>
