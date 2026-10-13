@@ -5,43 +5,65 @@ function setVisibility(state: 'hidden' | 'visible') {
 	Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => state });
 }
 
+function callbacks() {
+	return { onHidden: vi.fn(), onVisible: vi.fn(), onLeave: vi.fn() };
+}
+
 describe('flushOnLeave', () => {
 	afterEach(() => {
 		setVisibility('visible');
 	});
 
-	it('flushes when the page becomes hidden (happy path)', () => {
-		const flush = vi.fn();
-		const stop = flushOnLeave(flush);
+	it('calls onHidden, and only it, when the page becomes hidden (happy path)', () => {
+		const handlers = callbacks();
+		const stop = flushOnLeave(handlers);
 		setVisibility('hidden');
 		document.dispatchEvent(new Event('visibilitychange'));
-		expect(flush).toHaveBeenCalledTimes(1);
+		expect(handlers.onHidden).toHaveBeenCalledTimes(1);
+		expect(handlers.onVisible).not.toHaveBeenCalled();
+		expect(handlers.onLeave).not.toHaveBeenCalled();
 		stop();
 	});
 
-	it('does not flush when the page becomes visible again (boundary)', () => {
-		const flush = vi.fn();
-		const stop = flushOnLeave(flush);
+	it('calls onVisible, and only it, when the page comes back (happy path)', () => {
+		const handlers = callbacks();
+		const stop = flushOnLeave(handlers);
 		setVisibility('visible');
 		document.dispatchEvent(new Event('visibilitychange'));
-		expect(flush).not.toHaveBeenCalled();
+		expect(handlers.onVisible).toHaveBeenCalledTimes(1);
+		expect(handlers.onHidden).not.toHaveBeenCalled();
+		expect(handlers.onLeave).not.toHaveBeenCalled();
 		stop();
 	});
 
-	it('flushes on pagehide, as a safety net (happy path)', () => {
-		const flush = vi.fn();
-		const stop = flushOnLeave(flush);
+	it('calls onLeave, and only it, on pagehide (happy path)', () => {
+		const handlers = callbacks();
+		const stop = flushOnLeave(handlers);
 		window.dispatchEvent(new Event('pagehide'));
-		expect(flush).toHaveBeenCalledTimes(1);
+		expect(handlers.onLeave).toHaveBeenCalledTimes(1);
+		expect(handlers.onHidden).not.toHaveBeenCalled();
+		expect(handlers.onVisible).not.toHaveBeenCalled();
+		stop();
+	});
+
+	it('calls onLeave even for a page kept in the back/forward cache (limit)', () => {
+		const handlers = callbacks();
+		const stop = flushOnLeave(handlers);
+		window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true }));
+		expect(handlers.onLeave).toHaveBeenCalledTimes(1);
 		stop();
 	});
 
 	it('stops listening once cleaned up (limit)', () => {
-		const flush = vi.fn();
-		flushOnLeave(flush)();
+		const handlers = callbacks();
+		flushOnLeave(handlers)();
 		setVisibility('hidden');
 		document.dispatchEvent(new Event('visibilitychange'));
+		setVisibility('visible');
+		document.dispatchEvent(new Event('visibilitychange'));
 		window.dispatchEvent(new Event('pagehide'));
-		expect(flush).not.toHaveBeenCalled();
+		expect(handlers.onHidden).not.toHaveBeenCalled();
+		expect(handlers.onVisible).not.toHaveBeenCalled();
+		expect(handlers.onLeave).not.toHaveBeenCalled();
 	});
 });

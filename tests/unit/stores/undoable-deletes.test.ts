@@ -330,6 +330,49 @@ describe('generic undoable deletions', () => {
 				expect(send).not.toHaveBeenCalled();
 			});
 
+			it('a blur caused by the tab switch does not restart the hidden window (happy path)', async () => {
+				vi.useFakeTimers();
+				deletes.remove(ada, 0);
+				const id = toastOf('Ada').id;
+				notifications.pause(id, 'focus');
+
+				await deletes.onHidden();
+				notifications.resume(id, 'focus');
+				await vi.advanceTimersByTimeAsync(60_000);
+
+				expect(send).not.toHaveBeenCalled();
+				expect(notifications.items).toHaveLength(1);
+			});
+
+			it('stays held on return while the pointer is still on the toast (boundary)', async () => {
+				vi.useFakeTimers();
+				deletes.remove(ada, 0);
+				const id = toastOf('Ada').id;
+				notifications.pause(id, 'hover');
+				await deletes.onHidden();
+
+				deletes.onVisible();
+				await vi.advanceTimersByTimeAsync(60_000);
+				expect(send).not.toHaveBeenCalled();
+
+				notifications.resume(id, 'hover');
+				await vi.advanceTimersByTimeAsync(6000);
+				expect(send).toHaveBeenCalledTimes(1);
+			});
+
+			it('holds a deletion started while the page is already hidden (limit)', async () => {
+				vi.useFakeTimers();
+				await deletes.onHidden();
+
+				deletes.remove(ada, 0);
+				await vi.advanceTimersByTimeAsync(60_000);
+				expect(send).not.toHaveBeenCalled();
+
+				deletes.onVisible();
+				await vi.advanceTimersByTimeAsync(6000);
+				expect(send).toHaveBeenCalledTimes(1);
+			});
+
 			it('still sends on leaving the page, with keepalive (limit)', async () => {
 				deletes.remove(ada, 0);
 				await deletes.onHidden();

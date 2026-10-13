@@ -66,3 +66,47 @@ describe('toast backgrounds', () => {
 		});
 	}
 });
+
+describe('toast pause reasons', () => {
+	afterEach(cleanup);
+
+	function renderWithAction() {
+		const onpause = vi.fn();
+		const onresume = vi.fn();
+		const view = render(ToastItem, {
+			toast: {
+				id: 'toast-1',
+				message: 'Hello',
+				type: 'success',
+				action: { label: 'Undo', run: vi.fn() }
+			},
+			onpause,
+			onresume,
+			ondismiss: vi.fn(),
+			onaction: vi.fn(),
+			oncopyreference: vi.fn()
+		});
+		return { toast: view.container.querySelector('[data-toast]')!, onpause, onresume, view };
+	}
+
+	it('names the pointer and the focus separately (happy path)', () => {
+		const { toast, onpause, onresume } = renderWithAction();
+
+		toast.dispatchEvent(new MouseEvent('mouseenter'));
+		toast.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+		toast.dispatchEvent(new MouseEvent('mouseleave'));
+		toast.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+
+		expect(onpause.mock.calls).toEqual([['hover'], ['focus']]);
+		expect(onresume.mock.calls).toEqual([['hover'], ['focus']]);
+	});
+
+	it('does not release the focus when it moves between the toast own buttons (boundary)', () => {
+		const { toast, onresume, view } = renderWithAction();
+		const button = view.getByRole('button', { name: 'Undo' });
+
+		toast.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: button }));
+
+		expect(onresume).not.toHaveBeenCalled();
+	});
+});

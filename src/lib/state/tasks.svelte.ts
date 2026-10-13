@@ -121,6 +121,15 @@ export class TaskState {
 		return this.#deletes.commitPending(options);
 	}
 
+	// The page is hidden: a task is sent at once (TASK-R18).
+	onHidden() {
+		return this.#deletes.onHidden();
+	}
+
+	onVisible() {
+		this.#deletes.onVisible();
+	}
+
 	#putBack(task: Task, index: number) {
 		if (this.#listOwnerId !== null && this.#listOwnerId !== task.user_id) return;
 		const tasks = [...this.tasks];

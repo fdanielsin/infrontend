@@ -3,6 +3,7 @@
 	import ToastItem from '$lib/ui/ToastItem.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { getAppState } from '$lib/state/app-state.svelte';
+	import type { PauseReason } from '$lib/state/notification.svelte';
 
 	const { notifications } = getAppState();
 
@@ -113,8 +114,8 @@ sentence anew. -->
 		{#each notifications.statuses as toast (toast.id)}
 			<ToastItem
 				{toast}
-				onpause={() => notifications.pause(toast.id)}
-				onresume={() => notifications.resume(toast.id)}
+				onpause={(reason: PauseReason) => notifications.pause(toast.id, reason)}
+				onresume={(reason: PauseReason) => notifications.resume(toast.id, reason)}
 				ondismiss={(closeButton: HTMLElement) =>
 					leave(closeButton, () => notifications.remove(toast.id))}
 				onaction={(actionButton: HTMLElement) =>
@@ -127,8 +128,8 @@ sentence anew. -->
 		{#each notifications.alerts as toast (toast.id)}
 			<ToastItem
 				{toast}
-				onpause={() => notifications.pause(toast.id)}
-				onresume={() => notifications.resume(toast.id)}
+				onpause={(reason: PauseReason) => notifications.pause(toast.id, reason)}
+				onresume={(reason: PauseReason) => notifications.resume(toast.id, reason)}
 				ondismiss={(closeButton: HTMLElement) =>
 					leave(closeButton, () => notifications.remove(toast.id))}
 				onaction={(actionButton: HTMLElement) =>

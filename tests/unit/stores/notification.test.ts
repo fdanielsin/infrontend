@@ -281,6 +281,64 @@ describe('notification store', () => {
 			expect(ids()).toEqual([]);
 		});
 
+		describe('several reasons to wait', () => {
+			it('goes on only once every reason is released: focus alone does not restart a hidden page (happy path)', () => {
+				const id = notifications.add('Undo me', 'success', { duration: 1000 });
+				vi.advanceTimersByTime(400);
+				notifications.pause(id, 'hover');
+				notifications.pause(id, 'hidden');
+
+				// The tab switch blurs the toast: that releases hover/focus, not the hidden page.
+				notifications.resume(id, 'hover');
+				vi.advanceTimersByTime(10_000);
+				expect(ids()).toEqual([id]);
+
+				notifications.resume(id, 'hidden');
+				vi.advanceTimersByTime(599);
+				expect(ids()).toEqual([id]);
+				vi.advanceTimersByTime(1);
+				expect(ids()).toEqual([]);
+			});
+
+			it('keeps the time left across reasons, without counting the wait twice (boundary)', () => {
+				const id = notifications.add('Undo me', 'success', { duration: 1000 });
+				vi.advanceTimersByTime(300);
+				notifications.pause(id, 'hover');
+				vi.advanceTimersByTime(5000);
+				notifications.pause(id, 'hidden');
+				vi.advanceTimersByTime(5000);
+				notifications.resume(id, 'hover');
+				notifications.resume(id, 'hidden');
+
+				vi.advanceTimersByTime(699);
+				expect(ids()).toEqual([id]);
+				vi.advanceTimersByTime(1);
+				expect(ids()).toEqual([]);
+			});
+
+			it('treats a release of a reason never held as nothing, and a plain pause as hover (limit)', () => {
+				const id = notifications.add('Undo me', 'success', { duration: 1000 });
+				notifications.pause(id);
+				notifications.resume(id, 'hidden');
+				vi.advanceTimersByTime(5000);
+				expect(ids()).toEqual([id]);
+
+				notifications.resume(id);
+				vi.advanceTimersByTime(1000);
+				expect(ids()).toEqual([]);
+			});
+
+			it('forgets the reasons of a toast that left (limit)', () => {
+				const id = notifications.add('Gone', 'success', { duration: 1000 });
+				notifications.pause(id, 'hidden');
+				notifications.remove(id);
+
+				notifications.resume(id, 'hidden');
+				vi.advanceTimersByTime(5000);
+				expect(ids()).toEqual([]);
+			});
+		});
+
 		it('removes a notification paused 1 ms before its end exactly 1 ms after the resume (boundary)', () => {
 			// GIVEN: A 1 s notification paused at 999 ms.
 			const id = notifications.add('Saved', 'success', { duration: 1000 });

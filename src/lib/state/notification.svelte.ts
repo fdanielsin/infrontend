@@ -57,6 +57,10 @@ export interface Announcement {
 	message: string;
 }
 
+// Why a toast waits. It goes on only when nobody holds it: a blur caused by a tab switch releases
+// the focus, never the hidden page.
+export type PauseReason = 'hover' | 'focus' | 'hidden';
+
 interface DismissTimer {
 	timeout: ReturnType<typeof setTimeout> | null;
 	remaining: number;
@@ -85,6 +89,8 @@ export class NotificationState {
 	// Callbacks are not part of the item: the state only needs to read what is shown.
 	// eslint-disable-next-line svelte/prefer-svelte-reactivity
 	#closeCallbacks = new Map<string, (reason: CloseReason) => void>();
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity
+	#holds = new Map<string, Set<PauseReason>>();
 	#lastId = 0;
 	#lastAnnouncementId = 0;
 	#announcementTimeout: ReturnType<typeof setTimeout> | undefined;
@@ -153,10 +159,15 @@ export class NotificationState {
 	}
 
 	// Pausing keeps the time left, so a toast read with the mouse or the keyboard
-	// stays long enough (WCAG 2.2.1).
-	pause(id: string) {
+	// stays long enough (WCAG 2.2.1). Each reason is held on its own; the plain call is the pointer.
+	pause(id: string, reason: PauseReason = 'hover') {
 		const timer = this.#timers.get(id);
-		if (!timer?.timeout) return;
+		if (!timer) return;
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
+		const holds = this.#holds.get(id) ?? new Set<PauseReason>();
+		holds.add(reason);
+		this.#holds.set(id, holds);
+		if (!timer.timeout) return;
 		clearTimeout(timer.timeout);
 		this.#timers.set(id, {
 			timeout: null,
@@ -165,9 +176,14 @@ export class NotificationState {
 		});
 	}
 
-	resume(id: string) {
+	resume(id: string, reason: PauseReason = 'hover') {
 		const timer = this.#timers.get(id);
-		if (!timer || timer.timeout) return;
+		if (!timer) return;
+		const holds = this.#holds.get(id);
+		holds?.delete(reason);
+		if (holds?.size) return;
+		this.#holds.delete(id);
+		if (timer.timeout) return;
 		this.#startTimer(id, timer.remaining);
 	}
 
@@ -176,6 +192,7 @@ export class NotificationState {
 		const timer = this.#timers.get(id);
 		if (timer?.timeout) clearTimeout(timer.timeout);
 		this.#timers.delete(id);
+		this.#holds.delete(id);
 		this.items = this.items.filter((notification) => notification.id !== id);
 		this.#startTimersOfShown();
 		const onclose = this.#closeCallbacks.get(id);
@@ -187,6 +204,7 @@ export class NotificationState {
 	destroy() {
 		for (const timer of this.#timers.values()) if (timer.timeout) clearTimeout(timer.timeout);
 		this.#timers.clear();
+		this.#holds.clear();
 		this.#closeCallbacks.clear();
 		this.clearAnnouncement();
 		this.items = [];

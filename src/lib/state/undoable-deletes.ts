@@ -54,6 +54,8 @@ export class UndoableDeletes<T extends { id: number }> {
 	readonly #pending = new Map<number, Pending<T>>();
 	// Deletions sent and not answered yet: the server may still list these items.
 	readonly #inFlight = new Set<number>();
+	// The page is hidden and this type waits for its return: new deletions wait too.
+	#held = false;
 
 	constructor(options: UndoableDeletesOptions<T>) {
 		this.#options = options;
@@ -89,6 +91,7 @@ export class UndoableDeletes<T extends { id: number }> {
 			}
 		});
 		this.#pending.set(id, { item, index, toastId });
+		if (this.#held) this.#options.notifications.pause(toastId, 'hidden');
 		return true;
 	}
 
@@ -106,13 +109,19 @@ export class UndoableDeletes<T extends { id: number }> {
 			await this.commitPending({ keepalive: true });
 			return;
 		}
-		for (const { toastId } of this.#pending.values()) this.#options.notifications.pause(toastId);
+		this.#held = true;
+		for (const { toastId } of this.#pending.values()) {
+			this.#options.notifications.pause(toastId, 'hidden');
+		}
 	}
 
 	// The page is visible again: a paused window goes on with the time it had left.
 	onVisible() {
 		if (this.#options.whenHidden !== 'pause') return;
-		for (const { toastId } of this.#pending.values()) this.#options.notifications.resume(toastId);
+		this.#held = false;
+		for (const { toastId } of this.#pending.values()) {
+			this.#options.notifications.resume(toastId, 'hidden');
+		}
 	}
 
 	#restore(id: number) {

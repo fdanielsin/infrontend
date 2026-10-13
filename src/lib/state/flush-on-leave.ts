@@ -1,14 +1,24 @@
-// Calls `flush` when the page is hidden (tab switch, close, navigation away) and, as a safety net,
-// on pagehide. Hidden comes first and while the page is still alive, so a request that needs a CORS
-// preflight can complete; callers must make `flush` safe to call twice.
-export function flushOnLeave(flush: () => void): () => void {
+export interface LeaveHandlers {
+	// The page is hidden (tab switch, locked screen, close, navigation away), still alive: a request
+	// that needs a CORS preflight can complete.
+	onHidden: () => void;
+	// The page is visible again.
+	onVisible: () => void;
+	// The page is being left, for good or into the back/forward cache. Handlers must be safe to call
+	// after onHidden: a deletion is sent once.
+	onLeave: () => void;
+}
+
+// Routes the lifecycle of the page to the handlers, and returns the cleanup.
+export function flushOnLeave({ onHidden, onVisible, onLeave }: LeaveHandlers): () => void {
 	const onVisibilityChange = () => {
-		if (document.visibilityState === 'hidden') flush();
+		if (document.visibilityState === 'hidden') onHidden();
+		else onVisible();
 	};
 	document.addEventListener('visibilitychange', onVisibilityChange);
-	window.addEventListener('pagehide', flush);
+	window.addEventListener('pagehide', onLeave);
 	return () => {
 		document.removeEventListener('visibilitychange', onVisibilityChange);
-		window.removeEventListener('pagehide', flush);
+		window.removeEventListener('pagehide', onLeave);
 	};
 }

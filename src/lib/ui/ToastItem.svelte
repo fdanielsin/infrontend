@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import type { Notification, NotificationType } from '$lib/state/notification.svelte';
+	import type { Notification, NotificationType, PauseReason } from '$lib/state/notification.svelte';
 	import ReferenceLine from '$lib/ui/ReferenceLine.svelte';
 	import Button from '$lib/ui/Button.svelte';
 	import Icon from '$lib/ui/Icon.svelte';
@@ -10,9 +10,9 @@
 
 	interface Props {
 		toast: Notification;
-		// Hovering or focusing a toast pauses its timer (WCAG 2.2.1); leaving both resumes it.
-		onpause: () => void;
-		onresume: () => void;
+		// Hovering or focusing a toast pauses its timer (WCAG 2.2.1); it goes on when both are gone.
+		onpause: (reason: PauseReason) => void;
+		onresume: (reason: PauseReason) => void;
 		ondismiss: (closeButton: HTMLElement) => void;
 		onaction: (actionButton: HTMLElement) => void;
 		oncopyreference: (reference: string) => void;
@@ -37,13 +37,12 @@
 		TOAST_BACKGROUNDS[toast.type],
 		TOAST_BORDERS[toast.type]
 	]}
-	onmouseenter={onpause}
-	onmouseleave={(event) => {
-		if (!event.currentTarget.matches(':focus-within')) onresume();
-	}}
-	onfocusin={onpause}
+	onmouseenter={() => onpause('hover')}
+	onmouseleave={() => onresume('hover')}
+	onfocusin={() => onpause('focus')}
 	onfocusout={(event) => {
-		if (!event.currentTarget.matches(':hover')) onresume();
+		// Focus moving between the toast's own buttons is not leaving it.
+		if (!event.currentTarget.contains(event.relatedTarget as Node | null)) onresume('focus');
 	}}
 >
 	<p class="min-w-0 wrap-anywhere">
