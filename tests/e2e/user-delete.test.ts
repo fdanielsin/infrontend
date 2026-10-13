@@ -65,6 +65,8 @@ test.describe('Undoable user deletion (mocked API)', () => {
 		// DELETE ever left.
 		const row = page.getByRole('button', { name: /^Ada Lovelace [^(]/ });
 		await expect(row).toBeFocused();
+		// The ring is shown: Undo was pressed with the keyboard, so the restored row shows it too.
+		expect(await row.evaluate((element) => element.matches(':focus-visible'))).toBe(true);
 		await expect(row).toHaveAttribute('aria-pressed', 'false');
 		await expect(page.locator('li').first()).toContainText('Ada Lovelace');
 		expect(userDeletes(api.calls)).toHaveLength(0);
