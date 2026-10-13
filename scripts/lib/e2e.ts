@@ -8,7 +8,16 @@ export type E2eSuite = 'mocked' | 'backend';
 export interface E2ePlan {
 	args: string[];
 	env: NodeJS.ProcessEnv;
+	// A second run, one worker, for the tests tagged `@alone` (real suite only).
+	alone?: E2ePlan;
 }
+
+// A test that only passes without other browsers running beside it carries this tag: the real
+// suite runs it apart, alone (see `planE2e`).
+const ALONE_TAG = '@alone';
+const TITLE_FILTERS = ['-g', '--grep', '--grep-invert'];
+const outputOf = (argv: string[]) =>
+	argv.find((arg) => arg.startsWith('--output='))?.slice('--output='.length);
 
 // Unreachable on purpose, and not port 9, which Firefox and WebKit refuse before `page.route`
 // can intercept the request.
@@ -39,6 +48,10 @@ export function planE2e(
 	const port = checkPort('E2E_PORT', env.E2E_PORT, USER_PORTS);
 	const planned: NodeJS.ProcessEnv = { ...env, E2E_PORT: String(port) };
 	const args = ['test'];
+	// A filter of titles given on the command line is what was asked for: no second run then.
+	const withAlone =
+		suite === 'backend' &&
+		!argv.some((arg) => TITLE_FILTERS.some((flag) => arg === flag || arg.startsWith(`${flag}=`)));
 	if (suite === 'mocked') {
 		planned.PUBLIC_API_URL = MOCKED_API_URL;
 		planned.E2E_MOCKED_ONLY = '1';
@@ -51,6 +64,7 @@ export function planE2e(
 		args.push('tests/e2e/backend');
 	}
 	args.push(...argv);
+	if (withAlone) args.push(`--grep-invert=${ALONE_TAG}`);
 	if (!argv.some((arg) => arg === '--output' || arg.startsWith('--output='))) {
 		args.push('--output=test-results/e2e');
 	}
@@ -58,7 +72,24 @@ export function planE2e(
 		const browsers = sharedBrowsers(root, exists);
 		if (browsers) planned.PLAYWRIGHT_BROWSERS_PATH = browsers;
 	}
-	return { args, env: planned };
+	const plan: E2ePlan = { args, env: planned };
+	if (withAlone) {
+		// Playwright empties the output folder of a run: the second one writes beside the first.
+		const output = outputOf(args) ?? 'test-results/e2e';
+		plan.alone = {
+			args: [
+				'test',
+				'tests/e2e/backend',
+				...argv.filter((arg) => !arg.startsWith('--output=')),
+				`--grep=${ALONE_TAG}`,
+				'--workers=1',
+				'--pass-with-no-tests',
+				`--output=${output}-alone`
+			],
+			env: planned
+		};
+	}
+	return plan;
 }
 
 /** Is the backend answering? A 4-minute build is not worth starting against nothing. */
@@ -96,5 +127,10 @@ export async function runE2e(
 		);
 		return 2;
 	}
-	return runChild(path.join(root, 'node_modules', '.bin', 'playwright'), plan.args, plan.env);
+	const playwright = path.join(root, 'node_modules', '.bin', 'playwright');
+	const code = await runChild(playwright, plan.args, plan.env);
+	if (!plan.alone) return code;
+	// The tests that must run alone, once the others are done, whatever their result.
+	const aloneCode = await runChild(playwright, plan.alone.args, plan.alone.env);
+	return code || aloneCode;
 }

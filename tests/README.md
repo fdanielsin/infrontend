@@ -28,6 +28,12 @@ Les E2E de `tests/e2e/backend/` nécessitent un backend `inbackend` de test, don
 (`bun run test:e2e:mocked`) et ils se vérifient en local avant chaque merge, comme
 `OPENAPI_URL=http://localhost:8081/openapi.yaml bun run api:check`. Une URL de backend déployé les remplacera en CI plus tard.
 
+Le script des E2E réels lance Playwright deux fois : d'abord tous les tests sauf ceux étiquetés `@alone`,
+puis ceux-là seuls, avec `--workers=1` (sortie dans `test-results/e2e-alone`). Un test porte cette étiquette
+quand sa mesure dépend de la charge du banc : la suppression envoyée à la fermeture réelle de la page
+(`backend/user-delete.test.ts`) arrive 10 fois sur 10 sur Firefox quand rien d'autre ne tourne, 10 sur 12 avec
+4 workers. Avec `-g`, `--grep` ou `--grep-invert` sur la ligne de commande, il n'y a qu'une seule passe.
+
 Les E2E d'accessibilité (`accessibility.test.ts`, axe avec les règles par
 défaut), de clavier (`keyboard-focus.test.ts`), de langues (`i18n.test.ts`), de
 focus et d'erreurs (`focus-and-errors.test.ts`), de bordures de champs

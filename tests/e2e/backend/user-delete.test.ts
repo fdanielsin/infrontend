@@ -97,23 +97,27 @@ test.describe('Delete and rename a user (real backend)', () => {
 		expect(await userStatus(request, user.id)).toBe(200);
 	});
 
-	test('a page really closed sends the waiting deletion, seen from another context (critère 32)', async ({
-		context,
-		request
-	}) => {
-		// GIVEN: A deletion that can still be undone.
-		const user = await createUser(request, 'Closing');
-		const page = await context.newPage();
-		await page.goto('/');
-		await deleteButton(page, user).click();
-		expect(await userStatus(request, user.id)).toBe(200);
+	// Tagged @alone: `bun run test:e2e:backend` runs it apart, with one worker, after the others. Firefox
+	// delivers a DELETE sent as the page unloads 10 times out of 10 when nothing else runs, and 10 out
+	// of 12 with 4 workers: a user closes a tab in a browser that runs one page, which is what this measures.
+	test(
+		'a page really closed sends the waiting deletion, seen from another context (critère 32)',
+		{ tag: '@alone' },
+		async ({ context, request }) => {
+			// GIVEN: A deletion that can still be undone.
+			const user = await createUser(request, 'Closing');
+			const page = await context.newPage();
+			await page.goto('/');
+			await deleteButton(page, user).click();
+			expect(await userStatus(request, user.id)).toBe(200);
 
-		// WHEN: The browser closes the page, with its unload events.
-		await page.close({ runBeforeUnload: true });
+			// WHEN: The browser closes the page, with its unload events.
+			await page.close({ runBeforeUnload: true });
 
-		// THEN: The server saw the deletion.
-		await expect.poll(() => userStatus(request, user.id), { timeout: 10_000 }).toBe(404);
-	});
+			// THEN: The server saw the deletion.
+			await expect.poll(() => userStatus(request, user.id), { timeout: 10_000 }).toBe(404);
+		}
+	);
 
 	test('a user created with the email of a user waiting for deletion is created after the DELETE (critère 37)', async ({
 		page,

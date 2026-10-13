@@ -94,10 +94,69 @@ describe('planE2e, real backend suite', () => {
 			'test',
 			'tests/e2e/backend',
 			'--project=chromium',
+			'--grep-invert=@alone',
 			'--output=test-results/e2e'
 		]);
 		expect(plan.env.PUBLIC_API_URL).toBe('http://localhost:8083');
 		expect(plan.env.E2E_MOCKED_ONLY).toBeUndefined();
+	});
+
+	it('plans a second run, one worker, for the tests tagged @alone, with an output folder of its own (happy path)', () => {
+		const plan = planE2e(
+			'backend',
+			{ E2E_PORT: '4103', PUBLIC_API_URL: 'http://localhost:8083' },
+			['--project=firefox', '--workers=4'],
+			ROOT,
+			present
+		);
+
+		expect(plan.alone?.args).toEqual([
+			'test',
+			'tests/e2e/backend',
+			'--project=firefox',
+			'--workers=4',
+			'--grep=@alone',
+			'--workers=1',
+			'--pass-with-no-tests',
+			'--output=test-results/e2e-alone'
+		]);
+		expect(plan.alone?.env).toEqual(plan.env);
+	});
+
+	it('derives the output folder of the second run from the one given (boundary values)', () => {
+		const plan = planE2e(
+			'backend',
+			{ E2E_PORT: '4103', PUBLIC_API_URL: 'http://localhost:8083' },
+			['--output=elsewhere'],
+			ROOT,
+			present
+		);
+
+		expect(plan.args).toContain('--output=elsewhere');
+		expect(plan.alone?.args).toContain('--output=elsewhere-alone');
+	});
+
+	it.each([['-g'], ['--grep'], ['--grep-invert']])(
+		'leaves a run alone when a filter of titles (%s) is given: one run, as asked (limit)',
+		(flag) => {
+			const plan = planE2e(
+				'backend',
+				{ E2E_PORT: '4103', PUBLIC_API_URL: 'http://localhost:8083' },
+				[flag, 'critère 32'],
+				ROOT,
+				present
+			);
+
+			expect(plan.alone).toBeUndefined();
+			expect(plan.args).not.toContain('--grep-invert=@alone');
+		}
+	);
+
+	it('plans no second run for the mocked suite (limit)', () => {
+		const plan = planE2e('mocked', { E2E_PORT: '4103' }, [], ROOT, present);
+
+		expect(plan.alone).toBeUndefined();
+		expect(plan.args).not.toContain('--grep-invert=@alone');
 	});
 
 	it('has no default URL (error)', () => {

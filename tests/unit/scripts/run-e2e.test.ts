@@ -27,6 +27,37 @@ describe('runE2e', () => {
 		expect(root.ran('playwright')).toBe(true);
 	});
 
+	it('runs Playwright twice for the real suite, the second time for the tests that must run alone, and returns the first failure (happy path)', async () => {
+		root.tool('playwright', 0);
+
+		const code = await runE2e(['backend', '--project=firefox'], ENV, root.dir, answering);
+
+		expect(code).toBe(0);
+		const runs = root.runs('playwright');
+		expect(runs).toHaveLength(2);
+		expect(runs[0]).toContain('--grep-invert=@alone');
+		expect(runs[1]).toContain('--grep=@alone');
+		expect(runs[1]).toContain('--workers=1');
+	});
+
+	it('runs the second pass even when the first fails, and returns the failure (sad path)', async () => {
+		root.tool('playwright', 1);
+
+		const code = await runE2e(['backend'], ENV, root.dir, answering);
+
+		expect(code).toBe(1);
+		expect(root.runs('playwright')).toHaveLength(2);
+	});
+
+	it('runs Playwright once when titles are filtered, and once for the mocked suite (limit)', async () => {
+		root.tool('playwright', 0);
+
+		await runE2e(['backend', '-g', 'critère 32'], ENV, root.dir, answering);
+		await runE2e(['mocked'], ENV, root.dir, answering);
+
+		expect(root.runs('playwright')).toHaveLength(2);
+	});
+
 	it('refuses with 2 and runs nothing when the backend answers an error (error)', async () => {
 		root.tool('playwright', 0);
 		const failing = vi.fn(() => Promise.resolve(new Response('', { status: 503 })));
