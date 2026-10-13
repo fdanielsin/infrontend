@@ -7,7 +7,7 @@ import StatsPage from '../../../src/routes/stats/+page.svelte';
 import { renderWithApp } from '../support/render-with-app';
 
 vi.mock('$lib/api/client', () => ({
-	api: { getStats: vi.fn(), ready: vi.fn() }
+	api: { getStats: vi.fn(), ready: vi.fn(), deleteUser: vi.fn(), deleteTask: vi.fn() }
 }));
 
 // The three tiles, in reading order: [users, tasks, average tasks per user].
@@ -47,6 +47,55 @@ describe('stats page', () => {
 		// THEN: Both counters and 10 / 3 rounded are shown.
 		expect(await findByText('Average tasks per user')).toBeTruthy();
 		expect(tileValues(container)).toEqual(['3', '10', '3.33']);
+	});
+
+	describe('deletions still waiting (USER-R20, critère 38)', () => {
+		const ada = { id: 1, name: 'Ada', email: 'ada@example.com' };
+		const bob = { id: 2, name: 'Bob', email: 'bob@example.com' };
+
+		it('sends the user and the task deletions first, and reads the counters after their answers', async () => {
+			// GIVEN: A user and a task of another user, both waiting for their deletion.
+			const order: string[] = [];
+			vi.mocked(api.deleteUser).mockImplementation(() => {
+				order.push('deleteUser');
+				return Promise.resolve({ success: true });
+			});
+			vi.mocked(api.deleteTask).mockImplementation(() => {
+				order.push('deleteTask');
+				return Promise.resolve({ success: true });
+			});
+			vi.mocked(api.getStats).mockImplementation(() => {
+				order.push('getStats');
+				return Promise.resolve({ success: true, data: { users: 1, tasks: 0 } });
+			});
+			app.users.users = [ada, bob];
+			app.tasks.clear(bob.id);
+			app.tasks.tasks = [{ id: 7, title: 'T', description: '', user_id: 2, completed: false }];
+			app.tasks.remove(7);
+			app.users.remove(ada.id);
+
+			// WHEN: The page is opened.
+			const { findByText, container } = renderWithApp(app, StatsPage);
+			await findByText('Average tasks per user');
+
+			// THEN: Both deletions went once, before the counters, and their toasts are gone.
+			expect(order.at(-1)).toBe('getStats');
+			expect(order.slice(0, 2).sort()).toEqual(['deleteTask', 'deleteUser']);
+			expect(order).toHaveLength(3);
+			expect(app.notifications.items).toEqual([]);
+			expect(tileValues(container)).toEqual(['1', '0', '0.00']);
+		});
+
+		it('sends nothing but the read of the counters when nothing waits (boundary)', async () => {
+			vi.mocked(api.getStats).mockResolvedValue({ success: true, data: { users: 3, tasks: 10 } });
+
+			const { findByText } = renderWithApp(app, StatsPage);
+			await findByText('Average tasks per user');
+
+			expect(api.deleteUser).not.toHaveBeenCalled();
+			expect(api.deleteTask).not.toHaveBeenCalled();
+			expect(api.getStats).toHaveBeenCalledTimes(1);
+		});
 	});
 
 	it('shows 0 as the average when there is no user (boundary)', async () => {

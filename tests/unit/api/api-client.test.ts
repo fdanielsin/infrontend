@@ -80,6 +80,20 @@ describe('API client', () => {
 				body: null
 			},
 			{
+				name: 'updateUser (the name alone: never an email, an id or a null)',
+				call: () => api.updateUser(3, { name: 'Grace' }),
+				method: 'PUT',
+				url: '/api/v1/users/3',
+				body: '{"name":"Grace"}'
+			},
+			{
+				name: 'deleteUser',
+				call: () => api.deleteUser(3),
+				method: 'DELETE',
+				url: '/api/v1/users/3',
+				body: null
+			},
+			{
 				name: 'getStats',
 				call: () => api.getStats(),
 				method: 'GET',
@@ -156,6 +170,41 @@ describe('API client', () => {
 			expect([...request.headers.keys()].sort()).toEqual(['accept-language']);
 		}
 	);
+
+	it.each([
+		['by default', undefined, false],
+		['when asked to outlive the page', { keepalive: true }, true]
+	] as const)(
+		'sends the user DELETE %s (keepalive: %s) and no extra header (happy path)',
+		async (_name, options, expected) => {
+			const fetchMock = stubFetch(jsonResponse({ success: true, message: 'User deleted' }));
+
+			await expect(api.deleteUser(42, options)).resolves.toEqual({
+				success: true,
+				message: 'User deleted'
+			});
+
+			const request = requestOf(fetchMock);
+			expect(request.method).toBe('DELETE');
+			expect(request.keepalive).toBe(expected);
+			expect([...request.headers.keys()].sort()).toEqual(['accept-language']);
+		}
+	);
+
+	it('reads the renamed user from the answer of updateUser (happy path)', async () => {
+		stubFetch(
+			jsonResponse({
+				success: true,
+				data: { id: 3, name: 'Grace', email: 'grace@example.com' },
+				message: 'User updated'
+			})
+		);
+
+		await expect(api.updateUser(3, { name: 'Grace' })).resolves.toMatchObject({
+			success: true,
+			data: { id: 3, name: 'Grace', email: 'grace@example.com' }
+		});
+	});
 
 	it('answers a DELETE 204 as a success without parsing a body (happy path, convention)', async () => {
 		// GIVEN: A deletion answered without content (no endpoint of the contract does it today).

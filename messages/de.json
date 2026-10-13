@@ -119,5 +119,10 @@
 	"reference_copy": "Kopieren",
 	"reference_copy_named": "Referenz {reference} kopieren",
 	"reference_copied": "Referenz kopiert",
-	"reference_copy_failed": "Die Referenz konnte nicht kopiert werden"
+	"reference_copy_failed": "Die Referenz konnte nicht kopiert werden",
+	"users_deleted_named": "Benutzer und seine Aufgaben gelöscht: {name}",
+	"users_undo_delete": "Rückgängig",
+	"users_gone": "Benutzer bereits gelöscht",
+	"error_delete_user": "Der Benutzer konnte nicht gelöscht werden.",
+	"error_update_user": "Der Name konnte nicht gespeichert werden."
 }

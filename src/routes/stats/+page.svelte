@@ -14,16 +14,23 @@
 	import { getAppState } from '$lib/state/app-state.svelte';
 	import { RequestStatus } from '$lib/state/request-status.svelte';
 
-	const { availability, notifications } = getAppState();
+	const app = getAppState();
+	const { availability, notifications } = app;
 	const status = new RequestStatus(notifications, true);
 	let stats = $state.raw<Stats | null>(null);
 	let page = $state<HTMLElement>();
 	const refs: { retry?: HTMLElement } = {};
 
 	async function load() {
-		const result = await status.run(() => api.getStats(), {
-			fallbackMessage: m.error_fetch_stats
-		});
+		const result = await status.run(
+			async () => {
+				// Deletions the user could still undo are sent and answered first: the counters must
+				// not count what is already gone from the screen (USER-R20, STAT-R01).
+				await app.commitPending();
+				return api.getStats();
+			},
+			{ fallbackMessage: m.error_fetch_stats }
+		);
 		if (result.success) stats = result.data;
 	}
 

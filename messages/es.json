@@ -119,5 +119,10 @@
 	"reference_copy": "Copiar",
 	"reference_copy_named": "Copiar la referencia {reference}",
 	"reference_copied": "Referencia copiada",
-	"reference_copy_failed": "No se pudo copiar la referencia"
+	"reference_copy_failed": "No se pudo copiar la referencia",
+	"users_deleted_named": "Usuario y sus tareas eliminados: {name}",
+	"users_undo_delete": "Deshacer",
+	"users_gone": "Usuario ya eliminado",
+	"error_delete_user": "No se pudo eliminar al usuario.",
+	"error_update_user": "No se pudo guardar el nombre."
 }

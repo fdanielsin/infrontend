@@ -8,13 +8,15 @@ import {
 	zCreateTaskResponse,
 	zCreateUserResponse,
 	zDeleteTaskResponse,
+	zDeleteUserResponse,
 	zGetStatsResponse,
 	zGetUserResponse,
 	zHealthCheckResponse,
 	zListUsersResponse,
 	zReadinessCheckResponse,
 	zListUserTasksResponse,
-	zUpdateTaskResponse
+	zUpdateTaskResponse,
+	zUpdateUserResponse
 } from './zod/zod.gen';
 
 type Schemas = components['schemas'];
@@ -24,6 +26,7 @@ export type Task = Schemas['Task'];
 export type UpdatedTask = Schemas['UpdatedTask'];
 export type UpdateTaskRequest = Schemas['UpdateTaskRequest'];
 export type CreateUserRequest = Schemas['CreateUserRequest'];
+export type UpdateUserRequest = Schemas['UpdateUserRequest'];
 export type CreateTaskRequest = Schemas['CreateTaskRequest'];
 export type Stats = Schemas['Stats'];
 export type ErrorCode = Schemas['ErrorCode'];
@@ -195,6 +198,38 @@ export class ApiClient {
 		return toResult(() => this.#http.POST('/api/v1/users', { body: user, parseAs: 'text' }), {
 			schema: zCreateUserResponse
 		});
+	}
+
+	// Only the name changes: the contract has no email or id in the body (USER-R18).
+	async updateUser(
+		id: number,
+		user: UpdateUserRequest
+	): Promise<ApiResult<SuccessData<paths['/api/v1/users/{id}']['put']>>> {
+		return toResult(
+			() =>
+				this.#http.PUT('/api/v1/users/{id}', {
+					params: { path: { id } },
+					body: user,
+					parseAs: 'text'
+				}),
+			{ schema: zUpdateUserResponse }
+		);
+	}
+
+	// Deletes the user and, on the server, all their tasks. `keepalive` as for deleteTask.
+	async deleteUser(
+		id: number,
+		{ keepalive = false }: { keepalive?: boolean } = {}
+	): Promise<ApiResult<SuccessData<paths['/api/v1/users/{id}']['delete']>>> {
+		return toResult(
+			() =>
+				this.#http.DELETE('/api/v1/users/{id}', {
+					params: { path: { id } },
+					parseAs: 'text',
+					keepalive
+				}),
+			{ schema: zDeleteUserResponse, hasData: false }
+		);
 	}
 
 	// Tasks

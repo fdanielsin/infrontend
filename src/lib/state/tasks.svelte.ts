@@ -11,9 +11,16 @@ function isTaskGone(failure: ApiFailure) {
 	return failure.code === TASK_NOT_FOUND;
 }
 
+const USER_NOT_FOUND: ErrorCode = 'USER_NOT_FOUND';
+
+// Owner of a list that belongs to no one: the user it was for is gone, nothing is added to it.
+const NO_OWNER = -1;
+
 export class TaskState {
 	tasks = $state.raw<Task[]>([]);
 	readonly status: RequestStatus;
+	// Told when the server says the user of a task being created no longer exists (USER-R23).
+	onUserGone: ((userId: number) => void) | undefined;
 
 	readonly #notifications: NotificationState;
 	// Whose tasks the list is for, set as soon as a user is selected (before his tasks arrive): a
@@ -47,6 +54,19 @@ export class TaskState {
 		void this.commitPending();
 	}
 
+	// The list belongs to no one any more: the user was deleted on screen. Late answers for him
+	// find no list to join (USER-R24).
+	closeList() {
+		this.tasks = [];
+		this.#listOwnerId = NO_OWNER;
+	}
+
+	// The tasks of a user being deleted follow him: their own deletions are not sent, the server
+	// deletes them with the user, and Undo brings them back with him (USER-R19).
+	discardPendingFor(userId: number) {
+		this.#deletes.discard((task) => task.user_id === userId);
+	}
+
 	async load(userId: number, isCurrent: () => boolean) {
 		const result = await this.status.run(() => api.getUserTasks(userId), {
 			fallbackMessage: m.error_fetch_tasks,
@@ -61,9 +81,15 @@ export class TaskState {
 	async add(title: string, description: string, userId: number) {
 		const result = await this.status.run(
 			() => api.createTask({ title, description, user_id: userId, completed: false }),
-			{ fallbackMessage: m.error_create_task }
+			{
+				fallbackMessage: m.error_create_task,
+				isHandled: (failure) => failure.code === USER_NOT_FOUND
+			}
 		);
-		if (!result.success) return undefined;
+		if (!result.success) {
+			if (result.code === USER_NOT_FOUND) this.onUserGone?.(userId);
+			return undefined;
+		}
 		// A reload of the same user's list may already hold the task when the answer comes.
 		const listed = this.tasks.some((task) => task.id === result.data.id);
 		if (!listed && (this.#listOwnerId === null || this.#listOwnerId === userId)) {

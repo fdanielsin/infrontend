@@ -119,5 +119,10 @@
 	"reference_copy": "Copier",
 	"reference_copy_named": "Copier la référence {reference}",
 	"reference_copied": "Référence copiée",
-	"reference_copy_failed": "Impossible de copier la référence"
+	"reference_copy_failed": "Impossible de copier la référence",
+	"users_deleted_named": "Utilisateur et ses tâches supprimés : {name}",
+	"users_undo_delete": "Annuler",
+	"users_gone": "Utilisateur déjà supprimé",
+	"error_delete_user": "Impossible de supprimer l'utilisateur.",
+	"error_update_user": "Impossible d'enregistrer le nom."
 }

@@ -23,6 +23,12 @@ export class AppState {
 		this.notifications.destroy();
 	}
 
+	// Sends every deletion still waiting, users and tasks, and waits for the answers: for what must
+	// not read the server's figures before them (STAT-R01).
+	async commitPending(options: { keepalive?: boolean } = {}) {
+		await Promise.all([this.users.commitPending(options), this.tasks.commitPending(options)]);
+	}
+
 	// Toasts already shown stay in the old language: they expire by themselves.
 	changeLocale(locale: Locale) {
 		this.locale.set(locale);

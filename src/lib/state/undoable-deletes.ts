@@ -70,6 +70,21 @@ export class UndoableDeletes<T extends { id: number }> {
 		return this.#inFlight.has(id);
 	}
 
+	// The items waiting for their deletion to be sent.
+	waiting(): T[] {
+		return [...this.#pending.values()].map(({ item }) => item);
+	}
+
+	// Forgets the waiting deletions this accepts: no request, no failure, the toast just leaves.
+	// For items whose deletion is carried by another one.
+	discard(where: (item: T) => boolean) {
+		for (const { item, toastId } of [...this.#pending.values()]) {
+			if (!where(item)) continue;
+			this.#pending.delete(item.id);
+			this.#options.notifications.remove(toastId, 'action');
+		}
+	}
+
 	// Starts the wait for an item the caller has already taken out of its list. Returns false,
 	// and does nothing, for an item already waiting.
 	remove(item: T, index: number, { onundo, onleave }: RemoveHooks = {}) {

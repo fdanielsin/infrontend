@@ -119,5 +119,10 @@
 	"reference_copy": "Copy",
 	"reference_copy_named": "Copy reference {reference}",
 	"reference_copied": "Reference copied",
-	"reference_copy_failed": "Could not copy the reference"
+	"reference_copy_failed": "Could not copy the reference",
+	"users_deleted_named": "User and their tasks deleted: {name}",
+	"users_undo_delete": "Undo",
+	"users_gone": "User already deleted",
+	"error_delete_user": "We couldn't delete the user.",
+	"error_update_user": "We couldn't save the name."
 }
