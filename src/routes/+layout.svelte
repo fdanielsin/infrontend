@@ -13,7 +13,8 @@
 
 	const app = new AppState();
 	setAppState(app);
-	onDestroy(() => app.availability.destroy());
+	// The root layout is never destroyed in production: this is for tests that mount it.
+	onDestroy(() => app.destroy());
 	// A deletion the user could still undo is sent when the page is left: it must not be lost.
 	onMount(() => flushOnLeave(() => void app.tasks.commitPending({ keepalive: true })));
 </script>

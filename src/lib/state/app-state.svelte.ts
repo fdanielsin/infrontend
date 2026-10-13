@@ -17,6 +17,12 @@ export class AppState {
 	readonly tasks = new TaskState(this.notifications);
 	readonly users = new UserState(this.tasks, this.notifications);
 
+	// Stops every timer the state owns. Pending deletions are dropped, not sent.
+	destroy() {
+		this.availability.destroy();
+		this.notifications.destroy();
+	}
+
 	// Toasts already shown stay in the old language: they expire by themselves.
 	changeLocale(locale: Locale) {
 		this.locale.set(locale);

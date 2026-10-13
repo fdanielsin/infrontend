@@ -183,6 +183,15 @@ export class NotificationState {
 		onclose?.(reason);
 	}
 
+	// Ends every timer and drops every callback without calling them: nothing is sent or shown later.
+	destroy() {
+		for (const timer of this.#timers.values()) if (timer.timeout) clearTimeout(timer.timeout);
+		this.#timers.clear();
+		this.#closeCallbacks.clear();
+		this.clearAnnouncement();
+		this.items = [];
+	}
+
 	// A toast that waits has no timer: it must not expire before anyone has seen it.
 	#startTimersOfShown() {
 		for (const { id, duration } of visibleToasts(this.items)) {
