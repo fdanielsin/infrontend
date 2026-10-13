@@ -8,8 +8,7 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - A user can be deleted with all their tasks, behind a 6-second "Undo" that pauses while the page
   is hidden, and renamed in place (the e-mail stays fixed); a failed deletion puts the user back
-  with "We couldn't delete the user.". Not kept on Firefox when the page is closed during the
-  undo window (USER-R20, known limit; infrontend#87).
+  with "We couldn't delete the user." (infrontend#87).
 - The task list can be filtered to the tasks to do or the done ones, in the browser; the choice is
   remembered, the count in the title stays right, and an empty filter says so (infrontend#77).
 - The site sends a Content-Security-Policy (scripts and styles from itself only, calls only to the
@@ -82,8 +81,9 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
-- A deletion sent while the page closes keeps `keepalive` on Firefox (copying the request dropped
-  it), for tasks too (infrontend#87).
+- A deletion pending when the page closes now reaches the server on Firefox, for tasks too: it is
+  sent as a plain `fetch` with `keepalive`, which Firefox dropped from a copied request
+  (infrontend#87).
 - A task created while the same user is selected again is no longer listed twice when the
   answer to its creation arrives after the reload of the list (infrontend#78).
 - The e-mail check applies the server's rule: an international address such as
