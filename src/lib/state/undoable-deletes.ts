@@ -55,7 +55,8 @@ export class UndoableDeletes<T extends { id: number }> {
 	// Deletions the user can still undo, by id.
 	readonly #pending = new Map<number, Pending<T>>();
 	// Deletions sent and not answered yet: the server may still list these items.
-	readonly #inFlight = new Set<number>();
+	// ... with what is needed to wait for their answer.
+	readonly #inFlight = new Map<number, { item: T; answered: Promise<void> }>();
 	// The page is hidden and this type waits for its return: new deletions wait too.
 	#held = false;
 
@@ -70,6 +71,17 @@ export class UndoableDeletes<T extends { id: number }> {
 
 	isInFlight(id: number) {
 		return this.#inFlight.has(id);
+	}
+
+	// The items whose deletion is sent and not answered yet.
+	inFlightItems(): T[] {
+		return [...this.#inFlight.values()].map(({ item }) => item);
+	}
+
+	// Waits for the answer (and the putting back that may follow) of the sent deletions this accepts.
+	async answered(where: (item: T) => boolean) {
+		const sent = [...this.#inFlight.values()].filter(({ item }) => where(item));
+		await Promise.all(sent.map(({ answered }) => answered));
 	}
 
 	// The items waiting for their deletion to be sent.
@@ -153,7 +165,12 @@ export class UndoableDeletes<T extends { id: number }> {
 		const pending = this.#pending.get(id);
 		if (!pending) return;
 		this.#pending.delete(id);
-		this.#inFlight.add(id);
+		const answered = this.#send(pending, id, keepalive);
+		this.#inFlight.set(id, { item: pending.item, answered });
+		await answered;
+	}
+
+	async #send(pending: Pending<T>, id: number, keepalive: boolean) {
 		const { status, send, isGone, failureMessage, fixedFailureMessage } = this.#options;
 		const result = await status
 			.run(() => send(id, { keepalive }), {

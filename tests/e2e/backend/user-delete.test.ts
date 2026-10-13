@@ -99,15 +99,8 @@ test.describe('Delete and rename a user (real backend)', () => {
 
 	test('a page really closed sends the waiting deletion, seen from another context (critère 32)', async ({
 		context,
-		request,
-		browserName
+		request
 	}) => {
-		// Measured on 2026-10-13 (Playwright Firefox 155, :8089): the page runs its pagehide handler and
-		// sends the DELETE with keepalive, but Firefox delivers it to the server in about 1 close out of
-		// 10 (1/10 without, 0/10 with a timeout-free request; ~1/3 when other pages are open). Chromium
-		// and WebKit deliver it every time. The user accepted that a deletion may be lost when the page
-		// goes away (USER-R20, Q3): this test is skipped on Firefox rather than hidden by test.fail.
-		test.skip(browserName === 'firefox', 'Firefox does not reliably send a DELETE at unload');
 		// GIVEN: A deletion that can still be undone.
 		const user = await createUser(request, 'Closing');
 		const page = await context.newPage();

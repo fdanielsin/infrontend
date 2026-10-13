@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { api } from '$lib/api/client';
 import { overwriteGetLocale } from '$lib/paraglide/runtime';
 import { AppState } from '$lib/state/app-state.svelte';
-import { jsonResponse, requestOf, stubFetch } from '../support/fetch';
+import { jsonResponse, requestOf, sentOf, stubFetch } from '../support/fetch';
 
 vi.mock('$env/static/public', () => ({ PUBLIC_API_URL: 'http://api.test' }));
 
@@ -164,10 +164,10 @@ describe('API client', () => {
 			await api.deleteTask(42, options);
 
 			// THEN: The request keeps or not alive, and adds no header that would need a CORS preflight allowance.
-			const request = requestOf(fetchMock);
-			expect(request.method).toBe('DELETE');
-			expect(request.keepalive).toBe(expected);
-			expect([...request.headers.keys()].sort()).toEqual(['accept-language']);
+			const sent = sentOf(fetchMock);
+			expect(sent.method).toBe('DELETE');
+			expect(sent.keepalive).toBe(expected);
+			expect([...sent.headers.keys()].sort()).toEqual(['accept-language']);
 		}
 	);
 
@@ -184,10 +184,10 @@ describe('API client', () => {
 				message: 'User deleted'
 			});
 
-			const request = requestOf(fetchMock);
-			expect(request.method).toBe('DELETE');
-			expect(request.keepalive).toBe(expected);
-			expect([...request.headers.keys()].sort()).toEqual(['accept-language']);
+			const sent = sentOf(fetchMock);
+			expect(sent.method).toBe('DELETE');
+			expect(sent.keepalive).toBe(expected);
+			expect([...sent.headers.keys()].sort()).toEqual(['accept-language']);
 		}
 	);
 
@@ -206,33 +206,27 @@ describe('API client', () => {
 		});
 	});
 
-	it('keeps keepalive when the request is copied to get its timeout, as Firefox does not (limit, critère 32)', async () => {
-		// GIVEN: A runtime where copying a Request into a new one drops `keepalive` unless the new init
-		// says it (Firefox 155 does: `new Request(request, {}).keepalive` is false).
-		const NativeRequest = globalThis.Request;
-		class CopyDropsKeepalive extends NativeRequest {
-			constructor(input: RequestInfo | URL, init?: RequestInit) {
-				super(
-					input,
-					input instanceof NativeRequest && init?.keepalive === undefined
-						? { ...init, keepalive: false }
-						: init
-				);
-			}
-		}
-		vi.stubGlobal('Request', CopyDropsKeepalive);
-		const fetchMock = stubFetch(jsonResponse({ success: true, message: 'User deleted' }));
+	it('hands a request that must outlive the page to fetch as a URL and an init, never as a Request object (limit, critère 32)', async () => {
+		// GIVEN: A backend that accepts the deletions.
+		const fetchMock = stubFetch(jsonResponse({ success: true, message: 'Deleted' }));
 
-		// WHEN: A deletion is sent as the page is left.
+		// WHEN: Deletions are sent as the page is left, and an ordinary one.
 		await api.deleteUser(42, { keepalive: true });
 		await api.deleteTask(43, { keepalive: true });
+		await api.deleteTask(44);
 
-		// THEN: Both requests that reach fetch still outlive the page.
-		expect(fetchMock.mock.calls.map(([request]) => (request as Request).keepalive)).toEqual([
-			true,
-			true
-		]);
-		vi.unstubAllGlobals();
+		// THEN: Firefox delivers a keepalive DELETE only when fetch is given a URL and an init (measured
+		// 10/10, against 0/10 with a Request object): the first two go that way, with their headers and
+		// keepalive; the ordinary one keeps the Request and the timeout.
+		const [first, second, third] = fetchMock.mock.calls;
+		for (const call of [first, second]) {
+			expect(typeof call![0]).toBe('string');
+			expect(call![1]).toMatchObject({ method: 'DELETE', keepalive: true });
+		}
+		expect(third![0]).toBeInstanceOf(Request);
+		expect(sentOf(fetchMock, 0).url).toBe('http://api.test/api/v1/users/42');
+		expect(sentOf(fetchMock, 1).url).toBe('http://api.test/api/v1/tasks/43');
+		expect([...sentOf(fetchMock, 0).headers.keys()]).toEqual(['accept-language']);
 	});
 
 	it('answers a DELETE 204 as a success without parsing a body (happy path, convention)', async () => {

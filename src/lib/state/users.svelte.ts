@@ -90,10 +90,13 @@ export class UserState {
 
 	async add(name: string, email: string): Promise<AddUserOutcome> {
 		// The email of a user waiting for his deletion is free only once it is sent (USER-R16).
-		if (this.#deletes.waiting().some((user) => sameEmail(user.email, email))) {
-			await this.#deletes.commitPending({ where: (user) => sameEmail(user.email, email) });
+		// A deletion already sent and not answered holds the email too: the creation goes after its answer.
+		const holds = (user: User) => sameEmail(user.email, email);
+		if (this.#deletes.waiting().some(holds) || this.#deletes.inFlightItems().some(holds)) {
+			await this.#deletes.commitPending({ where: holds });
+			await this.#deletes.answered(holds);
 			// A refused deletion brought the user back: the email is not free, nothing is created.
-			if (this.users.some((user) => sameEmail(user.email, email))) return { status: 'failed' };
+			if (this.users.some(holds)) return { status: 'failed' };
 		}
 		const result = await this.status.run(() => api.createUser({ name, email }), {
 			fallbackMessage: m.error_create_user,

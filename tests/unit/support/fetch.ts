@@ -53,3 +53,22 @@ export function settled<T>(promise: Promise<T>) {
 	void promise.then((result) => (value = result));
 	return () => value;
 }
+
+// What a call of a stubbed fetch sends, whether it got a Request or a URL and an init.
+export function sentOf(spy: ReturnType<typeof stubFetch>, call = 0) {
+	const [input, init] = spy.mock.calls[call]! as [Request | string, RequestInit | undefined];
+	if (input instanceof Request) {
+		return {
+			url: input.url,
+			method: input.method,
+			headers: input.headers,
+			keepalive: input.keepalive
+		};
+	}
+	return {
+		url: input,
+		method: init?.method ?? 'GET',
+		headers: new Headers(init?.headers),
+		keepalive: init?.keepalive ?? false
+	};
+}
