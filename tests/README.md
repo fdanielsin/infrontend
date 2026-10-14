@@ -146,3 +146,27 @@ mémoire (environ 10 s) pour prouver que seules les icônes importées sont emba
 `Icon.hydration.test.ts` hydrate, sous jsdom, le HTML figé dans
 `tests/unit/support/icon-server-markup.ts` (que le test serveur épingle), sans
 avertissement de désaccord.
+
+## Captures reproductibles
+
+`CAPTURE_PORT=<port du worktree> bun run captures` construit l'application contre l'API simulée
+(`tests/e2e/support/mock-api.ts`, `PUBLIC_API_URL` forcé à l'adresse injoignable), la sert avec
+`vite preview` sur `CAPTURE_PORT` (jamais `:8080`, `:5173`, `:5174` ni `:8081`) et prend, pour chaque
+écran (accueil, statistiques) et chaque état utile (repos, vide, chargement, erreur, panne, sélection,
+édition, suppression en attente, formulaires refusés, textes longs), une capture à 320, 768 et 1280 px
+dans les 4 langues, en `reducedMotion`. Sortie : `test-results/captures/<écran>/<état>/<largeur>-<langue>.png`,
+avec `index.md` et `index.json` (fichier, taille, ce que la capture montre) et `requests.log`. Aucune
+capture n'est commitée (`test-results/` est ignoré).
+
+- Filtres : `--screen=`, `--state=`, `--width=`, `--locale=` (listes séparées par des virgules),
+  `--out=test-results/<dossier>` (vidé au départ, seul un dossier de `test-results/` est accepté),
+  `--skip-build` pour réutiliser le dernier `build/` (qui doit avoir été construit contre l'API simulée,
+  donc par ce script).
+- Gardes : une requête vers `:8080`, `:8081`, `:5173` ou `:5174` est coupée, comptée même si l'API
+  simulée la reçoit, et fait échouer la commande ; un fichier vide, trop petit ou qui n'est pas un PNG
+  aussi. Un état qui n'arrive pas à l'écran fait échouer la commande (jamais une capture d'un autre état).
+- Un état se décrit dans `scripts/lib/capture-catalog.ts` (nom, texte de l'index) et se pilote dans
+  `scripts/lib/capture-drivers.ts` ; `tests/unit/scripts/capture-*.test.ts` vérifient le plan, les
+  gardes et qu'aucun état n'est sans pilote.
+- Le build et le navigateur en font une suite lourde : à lancer sous le verrou
+  (skill `indrive-heavy-suite-lock`).

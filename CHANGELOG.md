@@ -10,6 +10,12 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `on-toast`, `on-toast-hover`), and a test refuses any color written outside `layout.css`; nothing
   changes on screen.
 
+### Added
+
+- `bun run captures` takes the same set of screen captures every time (home page and statistics, 22
+  states, widths 320, 768 and 1280 px, the four languages, reduced motion) on the simulated API,
+  with an index, and fails on any request to a port of the user or of the reference backend.
+
 ## [1.4.0] - 2026-10-14
 
 **À vérifier avant de mettre à jour (de 1.3.0 vers 1.4.0)**

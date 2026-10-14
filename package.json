@@ -20,6 +20,7 @@
 		"mutate": "stryker run",
 		"test:unit": "vitest",
 		"test": "bun run test:unit -- --run",
+		"captures": "bun scripts/captures.ts",
 		"test:e2e:mocked": "bun scripts/run-e2e.ts mocked",
 		"test:e2e:backend": "bun scripts/run-e2e.ts backend",
 		"verify": "svelte-kit sync && bun run i18n:compile && bun run lint && bun run check && bun run test:coverage && bun run build"
