@@ -2,6 +2,7 @@ import { api, type ApiFailure, type ErrorCode, type Task } from '$lib/api/client
 import { m } from '$lib/paraglide/messages';
 import type { NotificationState } from './notification.svelte';
 import { RequestStatus } from './request-status.svelte';
+import { BulkCompletion, type CompletionHooks } from './bulk-completion.svelte';
 import { UndoableDeletes } from './undoable-deletes';
 
 const TASK_NOT_FOUND: ErrorCode = 'TASK_NOT_FOUND';
@@ -29,6 +30,7 @@ export class TaskState {
 	#listOwnerId: number | null = null;
 	// Deletions the user can still undo. A hidden page sends them at once (TASK-R18).
 	readonly #deletes: UndoableDeletes<Task>;
+	readonly #completion: BulkCompletion;
 
 	constructor(notifications: NotificationState) {
 		this.#notifications = notifications;
@@ -46,6 +48,25 @@ export class TaskState {
 			putBack: (task, index) => this.#putBack(task, index),
 			whenHidden: 'send'
 		});
+		this.#completion = new BulkCompletion(
+			{
+				tasks: () => this.tasks,
+				ownerId: () => this.#listOwnerId,
+				replace: (update) => (this.tasks = update(this.tasks))
+			},
+			notifications,
+			this.status
+		);
+	}
+
+	// True while "Mark all as done" or its Undo is being sent.
+	get markingAll() {
+		return this.#completion.busy;
+	}
+
+	// Marks every task to do as done, then offers Undo (TASK-R22 to R26).
+	markAllDone(hooks?: CompletionHooks) {
+		return this.#completion.markAllDone(hooks);
 	}
 
 	// Empties the list for the user being selected, and makes him its owner from now on.
