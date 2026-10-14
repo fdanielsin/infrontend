@@ -76,7 +76,7 @@
 			onchange={(event) => ontoggle(event.currentTarget)}
 			aria-label={editing ? task.title : undefined}
 			disabled={editing}
-			class="block h-4 w-4"
+			class="block h-4 w-4 shadow-[0_0_0_1px_var(--color-control-edge)]"
 		/>
 		<!-- Touch screens only: a 44 px target around the 16 px box. -->
 		<span

@@ -43,3 +43,24 @@ export async function resolvedTheme(page: Page): Promise<'light' | 'dark'> {
 	if (from < 0.1 && to < 0.1) return 'dark';
 	throw new Error(`The page is neither light nor dark: gradient luminance ${from}, ${to}`);
 }
+
+// The color a CSS value paints on the page, as sRGB: a token (`var(--color-surface-muted)`), a system
+// color, or a computed value such as the one of `box-shadow`'s color. Alpha is ignored here; read it
+// from the computed style when it matters.
+export function rgbOf(page: Page, css: string): Promise<[number, number, number]> {
+	return page.evaluate((value) => {
+		const probe = document.createElement('div');
+		probe.style.setProperty('background-color', value);
+		document.body.append(probe);
+		const painted = getComputedStyle(probe).backgroundColor;
+		probe.remove();
+		const context = document
+			.createElement('canvas')
+			.getContext('2d', { willReadFrequently: true })!;
+		context.fillStyle = '#000';
+		context.fillStyle = painted;
+		context.fillRect(0, 0, 1, 1);
+		const [red, green, blue] = context.getImageData(0, 0, 1, 1).data;
+		return [red!, green!, blue!] as [number, number, number];
+	}, css);
+}

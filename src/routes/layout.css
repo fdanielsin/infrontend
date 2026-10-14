@@ -25,6 +25,9 @@
 		var(--color-gray-400)
 	); /* WCAG 1.4.11: 4.84:1 on white, 4.39:1 on gray-100, 3.93:1 at worst on the page gradient | 5.64:1 on the surface, 3.96:1 on the muted one */
 	--color-disabled: light-dark(var(--color-gray-400), var(--color-gray-500));
+	/* Ring around a native checkbox, whose own border is 2.79:1 on the dark muted row: none in light
+	   (the native one is 4.13:1), gray-300 in dark (7.00:1 on surface-muted, 5.14:1 on surface-hover) */
+	--color-control-edge: light-dark(transparent, var(--color-gray-300));
 
 	/* Text on a surface */
 	--color-heading: light-dark(

@@ -3,7 +3,7 @@ import { announcement } from './support/announcement';
 import { contrast } from './support/contrast';
 import { text } from './support/locale';
 import { ada, adaTasks, mockApi } from './support/mock-api';
-import { canvasLuminance, resolvedTheme } from './support/theme';
+import { canvasLuminance, resolvedTheme, rgbOf } from './support/theme';
 
 // The dark palette (THEME-R01, R05, R07, R09, R11): what the theme is is read from the colors the
 // page really paints (resolved page gradient, system Canvas), never from a class or an attribute.
@@ -162,6 +162,55 @@ test.describe('Dark palette (mocked API)', () => {
 		expect(await schemeOf('html')).toBe('dark');
 		expect(await schemeOf('#language')).toBe('dark');
 		expect(await canvasLuminance(page)).toBeLessThan(0.1);
+		await context.close();
+	});
+});
+
+const ringColors = (boxShadow: string) =>
+	[...boxShadow.matchAll(/((?:rgba?|oklch|oklab|color)\([^)]*\))\s+0px 0px 0px 1px/g)].map(
+		(match) => match[1]!
+	);
+
+test.describe('Unchecked box (mocked API)', () => {
+	// WCAG 1.4.11: the border of a control reaches 3:1 against what it sits on. The browser draws the
+	// border of a native box in a gray of its own, 2.79:1 on the dark muted row (measured), so a ring in
+	// the `control-edge` token is added in the dark theme; in the light one the native border already
+	// reaches 4.13:1 and the ring is transparent (the light theme does not change).
+	test('THEME-R08: in the dark theme the box of an undone task has a ring of 3:1 on its row at rest and under the pointer (boundary)', async ({
+		browser
+	}) => {
+		const context = await browser.newContext({ colorScheme: 'dark' });
+		const page = await context.newPage();
+		await openHome(page);
+		await page.getByRole('button', { name: /^Ada Lovelace [^(]/ }).click();
+		await page.getByRole('heading', { name: 'Tasks for Ada Lovelace' }).waitFor();
+		const box = page.getByRole('checkbox', { name: 'Review', exact: true }).first();
+		const ring = await box.evaluate((element) => getComputedStyle(element).boxShadow);
+		// A computed box-shadow lists every layer of Tailwind's shadow, the color first in each: the
+		// ring is the layer with a 1px spread.
+		const color = ringColors(ring).at(-1);
+		expect(color, `box-shadow: ${ring}`).toBeDefined();
+		const edge = await rgbOf(page, color!);
+		for (const row of ['var(--color-surface-muted)', 'var(--color-surface-hover)']) {
+			expect(contrast(edge, await rgbOf(page, row)), row).toBeGreaterThanOrEqual(3);
+		}
+		await context.close();
+	});
+
+	test('THEME-R08: in the light theme the ring is transparent, so nothing is added (boundary)', async ({
+		browser
+	}) => {
+		const context = await browser.newContext({ colorScheme: 'light' });
+		const page = await context.newPage();
+		await openHome(page);
+		await page.getByRole('button', { name: /^Ada Lovelace [^(]/ }).click();
+		await page.getByRole('heading', { name: 'Tasks for Ada Lovelace' }).waitFor();
+		const ring = await page
+			.getByRole('checkbox', { name: 'Review', exact: true })
+			.first()
+			.evaluate((element) => getComputedStyle(element).boxShadow);
+		const painted = ringColors(ring).filter((color) => !/, 0\)$|\/ 0\)$/.test(color));
+		expect(painted, ring).toEqual([]);
 		await context.close();
 	});
 });
