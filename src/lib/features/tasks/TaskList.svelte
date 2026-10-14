@@ -290,9 +290,10 @@
 			<p class="mt-1 text-sm text-subtle">{m.tasks_empty_hint()}</p>
 		</div>
 	{:else}
-		<div class="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+		<div class="mb-3 flex flex-col gap-3 sm:flex-row sm:gap-x-4">
 			<Select
 				id="task-filter"
+				stacked
 				icon="filter"
 				label={m.tasks_filter_label()}
 				value={taskFilter.current}
@@ -302,6 +303,7 @@
 			{#if tasks.tasks.length > 1}
 				<Select
 					id="task-order"
+					stacked
 					icon="sort"
 					label={m.tasks_order_label()}
 					value={taskOrder.current}

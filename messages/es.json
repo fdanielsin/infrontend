@@ -134,5 +134,11 @@
 	"users_edit_named": "Editar {name} ({email})",
 	"users_delete_named": "Eliminar {name} ({email})",
 	"users_save": "Guardar",
-	"users_cancel": "Cancelar"
+	"users_cancel": "Cancelar",
+	"error_not_found_title": "Página no encontrada - inBackend",
+	"error_not_found_heading": "Página no encontrada",
+	"error_not_found_text": "Esta dirección no lleva a ninguna página.",
+	"error_generic_title": "Algo salió mal - inBackend",
+	"error_generic_heading": "Algo salió mal",
+	"error_generic_text": "No se pudo mostrar la página."
 }

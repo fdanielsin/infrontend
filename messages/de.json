@@ -134,5 +134,11 @@
 	"users_edit_named": "{name} ({email}) bearbeiten",
 	"users_delete_named": "{name} ({email}) löschen",
 	"users_save": "Speichern",
-	"users_cancel": "Abbrechen"
+	"users_cancel": "Abbrechen",
+	"error_not_found_title": "Seite nicht gefunden - inBackend",
+	"error_not_found_heading": "Seite nicht gefunden",
+	"error_not_found_text": "Diese Adresse führt zu keiner Seite.",
+	"error_generic_title": "Etwas ist schiefgelaufen - inBackend",
+	"error_generic_heading": "Etwas ist schiefgelaufen",
+	"error_generic_text": "Die Seite konnte nicht angezeigt werden."
 }

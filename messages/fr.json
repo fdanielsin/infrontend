@@ -134,5 +134,11 @@
 	"users_edit_named": "Modifier {name} ({email})",
 	"users_delete_named": "Supprimer {name} ({email})",
 	"users_save": "Enregistrer",
-	"users_cancel": "Annuler"
+	"users_cancel": "Annuler",
+	"error_not_found_title": "Page introuvable - inBackend",
+	"error_not_found_heading": "Page introuvable",
+	"error_not_found_text": "Cette adresse ne mène à aucune page.",
+	"error_generic_title": "Un problème est survenu - inBackend",
+	"error_generic_heading": "Un problème est survenu",
+	"error_generic_text": "La page n'a pas pu être affichée."
 }

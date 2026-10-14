@@ -18,12 +18,20 @@
 		onchange: (value: string) => void;
 		// A decorative icon before the label.
 		icon?: IconName;
+		// The label above the selector, whatever its length: the selector sits at the same place in
+		// every language instead of after a label of a different width.
+		stacked?: boolean;
 	}
 
-	let { id, label, value, options, onchange, icon }: Props = $props();
+	let { id, label, value, options, onchange, icon, stacked = false }: Props = $props();
 </script>
 
-<div class="flex flex-wrap items-center gap-2 text-sm text-heading">
+<div
+	class={[
+		'flex gap-2 text-sm text-heading',
+		stacked ? 'flex-col items-start gap-1' : 'flex-wrap items-center'
+	]}
+>
 	<label for={id} class="flex items-center gap-1">
 		{#if icon}<Icon {icon} size={16} />{/if}
 		{label}

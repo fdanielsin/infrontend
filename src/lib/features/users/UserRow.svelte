@@ -146,12 +146,13 @@
 		</form>
 	{:else}
 		<!-- The selection is a fill, a bar and a check (not a ring, which is the focus). The bar
-		     replaces 4px of padding so the text does not move. -->
+		     replaces 4px of padding so the text does not move. The focus ring is drawn inside the
+		     button: outside it, it left the row on the left and touched Edit on the right. -->
 		<button
 			id={`user-select-${user.id}`}
 			type="button"
 			class={[
-				'flex min-h-11 w-full min-w-0 items-center gap-3 rounded-control p-3 text-left',
+				'flex min-h-11 w-full min-w-0 items-center gap-3 rounded-control p-3 text-left focus-visible:-outline-offset-2',
 				selected ? 'pl-3' : 'pl-4'
 			]}
 			aria-pressed={selected}
