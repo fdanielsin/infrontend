@@ -148,12 +148,12 @@
 		<!-- The selection is a fill, a bar and a check (not a ring, which is the focus). The bar
 		     replaces 4px of padding so the text does not move. The 4px margin keeps the focus
 		     ring (2px offset and 2px width, the same everywhere) inside the row and off Edit; the
-		     padding is 4px smaller to keep the text where it was. -->
+		     padding (py-2 for p-3, and 4px less on the left) keeps the text and the height of the row. -->
 		<button
 			id={`user-select-${user.id}`}
 			type="button"
 			class={[
-				'm-1 flex min-h-11 w-[calc(100%-0.5rem)] min-w-0 items-center gap-3 rounded-control p-3 text-left',
+				'm-1 flex min-h-11 w-[calc(100%-0.5rem)] min-w-0 items-center gap-3 rounded-control px-3 py-2 text-left',
 				selected ? 'pl-2' : 'pl-3'
 			]}
 			aria-pressed={selected}

@@ -70,3 +70,46 @@ for (const width of [1280, 320]) {
 		}
 	});
 }
+
+// The margin that holds the ring inside the row is paid for by the padding of the button: the row
+// is as high as before (12 px above and under the two lines of text), and the text has not moved.
+for (const width of [1280, 320]) {
+	test.describe(`Selection row height at ${width} px (mocked API)`, () => {
+		test.use({ viewport: { width, height: 800 } });
+
+		test('the text starts 12 px under the top of the row and the button adds no height (happy path)', async ({
+			page
+		}) => {
+			// GIVEN: Two users, the first one selected.
+			await mockApi(page, { users: [ada, grace] });
+			await page.goto('/');
+			await page.locator('#user-select-1').click();
+
+			// THEN: Per row, the button is its two text lines plus 12 px above and under (the
+			// outer margin and the padding together), and the name sits 12 px from the top and 16 px
+			// from the left, as before the margin existed.
+			const rows = await page.evaluate(() =>
+				[1, 2].map((id) => {
+					const button = document.getElementById(`user-select-${id}`)!;
+					const li = button.closest('li')!.getBoundingClientRect();
+					const box = button.getBoundingClientRect();
+					const lines = button.querySelector('span')!.getBoundingClientRect();
+					return {
+						aboveText: lines.top - li.top,
+						underText: box.bottom - lines.bottom + (li.bottom - box.bottom),
+						left: lines.left - li.left
+					};
+				})
+			);
+			for (const row of rows) {
+				expect(row.aboveText).toBeCloseTo(12, 0);
+				expect(row.left).toBeCloseTo(16, 0);
+			}
+			// Row 1 and 2 ends at the same distance under the text only when no extra band exists
+			// at 1280 px (the actions sit beside the button there).
+			if (width >= 640) {
+				for (const row of rows) expect(row.underText).toBeCloseTo(12, 0);
+			}
+		});
+	});
+}

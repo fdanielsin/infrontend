@@ -51,7 +51,8 @@ describe('UserList', () => {
 		expect(item.classList.contains('hover:bg-surface-hover')).toBe(true);
 		expect(button.classList.contains('w-[calc(100%-0.5rem)]')).toBe(true);
 		expect(button.classList.contains('m-1')).toBe(true);
-		expect(button.classList.contains('p-3')).toBe(true);
+		expect(button.classList.contains('px-3')).toBe(true);
+		expect(button.classList.contains('py-2')).toBe(true);
 		expect(button.classList.contains('min-h-11')).toBe(true);
 	});
 
