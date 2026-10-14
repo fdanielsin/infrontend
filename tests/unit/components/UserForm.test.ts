@@ -242,7 +242,7 @@ describe('UserForm', () => {
 		const view = renderForm();
 		const adaButton = view.getByRole('button', { name: /^Ada/ });
 		const graceButton = view.getByRole('button', { name: /^Grace/ });
-		const highlight = ['bg-surface-selected', 'border-l-4', 'border-primary'];
+		const highlight = ['bg-surface-selected', 'border-l-4', 'border-accent'];
 		// The row (the item) carries the fill and the bar.
 		const rowOf = (button: HTMLElement) => button.closest('li') as HTMLElement;
 		const isHighlighted = (button: HTMLElement) =>

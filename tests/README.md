@@ -161,6 +161,7 @@ avec `index.md` et `index.json` (fichier, taille, ce que la capture montre) et `
 capture n'est commitée (`test-results/` est ignoré).
 
 - Filtres : `--screen=`, `--state=`, `--width=`, `--locale=` (listes séparées par des virgules),
+  `--scheme=light|dark` (le réglage clair ou sombre de l'appareil émulé : le thème est alors « System »),
   `--out=test-results/<dossier>` (vidé au départ, seul un dossier de `test-results/` est accepté),
   `--skip-build` pour réutiliser le dernier `build/` (qui doit avoir été construit contre l'API simulée,
   donc par ce script).

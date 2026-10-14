@@ -60,6 +60,7 @@ async function takeCaptures(
 			viewport: { width, height: 900 },
 			locale,
 			reducedMotion: 'reduce',
+			...(options.scheme && { colorScheme: options.scheme }),
 			baseURL: origin
 		});
 		// Registered before any page: a request to a port of the user is cut short, and counted

@@ -102,7 +102,7 @@
 <li
 	class={[
 		'group relative grid grid-cols-1 items-center rounded-control @md:grid-cols-[minmax(0,1fr)_auto]',
-		selected ? 'border-l-4 border-primary bg-surface-selected' : 'bg-surface-muted',
+		selected ? 'border-l-4 border-accent bg-surface-selected' : 'bg-surface-muted',
 		!selected && !editing && 'hover:bg-surface-hover'
 	]}
 >

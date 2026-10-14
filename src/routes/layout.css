@@ -1,62 +1,91 @@
 @import 'tailwindcss';
 
 /*
- * Design tokens. Each one names a value the interface already uses (a Tailwind palette
- * shade, radius or shadow), so adopting a token never changes a pixel. Contrast ratios
- * are the ones validated for WCAG 2.2 AA (1.4.3, text 4.5:1 minimum).
+ * Design tokens. Each one names a value for the light theme (a Tailwind palette shade, radius or
+ * shadow) and one for the dark theme, written once with `light-dark()`: the browser picks the one of
+ * the scheme in force (`color-scheme` of <html>, below). The dark values are another set, never an
+ * inversion (docs/design-system.md, "Couleurs sémantiques"). Contrast ratios are the ones validated
+ * for WCAG 2.2 AA (1.4.3, text 4.5:1 minimum); light first, dark after "|".
  */
 @theme {
 	/* Surfaces and lines */
-	--color-surface: var(--color-white);
-	--color-surface-muted: var(--color-gray-100);
-	--color-surface-hover: var(
-		--color-gray-200
-	); /* row under the pointer: name 16.96:1, e-mail 6.10:1 */
-	--color-surface-selected: var(
-		--color-blue-100
-	); /* selected row: name 17.21:1, e-mail 6.19:1, bar (primary) 4.30:1, check 6.19:1 */
-	--color-line: var(--color-gray-300);
-	--color-field-border: var(
-		--color-gray-500
-	); /* WCAG 1.4.11: 4.84:1 on white, 4.39:1 on gray-100, 3.93:1 at worst on the page gradient (indigo-100 end, 4.44:1 on blue-50) */
-	--color-disabled: var(--color-gray-400);
+	--color-surface: light-dark(var(--color-white), var(--color-gray-800));
+	--color-surface-muted: light-dark(var(--color-gray-100), var(--color-gray-700));
+	--color-surface-hover: light-dark(
+		var(--color-gray-200),
+		var(--color-gray-600)
+	); /* row under the pointer: name 16.96:1, e-mail 6.10:1 | 7.24:1, 5.14:1 */
+	--color-surface-selected: light-dark(
+		var(--color-blue-100),
+		var(--color-blue-950)
+	); /* selected row: name 17.21:1, e-mail 6.19:1, bar 4.30:1 | 14.11:1, 10.00:1 */
+	--color-line: light-dark(var(--color-gray-300), var(--color-gray-600));
+	--color-field-border: light-dark(
+		var(--color-gray-500),
+		var(--color-gray-400)
+	); /* WCAG 1.4.11: 4.84:1 on white, 4.39:1 on gray-100, 3.93:1 at worst on the page gradient | 5.64:1 on the surface, 3.96:1 on the muted one */
+	--color-disabled: light-dark(var(--color-gray-400), var(--color-gray-500));
 
-	/* Text on a white surface */
-	--color-heading: var(--color-gray-900); /* titles and figures: 17.9:1 on white */
-	--color-label: var(--color-gray-700);
-	--color-muted: var(--color-gray-600); /* 7.56:1 */
-	--color-subtle: var(--color-gray-500); /* 4.84:1 */
+	/* Text on a surface */
+	--color-heading: light-dark(
+		var(--color-gray-900),
+		var(--color-gray-50)
+	); /* titles and figures: 17.9:1 on white | 14.07:1 */
+	--color-label: light-dark(var(--color-gray-700), var(--color-gray-200));
+	--color-muted: light-dark(var(--color-gray-600), var(--color-gray-300)); /* 7.56:1 | 9.98:1 */
+	--color-subtle: light-dark(
+		var(--color-gray-500),
+		var(--color-gray-400)
+	); /* 4.84:1 | 5.64:1; never on surface-muted or surface-hover */
 
 	/* Actions: white text on these backgrounds reaches 4.5:1 or more */
-	--color-primary: var(--color-blue-600);
-	--color-primary-hover: var(--color-blue-700);
-	--color-action-strong: var(--color-blue-700); /* also text on gray: 4.5:1 or more */
-	--color-action-strong-hover: var(--color-blue-900);
-	--color-success: var(--color-green-700);
-	--color-danger: var(
-		--color-red-700
-	); /* the one error color: 5.21:1 or more on white, gray-100, red-100 and the gradient */
-	--color-danger-hover: var(--color-red-900);
-	--color-danger-soft: var(--color-red-100);
-	--color-warning: var(--color-amber-700);
-	--color-info: var(
-		--color-gray-800
-	); /* neutral toast: white text 14.7:1, never the color of an action */
+	--color-primary: light-dark(var(--color-blue-600), var(--color-blue-700));
+	--color-primary-hover: light-dark(var(--color-blue-700), var(--color-blue-600));
+	--color-action-strong: light-dark(
+		var(--color-blue-700),
+		var(--color-blue-300)
+	); /* also text on gray: 4.5:1 or more | 8.11:1 on the surface */
+	--color-action-strong-hover: light-dark(var(--color-blue-900), var(--color-blue-200));
+	/* Valid field (border, check) and error text, on a surface; the solid ones are toast fills */
+	--color-success: light-dark(var(--color-green-700), var(--color-green-300));
+	--color-success-solid: light-dark(
+		var(--color-green-700),
+		var(--color-green-800)
+	); /* toast fill, white text: 4.5:1 or more | 7.09:1 */
+	--color-danger: light-dark(
+		var(--color-red-700),
+		var(--color-red-300)
+	); /* the one error color: 5.21:1 or more on white, gray-100, red-100 and the gradient | 7.64:1 */
+	--color-danger-solid: light-dark(
+		var(--color-red-700),
+		var(--color-red-800)
+	); /* toast fill, white text | 8.37:1 */
+	--color-danger-hover: light-dark(var(--color-red-900), var(--color-red-200));
+	--color-danger-soft: light-dark(var(--color-red-100), var(--color-red-950));
+	--color-warning: light-dark(var(--color-amber-700), var(--color-amber-800)); /* | 7.13:1 */
+	--color-info: light-dark(
+		var(--color-gray-800),
+		var(--color-gray-700)
+	); /* neutral toast: white text 14.7:1 | 10.31:1, never the color of an action */
 
-	/* Left edge of each toast type: darker than its background, 3:1 or more on the page */
-	--color-success-edge: var(--color-green-900);
-	--color-danger-edge: var(--color-red-950);
-	--color-warning-edge: var(--color-amber-900);
-	--color-info-edge: var(--color-gray-950);
+	/* Left edge of each toast type: apart from its fill and 3:1 or more on the page (dark: lighter) */
+	--color-success-edge: light-dark(var(--color-green-900), var(--color-green-300));
+	--color-danger-edge: light-dark(var(--color-red-950), var(--color-red-300));
+	--color-warning-edge: light-dark(var(--color-amber-900), var(--color-amber-300));
+	--color-info-edge: light-dark(var(--color-gray-950), var(--color-gray-300));
 
-	/* Focus: the one outline of the interface (3:1 or more on white, gray-100, blue-100 and the page gradient) */
-	--color-accent: var(
-		--color-blue-600
-	); /* selection edge: the theme group (4.27:1 on the page's end) */
-	--color-focus: var(--color-blue-700); /* 5.55:1 on indigo-100, 6.83:1 on white */
+	/* Focus: the one outline of the interface (3:1 or more on every surface and on the page gradient) */
+	--color-accent: light-dark(
+		var(--color-blue-600),
+		var(--color-blue-400)
+	); /* selection edge: the theme group, the selected row (4.27:1 on the page's end | 5.57:1) */
+	--color-focus: light-dark(
+		var(--color-blue-700),
+		var(--color-blue-300)
+	); /* 5.55:1 on indigo-100, 6.83:1 on white | 8.11:1 on the surface */
 	--color-focus-inverse: var(--color-white); /* on the colored toasts: 4.95:1 or more */
 
-	/* Text and lines laid on a colored fill: the same white as before, now named by role */
+	/* Text and lines laid on a colored fill: white in both themes, named by role */
 	--color-on-primary: var(--color-white); /* text of the primary button */
 	--color-on-toast: var(--color-white); /* text and lines on the colored toasts */
 	--color-on-toast-hover: color-mix(
@@ -66,14 +95,30 @@
 	); /* pointer over a control on a toast: what Tailwind computes for white at 20% */
 
 	/* Page background: a gradient carried by <html>, so it covers the whole scrollable area */
-	--color-page-from: var(--color-blue-50);
-	--color-page-to: var(--color-indigo-100);
+	--color-page-from: light-dark(var(--color-blue-50), var(--color-gray-900));
+	--color-page-to: light-dark(var(--color-indigo-100), var(--color-indigo-950));
 
 	/* Radii and shadows */
 	--radius-control: 0.25rem;
 	--radius-card: var(--radius-lg);
 	--shadow-card: var(--shadow-sm);
 	--shadow-card-raised: var(--shadow-lg);
+}
+
+/*
+ * The scheme in force (THEME-R01, R07, R09). "System" offers both and the browser follows the
+ * device, in direct and without a script; a choice read by the server (`data-theme` of <html>,
+ * hooks.server.ts) pins one. It also gives the native controls (menu, scrollbars, checkboxes,
+ * autofill) the colors of the theme.
+ */
+:root {
+	color-scheme: light dark;
+}
+:root[data-theme='light'] {
+	color-scheme: light;
+}
+:root[data-theme='dark'] {
+	color-scheme: dark;
 }
 
 @layer base {
@@ -112,5 +157,23 @@
 		border-color: Highlight;
 		background-color: Highlight;
 		color: HighlightText;
+	}
+}
+
+/* Forced colors: the page is the system's, not our gradient. */
+@media (forced-colors: active) {
+	html {
+		background: Canvas;
+	}
+}
+
+/*
+ * Print (THEME-R11): the light theme, text and background, whatever the choice or the device. Last
+ * on purpose: it must come after the `data-theme` rules above.
+ */
+@media print {
+	:root,
+	:root[data-theme] {
+		color-scheme: light;
 	}
 }

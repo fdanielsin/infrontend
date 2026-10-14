@@ -6,9 +6,10 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
-- A "Theme" selector (sun, moon, screen: Light, Dark, System) sits next to the language selector on both
-  pages. The choice is kept in a `theme` cookie and written into the HTML by the server, with no flash
-  at load. The dark palette is not shipped yet: the choice changes no color for now.
+- A dark theme. A "Theme" selector (sun, moon, screen: Light, Dark, System) sits next to the language
+  selector on both pages; System follows the device, live. The choice is kept in a `theme` cookie and
+  written into the HTML by the server, with no flash at load. The light theme does not change; a printed
+  page is always light; the native menus and scrollbars follow the theme.
 
 ### Changed
 

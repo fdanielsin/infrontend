@@ -99,6 +99,19 @@ describe('parseCaptureArgs', () => {
 		});
 	});
 
+	it('THEME-R01: reads the scheme of the device to emulate, and none by default (happy path)', () => {
+		expect(parseCaptureArgs(['--scheme=dark'], env, ROOT).scheme).toBe('dark');
+		expect(parseCaptureArgs(['--scheme=light'], env, ROOT).scheme).toBe('light');
+		expect(parseCaptureArgs([], env, ROOT).scheme).toBeUndefined();
+	});
+
+	it('THEME-R01: refuses any other scheme (sad path)', () => {
+		expect(() => parseCaptureArgs(['--scheme=sepia'], env, ROOT)).toThrow(
+			/--scheme: "sepia" is unknown/
+		);
+		expect(() => parseCaptureArgs(['--scheme='], env, ROOT)).toThrow(/--scheme needs a value/);
+	});
+
 	it('requires a port of its own, never one of the user, of the reference or of their previews (error)', () => {
 		expect(() => parseCaptureArgs([], {}, ROOT)).toThrow(/CAPTURE_PORT/);
 		for (const port of ['8080', '5173', '8081', '5174']) {

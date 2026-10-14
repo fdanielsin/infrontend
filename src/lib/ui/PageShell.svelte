@@ -41,7 +41,7 @@
 >
 	<div class="mx-auto max-w-6xl">
 		<header class="mb-8">
-			<div class="mb-4 flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
+			<div class="mb-4 flex flex-wrap items-center justify-end gap-x-4 gap-y-2 print:hidden">
 				<LanguageSwitcher />
 				<ThemeSwitcher />
 			</div>

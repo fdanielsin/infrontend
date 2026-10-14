@@ -5,8 +5,8 @@ import ToastItem from '$lib/ui/ToastItem.svelte';
 import { TOAST_BACKGROUNDS, TOAST_BORDERS } from '$lib/ui/toast-styles';
 
 const BACKGROUND_OF_TYPE: Record<NotificationType, string> = {
-	success: 'bg-success',
-	error: 'bg-danger',
+	success: 'bg-success-solid',
+	error: 'bg-danger-solid',
 	info: 'bg-info',
 	warning: 'bg-warning'
 };

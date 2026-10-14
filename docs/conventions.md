@@ -274,6 +274,13 @@ et d'accessibilité (WCAG 2.2 AA) : [design-system.md](./design-system.md).
   d'éclair de mauvaise langue. Dans le navigateur, `LocaleState.current`
   (`$state`) est lu par chaque message : changer de langue met l'écran à jour
   sans rechargement ni perte de saisie ; l'attribut `lang` du document suit.
+- Thème : cookie `theme` (`light` ou `dark`, absent pour « System »), écrit seulement au
+  choix explicite par `ThemeState.set` (`document.cookie`, refus sans conséquence). Le serveur le
+  lit par `parseThemeCookie` (exactement un cookie `theme`, valeur exactement `light` ou `dark`, tout
+  le reste est « System ») et écrit l'un de deux littéraux fixes dans `<html data-theme>` (jamais la
+  valeur reçue). La page suit en CSS : `color-scheme` sur `:root` et des jetons en `light-dark()`
+  (`layout.css`), sans script ni style en ligne, donc sans éclair et avec la CSP inchangée. Une
+  couleur s'écrit toujours par un jeton de `layout.css` (test : aucune couleur en dur ailleurs).
 - Limite connue : la détection de langue de Paraglide ne traite pas `q=0` comme
   « non acceptable » (RFC 9110, 12.4.2) : un en-tête `fr;q=0` donne le français.
   Sans effet pratique, aucun navigateur ne l'envoie.

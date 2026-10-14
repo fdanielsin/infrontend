@@ -36,10 +36,13 @@ export interface CaptureOptions {
 	outDir: string;
 	build: boolean;
 	filters: CaptureFilters;
+	// The color scheme of the device to emulate (the theme is then "System"); none keeps the browser's.
+	scheme?: 'light' | 'dark';
 }
 
 // Every option takes one value or a comma-separated list: --locale=fr,de.
 const LIST_FLAGS = ['screen', 'state', 'width', 'locale'] as const;
+const SCHEMES = ['light', 'dark'] as const;
 const DEFAULT_OUT = 'test-results/captures';
 
 function listOf(flag: string, value: string): string[] {
@@ -68,7 +71,7 @@ function oneOf<T extends string | number>(
 /**
  * The settings of `bun run captures`: `CAPTURE_PORT` (required, one per worktree, never a user port),
  * `--out=<folder under test-results/>`, `--skip-build` and the filters `--screen`, `--state`,
- * `--width`, `--locale`.
+ * `--width`, `--locale`, and `--scheme=light|dark` (the device's color scheme).
  */
 export function parseCaptureArgs(
 	argv: string[],
@@ -79,6 +82,7 @@ export function parseCaptureArgs(
 	const raw = new Map<string, string>();
 	let build = true;
 	let out = DEFAULT_OUT;
+	let scheme: 'light' | 'dark' | undefined;
 	for (const arg of argv) {
 		if (arg === '--skip-build') {
 			build = false;
@@ -86,11 +90,18 @@ export function parseCaptureArgs(
 		}
 		const match = /^--([a-z]+)=(.*)$/.exec(arg);
 		const flag = match?.[1];
-		if (!match || !flag || (flag !== 'out' && !(LIST_FLAGS as readonly string[]).includes(flag))) {
+		if (
+			!match ||
+			!flag ||
+			(flag !== 'out' && flag !== 'scheme' && !(LIST_FLAGS as readonly string[]).includes(flag))
+		) {
 			throw new Error(`Unknown argument: ${arg}`);
 		}
 		if (flag === 'out') out = match[2] ?? '';
-		else raw.set(flag, match[2] ?? '');
+		else if (flag === 'scheme') {
+			const [chosen] = oneOf('scheme', listOf('scheme', match[2] ?? ''), SCHEMES);
+			scheme = chosen;
+		} else raw.set(flag, match[2] ?? '');
 	}
 	// The folder is emptied at the start of a run: only a folder of test-results/ may be.
 	const outDir = path.resolve(root, out);
@@ -113,7 +124,7 @@ export function parseCaptureArgs(
 	if (locales) filters.locales = oneOf('locale', locales, LOCALES);
 	// Planning checks the names of states, so that a typo fails before any browser starts.
 	planCaptures(filters);
-	return { port, outDir, build, filters };
+	return { port, outDir, build, filters, ...(scheme && { scheme }) };
 }
 
 /** Every capture to take, in a stable order: screen, state, width, language. */

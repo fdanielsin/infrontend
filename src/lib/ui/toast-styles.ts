@@ -2,8 +2,8 @@ import type { NotificationType } from '$lib/state/notification.svelte';
 
 // Whole class names, so Tailwind finds them. Read by `ToastItem` and by the contrast test.
 export const TOAST_BACKGROUNDS: Record<NotificationType, string> = {
-	success: 'bg-success',
-	error: 'bg-danger',
+	success: 'bg-success-solid',
+	error: 'bg-danger-solid',
 	info: 'bg-info',
 	warning: 'bg-warning'
 };

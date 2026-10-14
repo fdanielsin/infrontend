@@ -68,6 +68,44 @@ commentaire du jeton. Ratios mesurés (WCAG 1.4.3 texte 4,5:1, 1.4.11 non-texte 
 | `focus`, `focus-inverse`                                   | blue-700, blanc                         | contour de focus                                                                                | 6,83 blanc, 5,55 indigo-100 ; inverse 4,95 ou plus sur les toasts (succès 4,95, avertissement 5,03, erreur 6,42, info 6,83)                                        |
 | `on-primary`, `on-toast`, `on-toast-hover`                 | blanc, blanc, blanc à 20 %              | texte du bouton principal, texte et contours sur un toast coloré, survol d'un contrôle de toast | mêmes valeurs que `focus-inverse` et que les blancs écrits avant ; `tests/unit/architecture/no-hardcoded-colors.test.ts` refuse toute couleur hors `layout.css`    |
 
+#### Thème sombre
+
+Chaque jeton est écrit **une fois** dans `layout.css` : `light-dark(valeur claire, valeur sombre)`. Le
+navigateur choisit selon `color-scheme` de `<html>` : `light dark` en « System » (il suit l'appareil en
+direct, sans script), `light` ou `dark` quand le serveur a posé `data-theme` (cookie `theme`). `color-scheme`
+donne aussi leurs couleurs aux contrôles natifs (menu, barres, cases, saisie automatique). C'est un autre
+jeu, jamais une inversion : fond gris très sombre sans noir pur, texte blanc cassé, accents plus clairs, surfaces
+élevées plus claires. Valeurs sombres (ratios WCAG calculés, seuil 4,5:1 texte et 3:1 non-texte) :
+
+| Jeton                                                           | Sombre                                  | Mesure                                                                       |
+| --------------------------------------------------------------- | --------------------------------------- | ---------------------------------------------------------------------------- |
+| `page-from` / `page-to`                                         | gray-900 / indigo-950                   | dégradé                                                                      |
+| `surface`, `surface-muted`, `surface-hover`, `surface-selected` | gray-800, gray-700, gray-600, blue-950  | nom 7,24 et e-mail 5,14 sur survol ; 14,11 et 10,00 sur sélection            |
+| `line`, `disabled`                                              | gray-600, gray-500                      | décoratif, exempté                                                           |
+| `field-border`                                                  | gray-400                                | 5,64 surface ; 3,96 muted ; 6,16 dégradé                                     |
+| `heading`, `label`, `muted`, `subtle`                           | gray-50, gray-200, gray-300, gray-400   | 14,07 ; 11,88 ; 9,98 ; 5,64 sur surface (`subtle` jamais sur muted ni hover) |
+| `primary` / `-hover`                                            | blue-700 / blue-600                     | blanc 6,82 / 5,26                                                            |
+| `action-strong` / `-hover`                                      | blue-300 / blue-200                     | 8,11 surface ; 5,69 muted                                                    |
+| `danger` / `-hover`, `danger-soft`                              | red-300 / red-200, red-950              | 7,64 surface ; 8,40 sur `danger-soft`                                        |
+| `success`                                                       | green-300                               | 10,50 surface ; 7,37 muted (texte, bordure et coche du champ valide)         |
+| `success-solid`, `danger-solid`                                 | green-800, red-800                      | blanc 7,09 et 8,37 (fond de toast)                                           |
+| `warning`, `info`                                               | amber-800, gray-700                     | blanc 7,13 et 10,31 (fond de toast)                                          |
+| `*-edge`                                                        | green-300, red-300, amber-300, gray-300 | 9 à 13 sur la page (3 requis)                                                |
+| `focus`                                                         | blue-300                                | 9,80 page ; 8,11 surface ; 4,17 sur survol (3 requis)                        |
+| `accent`                                                        | blue-400                                | 5,57 surface ; 6,08 dégradé                                                  |
+
+`success-solid` et `danger-solid` existent parce que `success` et `danger` servaient à deux usages
+incompatibles en sombre : le fond d'un toast (texte blanc dessus) et le texte, la bordure ou la coche sur
+une surface. Les jetons `-solid` portent le fond (en clair, la même valeur qu'avant : aucun pixel ne
+change) ; `success` et `danger` ne portent plus que le texte et les bordures. La barre de la ligne
+sélectionnée est `accent`, pas `primary` (2,15:1 seulement en sombre). Les blancs `on-primary`, `on-toast`,
+`on-toast-hover` et `focus-inverse` restent blancs dans les deux thèmes.
+
+À l'impression, le thème clair revient (`color-scheme: light`, texte et fond) quel que soit le choix, et la
+rangée des sélecteurs est masquée. En contraste forcé, `html` prend `Canvas`. Limite : le menu natif ouvert
+et les barres de défilement ne se prouvent pas automatiquement (capture manuelle). Les captures par thème :
+`CAPTURE_PORT=<port> bun run captures -- --scheme=dark`.
+
 Preuves : `tests/e2e/focus-and-errors.test.ts` (même contour de focus à 4,5:1, même
 rouge pour toutes les erreurs, dans les quatre langues), `tests/e2e/field-borders.test.ts`
 (bordures à 3:1 à 1280 et 320 px), mesures par `tests/e2e/support/contrast.ts`.
@@ -566,8 +604,7 @@ tabulation, les flèches déplacent et choisissent. Position active : fond `prim
 `on-primary`, bordure 2 px `accent` (pas la couleur de fond seule) ; focus : le contour unique du
 projet, sur le `<label>` (`has-focus-visible`). Cible `size-8`, `size-11` au toucher. Le choix est
 écrit dans le cookie `theme` (`light` ou `dark`, « System » l'efface) et dans `data-theme` de
-`<html>` ; aucune annonce. Tant que la palette sombre n'est pas livrée, le choix ne change que
-l'attribut : le rendu reste clair. Preuve : `tests/unit/components/ThemeSwitcher.test.ts`,
+`<html>` ; aucune annonce. Le choix change la page aussitôt (voir « Thème sombre » plus haut). Preuve : `tests/unit/components/ThemeSwitcher.test.ts`,
 `tests/e2e/theme-selector.test.ts`.
 
 ### AvailabilityBanner et ApiVersion
@@ -909,7 +946,7 @@ compte rendu).
 
 ### Mode sombre et système visuel
 
-- **Mode sombre** ([dark-mode](https://designmotionhq.com/patterns/dark-mode)) : un autre jeu de jetons, jamais une inversion ; fond gris très sombre (pas de noir pur), texte blanc cassé, accents désaturés ; les ratios de la section 2 se remesurent. **Cible : jeton à créer**.
+- **Mode sombre** ([dark-mode](https://designmotionhq.com/patterns/dark-mode)) : un autre jeu de jetons, jamais une inversion ; fond gris très sombre (pas de noir pur), texte blanc cassé, accents désaturés ; les ratios de la section 2 se remesurent. **Réalisé** : voir « Thème sombre » dans les couleurs sémantiques.
 - **Kit de design system** ([design-system-kit](https://designmotionhq.com/patterns/design-system-kit)) : jetons sémantiques plutôt que valeurs en dur ; échelle typographique fixe ; composants en variantes, tailles et états.
 - **Grille** ([grid-system](https://designmotionhq.com/patterns/grid-system)) : 12 colonnes, gouttière prise dans l'échelle de 4 px ; 12, 6, 4 puis 1 colonne selon le point de rupture ; on rompt la grille seulement après l'avoir établie.
 - **Lois de la Gestalt** ([gestalt-laws](https://designmotionhq.com/patterns/gestalt-laws)) : regrouper ce qui va ensemble (région commune, similarité, continuité sur un même axe) ; assombrir l'arrière-plan d'une modale.
