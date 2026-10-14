@@ -119,6 +119,28 @@ test.describe('Delete and rename a user (real backend)', () => {
 		}
 	);
 
+	// Tagged @alone for the same reason. The page leaves for another origin (here the API itself, which
+	// answers on its own port) instead of closing: the DELETE has a CORS preflight and must outlive
+	// the document. No `context.route` here: in Chromium a routed context loses that request.
+	test(
+		'a page that navigates to another origin sends the waiting deletion (USER-R20)',
+		{ tag: '@alone' },
+		async ({ context, request }) => {
+			// GIVEN: A deletion that can still be undone.
+			const user = await createUser(request, 'Leaving');
+			const page = await context.newPage();
+			await page.goto('/');
+			await deleteButton(page, user).click();
+			expect(await userStatus(request, user.id)).toBe(200);
+
+			// WHEN: The page navigates to another origin.
+			await page.goto(`${API}/health`);
+
+			// THEN: The server saw the deletion.
+			await expect.poll(() => userStatus(request, user.id), { timeout: 10_000 }).toBe(404);
+		}
+	);
+
 	test('a user created with the email of a user waiting for deletion is created after the DELETE (critère 37)', async ({
 		page,
 		request
