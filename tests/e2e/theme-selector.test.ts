@@ -546,7 +546,10 @@ test.describe('Forced colors (production build)', () => {
 			// color), not by its fill alone, which forced colors may flatten.
 			expect(light).toEqual(system);
 			expect(dark.width !== light.width || dark.color !== light.color).toBe(true);
+			// And it is the active one that is the most marked: the thicker border, its own fill.
+			expect(parseFloat(dark.width)).toBeGreaterThan(parseFloat(light.width));
 			expect(dark.fill).not.toBe(light.fill);
+			expect(dark.fill).not.toBe(system.fill);
 			await context.close();
 		});
 	}
