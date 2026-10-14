@@ -15,5 +15,3 @@ export const TOAST_BORDERS: Record<NotificationType, string> = {
 	info: 'border-l-4 border-info-edge',
 	warning: 'border-l-4 border-warning-edge'
 };
-
-// witness commit (to be reverted)
