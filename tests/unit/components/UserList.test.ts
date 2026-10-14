@@ -42,13 +42,15 @@ describe('UserList', () => {
 		const item = button.closest('li') as HTMLElement;
 
 		// THEN: The row holds the button, then the actions beside it, never inside it; the row carries
-		// the fill and the hover, the button the padding and the full width of its column.
+		// the fill and the hover, the button the padding and the full width of its column, less the
+		// 4px margin on each side that holds its focus ring inside the row.
 		expect(item.children).toHaveLength(2);
 		expect(item.firstElementChild).toBe(button);
 		expect(button.querySelector('button')).toBeNull();
 		expect(item.classList.contains('p-3')).toBe(false);
 		expect(item.classList.contains('hover:bg-surface-hover')).toBe(true);
-		expect(button.classList.contains('w-full')).toBe(true);
+		expect(button.classList.contains('w-[calc(100%-0.5rem)]')).toBe(true);
+		expect(button.classList.contains('m-1')).toBe(true);
 		expect(button.classList.contains('p-3')).toBe(true);
 		expect(button.classList.contains('min-h-11')).toBe(true);
 	});

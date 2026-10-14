@@ -28,8 +28,8 @@
 
 <div
 	class={[
-		'flex gap-2 text-sm text-heading',
-		stacked ? 'flex-col items-start gap-1' : 'flex-wrap items-center'
+		'flex text-sm text-heading',
+		stacked ? 'flex-col items-start gap-1' : 'flex-wrap items-center gap-2'
 	]}
 >
 	<label for={id} class="flex items-center gap-1">

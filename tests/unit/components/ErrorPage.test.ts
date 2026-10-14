@@ -56,6 +56,16 @@ describe('error page', () => {
 		expect(getByRole('link', { name: /Back to home/ }).getAttribute('href')).toBe('/');
 	});
 
+	it('titles the document after the error: not found for a 404, generic for another (happy path)', () => {
+		renderWithApp(app, ErrorPage);
+		expect(document.title).toBe('Page not found - inBackend');
+
+		cleanup();
+		status.current = 500;
+		renderWithApp(app, ErrorPage);
+		expect(document.title).toBe('Something went wrong - inBackend');
+	});
+
 	it('does not claim that the page is missing for another error (sad path)', () => {
 		status.current = 500;
 
