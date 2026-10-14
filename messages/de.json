@@ -68,6 +68,8 @@
 	"tasks_delete_named": "{title} löschen",
 	"tasks_deleted_named": "Aufgabe gelöscht: {title}",
 	"tasks_undo_delete": "Rückgängig",
+	"tasks_mark_all_done": "Alle als erledigt markieren",
+	"tasks_marking_all": "Wird markiert…",
 	"tasks_marked_all_done": "Alle Aufgaben als erledigt markiert",
 	"tasks_marked_some_done": "Als erledigt markierte Aufgaben: {count}",
 	"tasks_marked_todo": "Wieder offene Aufgaben: {count}",
