@@ -87,8 +87,8 @@ describe('icons in the bundle', () => {
 			expect(unexpectedIcons(code, LISTED_PATHS)).toEqual([]);
 			expect(code).not.toContain('@iconify');
 			expect(code).not.toContain('unplugin');
-			// The set is 700 kB: this only catches a bundle that holds more than the listed icons.
-			expect(code.length).toBeLessThan(25_000);
+			// The set is 700 kB: this only catches a bundle that holds more than the listed icons (22 390 bytes measured).
+			expect(code.length).toBeLessThan(23_000);
 		},
 		TIMEOUT
 	);

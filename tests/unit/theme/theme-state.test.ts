@@ -19,9 +19,15 @@ describe('ThemeState', () => {
 	it('starts on what the server rendered and writes nothing (happy path)', () => {
 		const app = new AppState('dark');
 		expect(app.theme.current).toBe('dark');
-		expect(new AppState(null).theme.current).toBe('system');
 		expect(root.hasAttribute('data-theme')).toBe(false);
 		expect(cookies()).not.toContain('theme=');
+	});
+
+	it('writes nothing when built for System either (happy path)', () => {
+		document.cookie = 'theme=dark; Path=/';
+		expect(new AppState(null).theme.current).toBe('system');
+		// A cookie that was there stays there: building the state neither writes nor erases it.
+		expect(cookies()).toContain('theme=dark');
 	});
 
 	it('sets the attribute and the cookie at an explicit choice (happy path)', () => {

@@ -272,6 +272,8 @@ test.describe('Theme selector (mocked API)', () => {
 const HOSTILE: [string, string][] = [
 	['a capital', 'Dark'],
 	['all capitals', 'DARK'],
+	['a capital light', 'Light'],
+	['all capitals light', 'LIGHT'],
 	['an empty value', ''],
 	['4 KB', 'a'.repeat(4000)],
 	['a broken encoding', '%E0%A4%A'],
@@ -507,4 +509,45 @@ test.describe('Narrow screen (production build)', () => {
 			}
 		}
 	});
+});
+
+test.describe('Forced colors (production build)', () => {
+	test.skip(
+		({ browserName }) => browserName !== 'chromium',
+		'forced-colors is emulated on Chromium only (Firefox and WebKit have no emulation)'
+	);
+
+	for (const device of ['light', 'dark'] as const) {
+		test(`THEME-R10: with forced colors on a ${device} device, the active position differs from the two others by more than its fill (limit)`, async ({
+			browser
+		}) => {
+			const context = await browser.newContext({ forcedColors: 'active', colorScheme: device });
+			const page = await context.newPage();
+			await openHome(page);
+			await chooseTheme(page, 'en', 'dark');
+
+			const styleOf = (key: 'light' | 'dark' | 'system') =>
+				radio(page, 'en', key)
+					.locator('xpath=..')
+					.evaluate((label) => {
+						const style = getComputedStyle(label);
+						return {
+							width: style.borderTopWidth,
+							color: style.borderTopColor,
+							fill: style.backgroundColor
+						};
+					});
+			const [light, dark, system] = [
+				await styleOf('light'),
+				await styleOf('dark'),
+				await styleOf('system')
+			];
+			// The two others look alike, and the active one differs from them by its border (width or
+			// color), not by its fill alone, which forced colors may flatten.
+			expect(light).toEqual(system);
+			expect(dark.width !== light.width || dark.color !== light.color).toBe(true);
+			expect(dark.fill).not.toBe(light.fill);
+			await context.close();
+		});
+	}
 });

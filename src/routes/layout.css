@@ -100,3 +100,17 @@
 		padding-bottom: var(--toast-stack-height, 0px);
 	}
 }
+
+/*
+ * Forced colors (THEME-R10): the system colors replace ours, and the checked position of the theme
+ * group would look like the two others. Its border gets thicker and takes the selection colors:
+ * a mark that does not rest on a fill alone.
+ */
+@media (forced-colors: active) {
+	[role='radiogroup'] label:has(> input:checked) {
+		border-width: 4px;
+		border-color: Highlight;
+		background-color: Highlight;
+		color: HighlightText;
+	}
+}

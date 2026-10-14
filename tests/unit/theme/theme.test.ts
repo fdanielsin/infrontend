@@ -22,6 +22,8 @@ describe('parseThemeCookie', () => {
 		['no theme cookie', 'a=1; b=2'],
 		['a capital', 'theme=Dark'],
 		['all capitals', 'theme=DARK'],
+		['a capital light', 'theme=Light'],
+		['all capitals light', 'theme=LIGHT'],
 		['a trailing space inside the pair', 'theme=dark ; a=1'],
 		['a leading space in the value', 'theme= dark'],
 		['an empty value', 'theme='],
