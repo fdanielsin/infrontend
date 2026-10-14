@@ -329,6 +329,58 @@ describe('mark every task as done (TASK-R22 to R26)', () => {
 
 			expect(errors()[0]?.message).toBe("We couldn't put every task back to do.");
 			expect(app.tasks.tasks.map((t) => t.completed)).toEqual([false, true]);
+			// AND: The announcement counts the tasks put back, not those asked.
+			expect(app.notifications.announcement?.message).toBe('Tasks marked as to do: 1');
+		});
+
+		it('announces nothing when every request of Undo fails', async () => {
+			app.tasks.tasks = [task(1), task(2)];
+			await app.tasks.markAllDone();
+			answers({ 1: refused, 2: refused });
+
+			app.notifications.runAction(undoToast()!.id);
+			await vi.waitFor(() => expect(errors()).toHaveLength(1));
+			await vi.waitFor(() => expect(app.tasks.markingAll).toBe(false));
+
+			expect(app.notifications.announcement).toBeNull();
+			expect(app.tasks.tasks.map((t) => t.completed)).toEqual([true, true]);
+		});
+
+		it('drops silently a task gone from the server during Undo', async () => {
+			app.tasks.tasks = [task(1), task(2)];
+			await app.tasks.markAllDone();
+			answers({ 1: gone });
+
+			app.notifications.runAction(undoToast()!.id);
+			await vi.waitFor(() => expect(app.tasks.markingAll).toBe(false));
+
+			expect(app.tasks.tasks.map((t) => t.id)).toEqual([2]);
+			expect(toasts()).toEqual([]);
+			expect(app.notifications.announcement?.message).toBe('Tasks marked as to do: 1');
+		});
+
+		it('ignores the Undo of another operation while one is being sent', async () => {
+			// GIVEN: Two operations, on two tasks; the Undo of the first has not been answered.
+			app.tasks.tasks = [task(1)];
+			await app.tasks.markAllDone();
+			const firstUndo = undoToast()!;
+			app.tasks.tasks = [...app.tasks.tasks, task(2)];
+			await app.tasks.markAllDone();
+			const secondUndo = toasts()
+				.filter((n) => n.action)
+				.at(-1)!;
+			vi.mocked(api.updateTask).mockClear();
+			const late = deferred<ApiResult<Task>>();
+			vi.mocked(api.updateTask).mockReturnValue(late.promise);
+			app.notifications.runAction(firstUndo.id);
+
+			// WHEN: The Undo of the second is pressed meanwhile.
+			app.notifications.runAction(secondUndo.id);
+			late.resolve({ success: true, data: task(1) });
+			await vi.waitFor(() => expect(app.tasks.markingAll).toBe(false));
+
+			// THEN: Only the first one sent its request.
+			expect(sent()).toEqual([[1, false]]);
 		});
 
 		it('sends nothing more when the toast leaves without Undo (criterion 18)', async () => {
@@ -378,28 +430,86 @@ describe('mark every task as done (TASK-R22 to R26)', () => {
 	});
 
 	describe('changes made while sending (TASK-R26)', () => {
-		it('keeps the local state of a task edited or removed during the sending', async () => {
-			// GIVEN: Three tasks sent; one is edited and one removed while the requests are in flight.
+		// A server that keeps what it is sent, and answers a marking only when released.
+		function coherentServer(tasks: Task[]) {
 			const late = deferred<void>();
-			app.tasks.tasks = [task(1), task(2), task(3)];
+			const stored = new Map(tasks.map((t) => [t.id, { ...t }]));
 			vi.mocked(api.updateTask).mockImplementation(async (id, body) => {
 				if (body.completed === true) await late.promise;
-				return { success: true, data: { ...task(id), completed: body.completed ?? false } };
+				const saved = { ...stored.get(id)!, ...body };
+				stored.set(id, saved);
+				return { success: true, data: saved };
 			});
+			return { release: () => late.resolve(), stored };
+		}
+
+		it('follows the server for the checkbox of a task whose title was edited meanwhile, keeping the local title (criterion 26)', async () => {
+			// GIVEN: Two tasks sent; the title of the first is edited while the requests are in flight.
+			app.tasks.tasks = [task(1), task(2)];
+			const server = coherentServer(app.tasks.tasks);
 			const running = app.tasks.markAllDone();
-			await vi.waitFor(() => expect(api.updateTask).toHaveBeenCalledTimes(3));
-			app.tasks.remove(3);
-			await app.tasks.edit(2, 'Renamed', '');
+			await vi.waitFor(() => expect(api.updateTask).toHaveBeenCalledTimes(2));
+			await app.tasks.edit(1, 'Renamed', '');
 
 			// WHEN: The answers arrive.
-			late.resolve();
+			server.release();
 			await running;
 
-			// THEN: The edited task keeps its local state, the removed one stays out, and only the
-			// untouched task is an object of the operation (and of its Undo).
+			// THEN: The row is done like the server says, with its local title, and counts in the
+			// operation: the toast says all, and Undo reaches it.
+			expect(listed(1)).toMatchObject({ title: 'Renamed', completed: true });
+			expect(server.stored.get(1)?.completed).toBe(true);
+			expect(undoToast()?.message).toBe('All tasks marked as done');
+			vi.mocked(api.updateTask).mockClear();
+			app.notifications.runAction(undoToast()!.id);
+			await vi.waitFor(() => expect(app.tasks.markingAll).toBe(false));
+			expect(sent()).toEqual([
+				[1, false],
+				[2, false]
+			]);
+		});
+
+		it('keeps the choice of the user for a task checked or unchecked meanwhile, out of the operation and of its Undo (criterion 25)', async () => {
+			// GIVEN: Two tasks sent.
+			app.tasks.tasks = [task(1), task(2)];
+			const server = coherentServer(app.tasks.tasks);
+			const running = app.tasks.markAllDone();
+			await vi.waitFor(() => expect(api.updateTask).toHaveBeenCalledTimes(2));
+			// AND: The user checks the first row himself while the operation is in flight, and that
+			// request is answered at once.
+			vi.mocked(api.updateTask).mockImplementationOnce((id, body) =>
+				Promise.resolve({
+					success: true,
+					data: { ...task(id), completed: body.completed ?? false }
+				})
+			);
+			await app.tasks.toggle(1, true);
+
+			// WHEN: The answers arrive.
+			server.release();
+			await running;
+
+			// THEN: The row keeps the user's choice and is not an object of the operation.
 			expect(listed(1)?.completed).toBe(true);
-			expect(listed(2)).toMatchObject({ title: 'Renamed', completed: false });
-			expect(listed(3)).toBeUndefined();
+			expect(listed(2)?.completed).toBe(true);
+			expect(undoToast()?.message).toBe('Tasks marked as done: 1');
+			vi.mocked(api.updateTask).mockClear();
+			app.notifications.runAction(undoToast()!.id);
+			await vi.waitFor(() => expect(app.tasks.markingAll).toBe(false));
+			expect(sent()).toEqual([[2, false]]);
+		});
+
+		it('leaves a task removed meanwhile out of the list and of the operation', async () => {
+			app.tasks.tasks = [task(1), task(2)];
+			const server = coherentServer(app.tasks.tasks);
+			const running = app.tasks.markAllDone();
+			await vi.waitFor(() => expect(api.updateTask).toHaveBeenCalledTimes(2));
+			app.tasks.remove(2);
+
+			server.release();
+			await running;
+
+			expect(listed(2)).toBeUndefined();
 			expect(toasts().map((n) => n.message)).toContain('Tasks marked as done: 1');
 		});
 
@@ -423,6 +533,9 @@ describe('mark every task as done (TASK-R22 to R26)', () => {
 			// THEN: The second list did not change, and no row, error or gone message was added.
 			expect(app.tasks.tasks).toEqual([task(20, false, 2)]);
 			expect(errors()).toHaveLength(0);
+			// AND: The result is still offered with Undo, without the name of the first user.
+			expect(undoToast()?.message).toBe('All tasks marked as done');
+			expect(toasts().map((n) => n.message)).not.toContain('Task already deleted');
 		});
 
 		it('verifies the tasks on the server before an Undo asked on another user', async () => {

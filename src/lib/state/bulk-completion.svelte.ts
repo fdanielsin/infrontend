@@ -79,10 +79,11 @@ export class BulkCompletion {
 					if (result.code === TASK_NOT_FOUND) gone.add(id);
 					continue;
 				}
-				// A task changed or removed while sending keeps what the user made of it (TASK-R22).
+				// A task removed, or checked or unchecked by the user while sending, keeps what the user
+				// made of it. A new title or description does not change the answer: the server says done.
 				const before = todo.find((task) => task.id === id)!;
 				const now = current.find((task) => task.id === id);
-				if (sameList && (!now || !sameState(now, before))) continue;
+				if (sameList && (!now || now.completed !== before.completed)) continue;
 				saved.set(id, { ...(now ?? before), completed: true });
 			}
 			if (sameList) this.#apply(saved, gone, userId);
