@@ -490,7 +490,7 @@ export interface components {
                 name: "InDrive Backend API";
                 /**
                  * @description Même valeur que `data.version` de `/health` et `info.version` de ce contrat.
-                 * @example 1.2.0
+                 * @example 1.3.0
                  */
                 version: string;
                 links: {
@@ -517,7 +517,7 @@ export interface components {
             data: {
                 /** @constant */
                 status: "ok";
-                /** @example 1.2.0 */
+                /** @example 1.3.0 */
                 version: string;
                 /** Format: uuid */
                 id: string;

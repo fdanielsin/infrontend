@@ -4,6 +4,18 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+**À vérifier avant de mettre à jour (de 1.3.0 vers 1.4.0)**
+
+- Le build échoue si `PUBLIC_API_URL` manque ou n'est pas une URL http(s) (image Docker comprise :
+  l'argument `PUBLIC_API_URL` est obligatoire).
+- La nouvelle Content-Security-Policy n'autorise des appels qu'à l'origine de l'API
+  (`PUBLIC_API_URL`) : toute autre adresse appelée par la page est bloquée.
+- `E2E_PORT` et `OPENAPI_URL` sont obligatoires pour les scripts (`api:generate`, `api:check`,
+  `test:e2e:mocked`, `test:e2e:backend`) : il n'y a plus de backend par défaut, et `test:e2e` est
+  remplacé par `test:e2e:mocked` et `test:e2e:backend`.
+- Le front 1.4.0 exige un backend 1.3.0 ou plus (suppression et renommage d'un utilisateur,
+  `DELETE /users/{id}` et `PUT /users/{id}`) : mettre à jour le backend d'abord.
+
 ### Added
 
 - A user can be deleted with all their tasks, behind a 6-second "Undo" that pauses while the page
