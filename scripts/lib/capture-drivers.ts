@@ -94,6 +94,18 @@ function hold(page: Page, pattern: RegExp): Release {
 	return release;
 }
 
+// The updates of a task wait for `release`, then go on to the simulated API.
+function holdUpdates(page: Page): Release {
+	let release: Release = () => {};
+	const gate = new Promise<void>((resolve) => (release = resolve));
+	void page.route(/\/api\/v1\/tasks\/\d+$/, async (route: Route) => {
+		if (route.request().method() !== 'PUT') return route.fallback();
+		await gate;
+		await route.fallback().catch(() => {});
+	});
+	return release;
+}
+
 const pick = (context: DriverContext, user: MockUser) =>
 	context.page.locator(`#user-select-${user.id}`);
 
@@ -231,6 +243,45 @@ const home: Record<string, Driver> = {
 			.getByRole('status')
 			.getByRole('button', { name: context.t('users_undo_delete') })
 			.waitFor();
+	},
+	async 'mark-all-sending'(context) {
+		await open(context, usersRest);
+		await selectUser(context, ada);
+		const release = holdUpdates(context.page);
+		await context.page
+			.getByRole('button', { name: context.t('tasks_mark_all_done'), exact: true })
+			.click();
+		await context.page
+			.getByRole('button', { name: context.t('tasks_marking_all'), exact: true })
+			.waitFor();
+		return release;
+	},
+	async 'mark-all-done'(context) {
+		await open(context, usersRest);
+		await selectUser(context, ada);
+		await context.page
+			.getByRole('button', { name: context.t('tasks_mark_all_done'), exact: true })
+			.click();
+		await context.page
+			.getByRole('status')
+			.getByRole('button', { name: context.t('tasks_undo_delete') })
+			.waitFor();
+	},
+	async 'mark-all-partial'(context) {
+		const api = await open(context, {
+			users: [ada, grace],
+			tasks: [...tasks, { ...lastTask, id: 13, title: 'Book the room' }]
+		});
+		api.failNext('PUT /tasks/{id}', {
+			status: 500,
+			error: 'Database unavailable',
+			requestId: 'req-capture'
+		});
+		await selectUser(context, ada);
+		await context.page
+			.getByRole('button', { name: context.t('tasks_mark_all_done'), exact: true })
+			.click();
+		await context.page.getByRole('alert').getByText(context.t('error_mark_all_done')).waitFor();
 	},
 	async 'task-delete-pending'(context) {
 		await open(context, usersRest);
