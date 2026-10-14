@@ -14,7 +14,7 @@ interface Options {
 // Whole class names, so Tailwind finds them.
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
 	primary:
-		'border border-transparent bg-primary text-white hover:bg-primary-hover disabled:bg-disabled',
+		'border border-transparent bg-primary text-on-primary hover:bg-primary-hover disabled:bg-disabled',
 	secondary: 'border',
 	link: 'min-h-6 px-1 text-action-strong hover:text-action-strong-hover disabled:text-disabled'
 };
@@ -25,7 +25,7 @@ const SECONDARY_TONE_CLASSES: Record<ButtonTone, string> = {
 	danger:
 		'border-danger text-danger hover:bg-danger/10 disabled:border-disabled disabled:text-disabled disabled:hover:bg-transparent',
 	inverse:
-		'border-white text-white hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-inverse'
+		'border-on-toast text-on-toast hover:bg-on-toast-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-inverse'
 };
 
 const SIZE_CLASSES: Record<ButtonSize, string> = {

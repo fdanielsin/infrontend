@@ -53,6 +53,15 @@
 	--color-focus: var(--color-blue-700); /* 5.55:1 on indigo-100, 6.83:1 on white */
 	--color-focus-inverse: var(--color-white); /* on the colored toasts: 4.95:1 or more */
 
+	/* Text and lines laid on a colored fill: the same white as before, now named by role */
+	--color-on-primary: var(--color-white); /* text of the primary button */
+	--color-on-toast: var(--color-white); /* text and lines on the colored toasts */
+	--color-on-toast-hover: color-mix(
+		in oklab,
+		var(--color-white) 20%,
+		transparent
+	); /* pointer over a control on a toast: what Tailwind computes for white at 20% */
+
 	/* Page background: a gradient carried by <html>, so it covers the whole scrollable area */
 	--color-page-from: var(--color-blue-50);
 	--color-page-to: var(--color-indigo-100);

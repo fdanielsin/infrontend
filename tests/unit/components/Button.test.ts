@@ -18,7 +18,7 @@ describe('button system', () => {
 			const classes = buttonClasses({ variant: 'primary' }).split(' ');
 
 			expect(classes).toContain('bg-primary');
-			expect(classes).toContain('text-white');
+			expect(classes).toContain('text-on-primary');
 			expect(classes).toContain('hover:bg-primary-hover');
 			expect(classes).toContain('disabled:bg-disabled');
 		});
@@ -63,7 +63,7 @@ describe('button system', () => {
 	describe('tones of the secondary variant', () => {
 		it.each([
 			['danger', 'border-danger', 'text-danger'],
-			['inverse', 'border-white', 'text-white']
+			['inverse', 'border-on-toast', 'text-on-toast']
 		] as const)('%s follows its surface (happy path)', (tone, border, text) => {
 			const classes = buttonClasses({ variant: 'secondary', tone }).split(' ');
 

@@ -52,8 +52,8 @@ describe('IconButton component', () => {
 	});
 
 	it.each([
-		['danger', 'text-danger', 'hover:bg-white/20'],
-		['inverse', 'hover:bg-white/20', 'text-danger']
+		['danger', 'text-danger', 'hover:bg-on-toast-hover'],
+		['inverse', 'hover:bg-on-toast-hover', 'text-danger']
 	] as const)(
 		'the %s tone takes its colors from the text color (happy path)',
 		(tone, present, absent) => {

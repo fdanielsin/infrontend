@@ -18,7 +18,7 @@
 		danger:
 			'inline-flex min-h-6 min-w-6 pointer-coarse:min-h-11 pointer-coarse:min-w-11 items-center justify-center rounded-control text-danger hover:text-danger-hover',
 		inverse:
-			'inline-flex min-h-6 min-w-6 pointer-coarse:min-h-11 pointer-coarse:min-w-11 items-center justify-center rounded-control hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-inverse'
+			'inline-flex min-h-6 min-w-6 pointer-coarse:min-h-11 pointer-coarse:min-w-11 items-center justify-center rounded-control hover:bg-on-toast-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-inverse'
 	};
 </script>
 

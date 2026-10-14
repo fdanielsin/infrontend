@@ -4,6 +4,12 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- The white of the primary button and of the toasts is named by three color tokens (`on-primary`,
+  `on-toast`, `on-toast-hover`), and a test refuses any color written outside `layout.css`; nothing
+  changes on screen.
+
 ## [1.4.0] - 2026-10-14
 
 **À vérifier avant de mettre à jour (de 1.3.0 vers 1.4.0)**

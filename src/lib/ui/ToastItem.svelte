@@ -33,7 +33,7 @@
 <div
 	data-toast
 	class={[
-		'animate-slide-in grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 rounded-card px-4 py-3 text-white shadow-card-raised',
+		'animate-slide-in grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 rounded-card px-4 py-3 text-on-toast shadow-card-raised',
 		TOAST_BACKGROUNDS[toast.type],
 		TOAST_BORDERS[toast.type]
 	]}

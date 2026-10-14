@@ -184,7 +184,7 @@ describe('toasts', () => {
 		const action = container.querySelector<HTMLButtonElement>('button[data-toast-action]')!;
 		expect(action.textContent?.trim()).toBe('Retry now');
 		expect(action.type).toBe('button');
-		expect(action.classList.contains('border-white')).toBe(true);
+		expect(action.classList.contains('border-on-toast')).toBe(true);
 		expect(action.classList.contains('text-sm')).toBe(true);
 		expect(draw(action)).not.toBeNull();
 	});
