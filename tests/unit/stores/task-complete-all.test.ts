@@ -513,6 +513,107 @@ describe('mark every task as done (TASK-R22 to R26)', () => {
 			expect(toasts().map((n) => n.message)).toContain('Tasks marked as done: 1');
 		});
 
+		it('TASK-R26: lets the second user mark his tasks while the first user is being sent, and keeps ignoring the first (limit)', async () => {
+			// GIVEN: An operation of user 1 whose answers are late.
+			const late = deferred<void>();
+			const stored = new Map<number, Task>();
+			vi.mocked(api.updateTask).mockImplementation(async (id) => {
+				if (id < 10) await late.promise;
+				const saved = { ...task(id, true, id < 10 ? 1 : 2) };
+				stored.set(id, saved);
+				return { success: true, data: saved };
+			});
+			app.tasks.tasks = [task(1), task(2)];
+			const first = app.tasks.markAllDone();
+			await vi.waitFor(() => expect(api.updateTask).toHaveBeenCalledTimes(2));
+
+			// WHEN: Another user is selected and marks his tasks, while the first is still sent.
+			app.tasks.clear(2);
+			app.tasks.tasks = [task(20, false, 2), task(21, false, 2)];
+			await app.tasks.markAllDone();
+
+			// THEN: His two tasks were sent and done, and the list is his.
+			expect(sent().filter(([id]) => id >= 20)).toEqual([
+				[20, true],
+				[21, true]
+			]);
+			expect(app.tasks.tasks.every((t) => t.completed)).toBe(true);
+
+			// WHEN: The first user is back and activates again, his first operation still being sent.
+			app.tasks.clear(1);
+			app.tasks.tasks = [task(1), task(2)];
+			await app.tasks.markAllDone();
+
+			// THEN: Nothing more was sent for him.
+			expect(sent().filter(([id]) => id < 10)).toHaveLength(2);
+			late.resolve();
+			await first;
+		});
+
+		it('TASK-R25: gives each user his own Undo toast, which puts back only his own tasks (limit)', async () => {
+			// GIVEN: User 1 marked his tasks, then user 2 marked his.
+			app.tasks.tasks = [task(1), task(2)];
+			await app.tasks.markAllDone();
+			app.tasks.clear(2);
+			app.tasks.tasks = [task(20, false, 2)];
+			await app.tasks.markAllDone();
+			const undos = toasts().filter((n) => n.action);
+			expect(undos).toHaveLength(2);
+			vi.mocked(api.getUserTasks).mockImplementation((userId) =>
+				Promise.resolve({
+					success: true,
+					data: userId === 1 ? [task(1, true), task(2, true)] : [task(20, true, 2)]
+				})
+			);
+			vi.mocked(api.updateTask).mockClear();
+
+			// WHEN: The Undo of the second user is pressed.
+			app.notifications.runAction(undos[1]!.id);
+			await vi.waitFor(() => expect(app.tasks.markingAll).toBe(false));
+
+			// THEN: Only his task goes back to do.
+			expect(sent()).toEqual([[20, false]]);
+
+			// WHEN: The Undo of the first user is pressed.
+			vi.mocked(api.updateTask).mockClear();
+			app.notifications.runAction(undos[0]!.id);
+			await vi.waitFor(() => expect(app.tasks.markingAll).toBe(false));
+
+			// THEN: Only his two tasks go back to do.
+			expect(sent()).toEqual([
+				[1, false],
+				[2, false]
+			]);
+		});
+
+		it('TASK-R26: lets the Undo of the second user work while the first user is being sent (limit)', async () => {
+			// GIVEN: User 2 marked his task; then user 1 starts an operation whose answers are late.
+			const late = deferred<void>();
+			vi.mocked(api.updateTask).mockImplementation(async (id, body) => {
+				if (id < 10 && body.completed === true) await late.promise;
+				return { success: true, data: { ...task(id, body.completed ?? false) } };
+			});
+			app.tasks.clear(2);
+			app.tasks.tasks = [task(20, false, 2)];
+			await app.tasks.markAllDone();
+			const secondUndo = undoToast()!;
+			app.tasks.clear(1);
+			app.tasks.tasks = [task(1), task(2)];
+			const first = app.tasks.markAllDone();
+			await vi.waitFor(() => expect(api.updateTask).toHaveBeenCalledTimes(3));
+			vi.mocked(api.updateTask).mockClear();
+			vi.mocked(api.getUserTasks).mockResolvedValue({ success: true, data: [task(20, true, 2)] });
+
+			// WHEN: The Undo of user 2 is pressed meanwhile.
+			app.notifications.runAction(secondUndo.id);
+			await vi.waitFor(() => expect(api.updateTask).toHaveBeenCalledTimes(1));
+
+			// THEN: It went through.
+			expect(sent()).toEqual([[20, false]]);
+			late.resolve();
+			await first;
+		});
+
 		it('saves the tasks of the first user and leaves the list of the second untouched (criterion 21)', async () => {
 			// GIVEN: An operation in flight for user 1.
 			const late = deferred<void>();

@@ -214,7 +214,18 @@
 		(document.getElementById(`task-${taskId}`) ?? refs.tasksHeading)?.focus();
 	}
 
-	const focusHeading = () => refs.tasksHeading;
+	// The heading of the list on the page: the one of this component, or, when the selected user
+	// changed and this panel is gone, the one of the panel that replaced it.
+	const focusHeading = () =>
+		refs.tasksHeading?.isConnected
+			? refs.tasksHeading
+			: (document.querySelector<HTMLElement>('[data-tasks-heading]') ?? undefined);
+
+	// False once the panel is destroyed (another user was selected): what is left of it moves no focus.
+	let alive = true;
+	$effect(() => () => {
+		alive = false;
+	});
 
 	async function handleRemoveTask(taskId: number) {
 		tasks.remove(taskId, { onundo: focusRestoredRow, onleave: () => focusIfInToast(focusHeading) });
@@ -240,14 +251,18 @@
 			marking = false;
 		}
 		await tick();
+		if (!alive) return;
 		if (hadFocus && !refs.markAllCommand?.isConnected) await focusUndoButton(focusHeading);
 	}
 
 	// Undo is done: the command that came back takes the focus, unless the selected user changed.
 	async function focusAfterUndo(userId: number) {
 		await tick();
-		if (userId === user.id && refs.markAllCommand?.isConnected) refs.markAllCommand.focus();
-		else refs.tasksHeading?.focus();
+		if (alive && userId === user.id && refs.markAllCommand?.isConnected) {
+			refs.markAllCommand.focus();
+		} else {
+			focusHeading()?.focus();
+		}
 	}
 
 	// The toggle took the row out of the filter: the focus goes to the row that took its place (else
@@ -292,6 +307,7 @@
 <div>
 	<h3
 		{@attach ref(refs, 'tasksHeading')}
+		data-tasks-heading
 		{@attach revealTasks}
 		tabindex="-1"
 		class="mb-3 font-semibold"

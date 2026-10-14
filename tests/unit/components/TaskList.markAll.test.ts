@@ -4,6 +4,7 @@ import { tick } from 'svelte';
 import { api, type ApiResult, type Task } from '$lib/api/client';
 import { AppState } from '$lib/state/app-state.svelte';
 import { renderWithApp } from '../support/render-with-app';
+import TaskFormKeyedUser from '../support/TaskFormKeyedUser.svelte';
 import TaskFormSwitchingUser from '../support/TaskFormSwitchingUser.svelte';
 import TaskFormWithToasts from '../support/TaskFormWithToasts.svelte';
 
@@ -316,6 +317,54 @@ describe('"Mark all as done" on the task list (TASK-R22 to R26, screen)', () => 
 			await settle();
 
 			expect(document.activeElement).toBe(heading(view));
+		});
+
+		it('TASK-R26: does not move the focus when the user changed during the sending and the first panel is gone (exception)', async () => {
+			app.tasks.tasks = [todo(1), todo(2)];
+			const late = deferred<void>();
+			vi.mocked(api.updateTask).mockImplementation(async (id) => {
+				await late.promise;
+				return { success: true, data: done(id) };
+			});
+			const other = { id: 2, name: 'Bob', email: 'bob@example.com' };
+			const view = renderWithApp(app, TaskFormKeyedUser, { first: user, second: other });
+			const first = view.getByRole('button', { name: COMMAND });
+			first.focus();
+			await fireEvent.click(first);
+			await settle();
+			app.tasks.clear(2);
+			app.tasks.tasks = [{ ...todo(20), user_id: 2 }];
+			const select = view.getByRole('button', { name: 'Select the second user' });
+			await fireEvent.click(select);
+			select.focus();
+			await settle();
+
+			late.resolve();
+			await settle();
+
+			expect(document.activeElement).toBe(select);
+		});
+
+		it('TASK-R26: lets the command of the second user act while the first user is being sent (limit)', async () => {
+			app.tasks.tasks = [todo(1), todo(2)];
+			vi.mocked(api.updateTask).mockImplementation((id) =>
+				id < 10
+					? deferred<ApiResult<Task>>().promise
+					: Promise.resolve({ success: true, data: done(id) } as ApiResult<Task>)
+			);
+			const other = { id: 2, name: 'Bob', email: 'bob@example.com' };
+			const view = renderWithApp(app, TaskFormKeyedUser, { first: user, second: other });
+			await fireEvent.click(view.getByRole('button', { name: COMMAND }));
+			await settle();
+			app.tasks.clear(2);
+			app.tasks.tasks = [{ ...todo(20), user_id: 2 }];
+			await fireEvent.click(view.getByRole('button', { name: 'Select the second user' }));
+			await settle();
+
+			await fireEvent.click(view.getByRole('button', { name: COMMAND }));
+			await settle();
+
+			expect(vi.mocked(api.updateTask).mock.calls.map(([id]) => id)).toEqual([1, 2, 20]);
 		});
 
 		it('TASK-R25: leaves the focus where it is when the command was activated without the focus (limit)', async () => {

@@ -865,4 +865,78 @@ describe('Notification component', () => {
 			expect(document.activeElement).toBe(main);
 		});
 	});
+
+	describe('a control that has the focus when the stack comes (TASK-R24)', () => {
+		// jsdom has no layout: the stack is at the bottom of a 640 px window, the control is where the
+		// test puts it.
+		const STACK = { top: 400, bottom: 640, left: 0, right: 320, width: 320, height: 240 };
+		let controlRect = { top: 560, bottom: 600, left: 16, right: 200, width: 184, height: 40 };
+
+		beforeEach(() => {
+			window.scrollBy = vi.fn();
+			vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+				this: HTMLElement
+			) {
+				const rect = this.classList.contains('fixed') ? STACK : controlRect;
+				return { x: rect.left, y: rect.top, toJSON: () => ({}), ...rect };
+			});
+		});
+
+		function focusedControl() {
+			const control = document.createElement('button');
+			control.textContent = 'Command';
+			document.body.append(control);
+			control.focus();
+			return control;
+		}
+
+		it('TASK-R24: brings it above the stack once the stack covers it (happy path)', async () => {
+			const control = focusedControl();
+			renderWithApp(app, Notification);
+
+			app.notifications.items = [{ id: 'n1', message: 'Failed', type: 'error' }];
+
+			await waitFor(() => expect(window.scrollBy).toHaveBeenCalled());
+			expect(window.scrollBy).toHaveBeenCalledWith({ top: 208 });
+			expect(document.activeElement).toBe(control);
+			control.remove();
+		});
+
+		it('TASK-R24: leaves the page and the focus alone when the control is above the stack (limit)', async () => {
+			controlRect = { top: 100, bottom: 140, left: 16, right: 200, width: 184, height: 40 };
+			const control = focusedControl();
+			renderWithApp(app, Notification);
+
+			app.notifications.items = [{ id: 'n1', message: 'Failed', type: 'error' }];
+			await waitFor(() => expect(reservedHeight()).toBe(`${STACK_HEIGHT}px`));
+			await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+
+			expect(window.scrollBy).not.toHaveBeenCalled();
+			expect(document.activeElement).toBe(control);
+			control.remove();
+		});
+
+		it('TASK-R24: leaves the page alone when nothing has the focus (limit)', async () => {
+			controlRect = { top: 560, bottom: 600, left: 16, right: 200, width: 184, height: 40 };
+			(document.activeElement as HTMLElement | null)?.blur();
+			renderWithApp(app, Notification);
+
+			app.notifications.items = [{ id: 'n1', message: 'Failed', type: 'error' }];
+			await waitFor(() => expect(reservedHeight()).toBe(`${STACK_HEIGHT}px`));
+			await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+
+			expect(window.scrollBy).not.toHaveBeenCalled();
+		});
+
+		it('TASK-R24: leaves the page alone when there is no toast (boundary)', async () => {
+			controlRect = { top: 560, bottom: 600, left: 16, right: 200, width: 184, height: 40 };
+			const control = focusedControl();
+			renderWithApp(app, Notification);
+			await waitFor(() => expect(reservedHeight()).toBe('0px'));
+			await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+
+			expect(window.scrollBy).not.toHaveBeenCalled();
+			control.remove();
+		});
+	});
 });

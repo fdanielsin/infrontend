@@ -262,4 +262,32 @@ test.describe('Mark all as done: states and keyboard (mocked API)', () => {
 		expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
 		await expectNoAxeViolations(page);
 	});
+
+	test('TASK-R24: after a partial failure the focused command is not under the toasts, in a window of 320 x 640 px (boundary)', async ({
+		page
+	}) => {
+		// GIVEN: A small window and three tasks, one of which will be refused.
+		await page.setViewportSize({ width: 320, height: 640 });
+		const api = await mockApi(page, { users: [ada], tasks: THREE });
+		api.failNext('PUT /tasks/{id}', {
+			status: 500,
+			error: 'Database unavailable',
+			requestId: 'req-1'
+		});
+		await openHomeWithUser(page);
+		await command(page).focus();
+
+		// WHEN: The command is activated with the keyboard, and the two toasts come.
+		await page.keyboard.press('Enter');
+		await expect(
+			page.getByRole('alert').getByText("We couldn't mark every task as done.")
+		).toBeVisible();
+		await expect(command(page)).toBeFocused();
+
+		// THEN: The command is wholly above the stack of toasts, which hides nothing of it.
+		const control = (await command(page).boundingBox())!;
+		const stack = (await page.getByRole('region', { name: 'Notifications' }).boundingBox())!;
+		expect(control.y + control.height).toBeLessThanOrEqual(stack.y);
+		expect(control.y).toBeGreaterThanOrEqual(0);
+	});
 });
