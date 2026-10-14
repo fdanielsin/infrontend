@@ -375,12 +375,12 @@ describe('TaskForm accessibility', () => {
 						error: 'Server error',
 						status: 500
 					}),
-				'Server error'
+				"We couldn't delete the task."
 			],
 			[
 				'the deletion request throws (exception)',
 				() => vi.mocked(api.deleteTask).mockRejectedValue(new Error('Network down')),
-				'Network down'
+				"We couldn't delete the task."
 			]
 		] as const)(
 			'keeps the focus on the list heading when %s, and shows the row again',

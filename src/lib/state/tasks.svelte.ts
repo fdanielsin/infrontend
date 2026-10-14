@@ -42,6 +42,7 @@ export class TaskState {
 			message: (task) => m.tasks_deleted_named({ title: task.title }),
 			undoLabel: m.tasks_undo_delete,
 			failureMessage: m.error_delete_task,
+			fixedFailureMessage: true,
 			putBack: (task, index) => this.#putBack(task, index),
 			whenHidden: 'send'
 		});

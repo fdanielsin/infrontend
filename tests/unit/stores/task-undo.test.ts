@@ -250,25 +250,72 @@ describe('undoable task deletion', () => {
 			expect(app.notifications.items).toEqual([]);
 		});
 
+		const FIXED = "We couldn't delete the task.";
 		it.each([
 			[
+				'an unknown route',
+				() =>
+					vi.mocked(api.deleteTask).mockResolvedValue({
+						success: false,
+						error: 'No route',
+						status: 404,
+						code: 'ROUTE_NOT_FOUND'
+					})
+			],
+			[
+				'a 405',
+				() =>
+					vi.mocked(api.deleteTask).mockResolvedValue({
+						success: false,
+						error: 'No',
+						status: 405,
+						code: 'METHOD_NOT_ALLOWED'
+					})
+			],
+			[
+				'a 400',
+				() =>
+					vi.mocked(api.deleteTask).mockResolvedValue({
+						success: false,
+						error: 'No',
+						status: 400,
+						code: 'INVALID_ID'
+					})
+			],
+			[
+				'a 500',
+				() =>
+					vi.mocked(api.deleteTask).mockResolvedValue({
+						success: false,
+						error: 'Boom',
+						status: 500,
+						code: 'INTERNAL_ERROR'
+					})
+			],
+			[
 				'a refusal',
-				() => vi.mocked(api.deleteTask).mockResolvedValue({ success: false, error: 'HTTP 500' }),
-				'HTTP 500'
+				() => vi.mocked(api.deleteTask).mockResolvedValue({ success: false, error: 'HTTP 500' })
 			],
 			[
 				'an empty refusal',
-				() => vi.mocked(api.deleteTask).mockResolvedValue({ success: false, error: '' }),
-				"We couldn't delete the task."
+				() => vi.mocked(api.deleteTask).mockResolvedValue({ success: false, error: '' })
+			],
+			[
+				'a timeout',
+				() =>
+					vi.mocked(api.deleteTask).mockResolvedValue({
+						success: false,
+						error: 'Request timed out',
+						kind: 'timeout'
+					})
 			],
 			[
 				'a thrown error',
-				() => vi.mocked(api.deleteTask).mockRejectedValue(new Error('Network down')),
-				'Network down'
+				() => vi.mocked(api.deleteTask).mockRejectedValue(new Error('Network down'))
 			]
 		] as const)(
-			'puts the row back at its place and shows the error after %s (sad path, exception)',
-			async (_name, arrange, message) => {
+			'puts the row back at its place and shows the fixed error after %s (sad path, exception)',
+			async (_name, arrange) => {
 				// GIVEN: A server that fails.
 				arrange();
 				app.tasks.remove(second.id);
@@ -276,11 +323,11 @@ describe('undoable task deletion', () => {
 				// WHEN: The deletion is committed.
 				await app.tasks.commitPending();
 
-				// THEN: The row is back where it was and the error is shown.
+				// THEN: The row is back where it was and the error always says the same thing.
 				expect(app.tasks.tasks).toEqual([first, second, third]);
-				expect(lastToast(app)).toBe(message);
+				expect(lastToast(app)).toBe(FIXED);
 				expect(app.notifications.items).toEqual([
-					expect.objectContaining({ message, type: 'error' })
+					expect.objectContaining({ message: FIXED, type: 'error' })
 				]);
 			}
 		);
@@ -323,7 +370,7 @@ describe('undoable task deletion', () => {
 
 			// WHEN: Another user is selected and the refusal arrives.
 			app.tasks.clear(2);
-			await vi.waitFor(() => expect(lastToast(app)).toBe('HTTP 500'));
+			await vi.waitFor(() => expect(lastToast(app)).toBe("We couldn't delete the task."));
 
 			// THEN: The other user's list stays empty.
 			expect(app.tasks.tasks).toEqual([]);

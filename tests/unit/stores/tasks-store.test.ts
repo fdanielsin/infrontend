@@ -202,7 +202,7 @@ describe('tasks store', () => {
 
 		// THEN: The task is listed again and the error is exposed.
 		expect(app.tasks.tasks).toEqual([task]);
-		expect(lastToast(app)).toBe('HTTP 500');
+		expect(lastToast(app)).toBe("We couldn't delete the task.");
 	});
 
 	it('leaves the list unchanged for an id that is not listed (boundary)', async () => {
@@ -226,7 +226,7 @@ describe('tasks store', () => {
 		['removeTask', () => removeAndCommit(app, 10)]
 	] as const)(
 		'%s keeps the list and exposes the message when the API call throws (exception)',
-		async (_name, action) => {
+		async (name, action) => {
 			// GIVEN: Every API call rejects.
 			app.tasks.tasks = [task];
 			vi.mocked(api.createTask).mockRejectedValue(new Error('Network down'));
@@ -238,7 +238,9 @@ describe('tasks store', () => {
 
 			// THEN: The list is unchanged, the error is exposed and loading is over.
 			expect(app.tasks.tasks).toEqual([task]);
-			expect(lastToast(app)).toBe('Network down');
+			expect(lastToast(app)).toBe(
+				name === 'removeTask' ? "We couldn't delete the task." : 'Network down'
+			);
 			expect(app.tasks.status.loading).toBe(false);
 		}
 	);

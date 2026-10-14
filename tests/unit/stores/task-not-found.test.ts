@@ -117,15 +117,17 @@ describe('a task already deleted on the server (TASK_NOT_FOUND)', () => {
 			// GIVEN: Any failure other than TASK_NOT_FOUND.
 			failWith(failure);
 
-			for (const [, action] of actions) {
+			for (const [name, action] of actions) {
 				// WHEN: Each action runs.
 				app.notifications.items = [];
 				await action(second.id);
 
-				// THEN: The error is shown and notified as an error, the task stays.
-				expect(lastToast(app)).toBe(shown);
+				// THEN: The error is shown and notified as an error, the task stays. A deletion always
+				// says the same fixed thing, whatever the failure.
+				const expected = name === 'removeTask' ? "We couldn't delete the task." : shown;
+				expect(lastToast(app)).toBe(expected);
 				expect(app.notifications.items).toEqual([
-					expect.objectContaining({ message: shown, type: 'error' })
+					expect.objectContaining({ message: expected, type: 'error' })
 				]);
 				expect(app.tasks.tasks).toEqual([first, second, third]);
 			}
@@ -197,7 +199,7 @@ describe('a task already deleted on the server (TASK_NOT_FOUND)', () => {
 		await removeAndCommit(second.id);
 
 		// THEN: The error is shown and the task stays.
-		expect(lastToast(app)).toBe('Failed to fetch');
+		expect(lastToast(app)).toBe("We couldn't delete the task.");
 		expect(app.tasks.tasks).toEqual([first, second, third]);
 	});
 });

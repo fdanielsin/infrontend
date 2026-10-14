@@ -115,4 +115,25 @@ test.describe('Undoable task deletion (mocked API)', () => {
 		await expect(page.locator('[data-toast]')).toHaveCount(0);
 		expect(api.tasks).toEqual([]);
 	});
+
+	test('a refused deletion puts the row back with the same words whatever the refusal (limit)', async ({
+		page
+	}) => {
+		// GIVEN: A server that does not know the route (a backend not up to date).
+		await page.clock.install();
+		const api = await mockApi(page, { users: [ada], tasks: adaTasks });
+		api.failNext('DELETE /tasks/{id}', { status: 404, error: 'No route', code: 'ROUTE_NOT_FOUND' });
+		await openHomeWithUser(page);
+
+		// WHEN: The task is deleted and the window ends.
+		await page.getByRole('button', { name: 'Delete Review', exact: true }).click();
+		await page.mouse.move(0, 0);
+		await page.evaluate(() => (document.activeElement as HTMLElement).blur());
+		await page.clock.runFor(6100);
+
+		// THEN: The row is back and the error is the fixed text, not the common one of the route.
+		await expect(page.getByRole('checkbox', { name: 'Review', exact: true })).toBeVisible();
+		await expect(page.getByRole('alert').getByText("We couldn't delete the task.")).toBeVisible();
+		await expect(page.getByText('Resource not found')).toHaveCount(0);
+	});
 });
