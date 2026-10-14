@@ -4,6 +4,8 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-10-14
+
 **À vérifier avant de mettre à jour (de 1.3.0 vers 1.4.0)**
 
 - Le build échoue si `PUBLIC_API_URL` manque ou n'est pas une URL http(s) (image Docker comprise :
@@ -293,7 +295,8 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Stats page.
 
-[Unreleased]: https://github.com/fdanielsin/infrontend/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/fdanielsin/infrontend/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/fdanielsin/infrontend/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/fdanielsin/infrontend/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/fdanielsin/infrontend/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/fdanielsin/infrontend/compare/v1.0.0...v1.1.0
