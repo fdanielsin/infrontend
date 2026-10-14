@@ -28,6 +28,8 @@ Les E2E de `tests/e2e/backend/` nécessitent un backend `inbackend` de test, don
 (`bun run test:e2e:mocked`) et ils se vérifient en local avant chaque merge, comme
 `OPENAPI_URL=http://localhost:8081/openapi.yaml bun run api:check`. Une URL de backend déployé les remplacera en CI plus tard.
 
+Les E2E ne tournent que sur Chromium (en local comme en CI) ; `E2E_ALL_BROWSERS=1` remet Firefox et WebKit (`--project=firefox`, `--project=webkit`).
+
 Le script des E2E réels lance Playwright deux fois : d'abord tous les tests sauf ceux étiquetés `@alone`,
 puis ceux-là seuls, avec `--workers=1` (sortie dans `test-results/e2e-alone`). Un test porte cette étiquette
 quand sa mesure dépend de la charge du banc : la suppression envoyée à la fermeture réelle de la page

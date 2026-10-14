@@ -6,6 +6,14 @@ if (!Number.isInteger(PORT) || PORT < 1 || PORT > 65_535) {
 	throw new Error(`E2E_PORT must be a whole number from 1 to 65535, got "${process.env.E2E_PORT}"`);
 }
 
+// Chromium only by default (decision of 2026-10-15); `E2E_ALL_BROWSERS=1` brings Firefox and WebKit back.
+const ALL_BROWSERS = process.env.E2E_ALL_BROWSERS === '1';
+const projects = [
+	{ name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+	{ name: 'firefox', use: { ...devices['Desktop Firefox'] } },
+	{ name: 'webkit', use: { ...devices['Desktop Safari'] } }
+];
+
 export default defineConfig({
 	testDir: './tests/e2e',
 	testMatch: /.*\.test\.ts/,
@@ -21,20 +29,7 @@ export default defineConfig({
 		trace: 'retain-on-failure'
 	},
 
-	projects: [
-		{
-			name: 'chromium',
-			use: { ...devices['Desktop Chrome'] }
-		},
-		{
-			name: 'firefox',
-			use: { ...devices['Desktop Firefox'] }
-		},
-		{
-			name: 'webkit',
-			use: { ...devices['Desktop Safari'] }
-		}
-	],
+	projects: ALL_BROWSERS ? projects : projects.filter(({ name }) => name === 'chromium'),
 
 	// A production build, not `vite dev`: the dev client reloads the page when its HMR websocket
 	// drops (a stalled machine is enough), which wipes the state of a running test. The port is

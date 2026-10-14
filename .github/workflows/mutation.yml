@@ -36,9 +36,12 @@ jobs:
   stryker:
     name: Stryker
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    # A full run measured 69 % at 30 min (PR 97): ~45 min, hence 60. A pull request only mutates its changed files.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - name: 'Setup Bun'
         uses: oven-sh/setup-bun@v2
@@ -52,8 +55,25 @@ jobs:
         run: bun run i18n:compile
 
       # Fails the job when the mutation score is below thresholds.break.
+      # Pull request: only the changed files of src/lib (same exclusions as `mutate` of
+      # stryker.config.json); push to develop and manual run: all of them.
       - name: 'Run Stryker'
-        run: bunx stryker run --concurrency 2
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          if [ "$EVENT" = "pull_request" ]; then
+            files=$(git diff --name-only --diff-filter=d "$BASE_SHA"...HEAD -- 'src/lib/*.ts' \
+              | grep -vE '\.d\.ts$|\.svelte\.ts$|^src/lib/api/zod/' | paste -sd, - || true)
+            if [ -z "$files" ]; then
+              echo "No mutable file changed in src/lib: nothing to mutate."
+              exit 0
+            fi
+            echo "Mutating: $files"
+            bunx stryker run --concurrency 2 --mutate "$files"
+          else
+            bunx stryker run --concurrency 2
+          fi
 
       - name: 'Upload report'
         if: always()

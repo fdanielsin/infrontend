@@ -71,7 +71,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        browser: [chromium, firefox, webkit]
+        # Chromium only (decision of 2026-10-15); to bring the others back: [chromium, firefox, webkit]
+        # and E2E_ALL_BROWSERS: '1' in the env of the run step.
+        browser: [chromium]
     steps:
       - uses: actions/checkout@v7
 
