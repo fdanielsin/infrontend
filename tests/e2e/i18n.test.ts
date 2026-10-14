@@ -1,8 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { AxeBuilder } from '@axe-core/playwright';
-import { expect, test, type BrowserContext, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { expectAnnounced } from './support/announcement';
+import { setLocaleCookie } from './support/locale';
 import { ada, adaTasks, grace, mockApi } from './support/mock-api';
 
 // Interface languages (I2): cookie, then Accept-Language, then English; no URL prefix.
@@ -31,12 +32,6 @@ function t(locale: Locale, key: string, parameters: Record<string, string> = {})
 		(text, [name, value]) => text.replace(`{${name}}`, value),
 		messages[locale][key] ?? ''
 	);
-}
-
-async function chooseLocaleCookie(context: BrowserContext, locale: string) {
-	await context.addCookies([
-		{ name: 'PARAGLIDE_LOCALE', value: locale, url: 'http://localhost:4173' }
-	]);
 }
 
 // Opens the home page once its data is loaded (hydrated), and selects Ada.
@@ -369,7 +364,7 @@ test.describe('API calls and server errors', () => {
 			context
 		}) => {
 			// GIVEN: The interface in that language and a server that refuses the email.
-			await chooseLocaleCookie(context, locale);
+			await setLocaleCookie(context, locale);
 			const api = await mockApi(page);
 			api.failNext('POST /users', {
 				status: 409,
@@ -401,9 +396,13 @@ test.describe('API calls and server errors', () => {
 		context
 	}) => {
 		// GIVEN: A French interface and a code added by the server later.
-		await chooseLocaleCookie(context, 'fr');
+		await setLocaleCookie(context, 'fr');
 		const api = await mockApi(page);
-		api.failNext('POST /users', { status: 429, error: 'Too many requests', code: 'RATE_LIMITED' });
+		api.failNext('POST /users', {
+			status: 429,
+			error: 'Too many requests',
+			futureCode: 'RATE_LIMITED'
+		});
 		const usersLoaded = page.waitForResponse((response) =>
 			response.url().endsWith('/api/v1/users')
 		);
@@ -429,7 +428,7 @@ test.describe('Reflow (WCAG 1.4.10)', () => {
 			}) => {
 				// GIVEN: A narrow or zoomed window (640 px = 1280 px at 200 %).
 				await page.setViewportSize({ width, height: 800 });
-				await chooseLocaleCookie(context, locale);
+				await setLocaleCookie(context, locale);
 				await mockApi(page, { users: [ada] });
 
 				for (const path of ['/', '/stats']) {
@@ -475,7 +474,7 @@ test.describe('Accessibility in every language (axe)', () => {
 			context
 		}) => {
 			// GIVEN: The interface in that language.
-			await chooseLocaleCookie(context, locale);
+			await setLocaleCookie(context, locale);
 			const api = await mockApi(page, { users: [ada, grace], tasks: adaTasks });
 
 			// WHEN / THEN: Home with a selected user and tasks.

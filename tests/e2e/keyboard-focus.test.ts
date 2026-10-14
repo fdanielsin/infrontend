@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { nextFocusKey } from './support/keyboard';
 import { measure, worstContrast } from './support/contrast';
+import { setLocaleCookie, type Locale } from './support/locale';
 import { ada, adaTasks, mockApi, openHomeWithUser } from './support/mock-api';
 
 // Keyboard and focus behavior in a real browser, with a mocked API. Actions use
@@ -300,23 +301,21 @@ test.describe('Keyboard and focus (mocked API)', () => {
 	});
 
 	test.describe('skip link', () => {
-		const SKIP_LINK = {
+		const SKIP_LINK: Record<Locale, string> = {
 			en: 'Skip to main content',
 			fr: 'Aller au contenu principal',
 			de: 'Zum Hauptinhalt springen',
 			es: 'Saltar al contenido principal'
-		} as const;
+		};
 
-		for (const [locale, name] of Object.entries(SKIP_LINK)) {
+		for (const [locale, name] of Object.entries(SKIP_LINK) as [Locale, string][]) {
 			test(`the first Tab reaches the skip link in ${locale}; it shows, and Enter moves the focus into the page (happy path)`, async ({
 				page,
 				context,
 				browserName
 			}) => {
 				// GIVEN: A page in the language.
-				await context.addCookies([
-					{ name: 'PARAGLIDE_LOCALE', value: locale, url: 'http://localhost:4173' }
-				]);
+				await setLocaleCookie(context, locale);
 				await mockApi(page, { users: [ada], tasks: adaTasks });
 				const usersLoaded = page.waitForResponse(
 					(response) =>

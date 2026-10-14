@@ -19,17 +19,30 @@ export function text(locale: Locale, key: string, params: Record<string, string>
 		) as Record<string, string>;
 		catalogs.set(locale, catalog);
 	}
+	const message = catalog[key];
+	if (message === undefined) throw new Error(`No message "${key}" in messages/${locale}.json`);
 	return Object.entries(params).reduce(
-		(message, [name, value]) => message.replace(`{${name}}`, value),
-		catalog[key] ?? ''
+		(text, [name, value]) => text.replace(`{${name}}`, value),
+		message
 	);
 }
 
-// The language of the interface before the page is opened: the cookie that the language selector writes.
+// The cookie that the language selector writes, for the server of this run: `E2E_PORT`, like
+// `playwright.config.ts` (4173 without it).
+export function localeCookie(
+	locale: Locale,
+	env: Record<string, string | undefined> = process.env
+) {
+	return {
+		name: 'PARAGLIDE_LOCALE',
+		value: locale,
+		url: `http://localhost:${env.E2E_PORT || 4173}`
+	};
+}
+
+// The language of the interface before the page is opened.
 export async function setLocaleCookie(context: BrowserContext, locale: Locale): Promise<void> {
-	await context.addCookies([
-		{ name: 'PARAGLIDE_LOCALE', value: locale, url: 'http://localhost:4173' }
-	]);
+	await context.addCookies([localeCookie(locale)]);
 }
 
 // Chooses a language in the selector of the page, as a user does: the page changes without a reload.

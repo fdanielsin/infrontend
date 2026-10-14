@@ -3,6 +3,7 @@ import { AxeBuilder } from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { measure, worstContrast } from './support/contrast';
 import { expectAnnounced, expectSilent } from './support/announcement';
+import { setLocaleCookie } from './support/locale';
 import { ada, mockApi, openHomeWithUser, type MockTask } from './support/mock-api';
 
 // Sorting of the task list, with a mocked API. Creation order of the tasks below: Banana, apple,
@@ -199,9 +200,7 @@ test.describe('Task sorting (mocked API)', () => {
 	});
 
 	test('orders "ñ" after "n" in Spanish only (limit)', async ({ page, context }) => {
-		await context.addCookies([
-			{ name: 'PARAGLIDE_LOCALE', value: 'es', url: 'http://localhost:4173' }
-		]);
+		await setLocaleCookie(context, 'es');
 		await mockApi(page, {
 			users: [ada],
 			tasks: [task(1, 'Ñu'), task(2, 'Nz'), task(3, 'Nube'), task(4, 'Oso')]
@@ -220,9 +219,7 @@ test.describe('Task sorting (mocked API)', () => {
 			context
 		}) => {
 			// GIVEN: Each interface language on the narrowest screen, with a 200-character title.
-			await context.addCookies([
-				{ name: 'PARAGLIDE_LOCALE', value: locale, url: 'http://localhost:4173' }
-			]);
+			await setLocaleCookie(context, locale);
 			await page.setViewportSize({ width: 320, height: 700 });
 			await page.emulateMedia({ reducedMotion: 'reduce' });
 			await mockApi(page, {

@@ -1,4 +1,5 @@
-import { expect, test, type BrowserContext, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+import { setLocaleCookie } from './support/locale';
 import { ada, mockApi, type MockTask, type MockUser } from './support/mock-api';
 
 // Layout (320 px, WCAG 1.4.10): whatever a user typed, at the longest length the API accepts and
@@ -19,12 +20,6 @@ const LONGEST_TASKS: MockTask[] = [
 	{ id: 10, title: 'T'.repeat(200), description: 'D'.repeat(2000), user_id: 1, completed: false },
 	{ id: 11, title: 'é<&>'.repeat(50), description: 'é<&>'.repeat(500), user_id: 1, completed: true }
 ];
-
-async function chooseLocaleCookie(context: BrowserContext, locale: Locale) {
-	await context.addCookies([
-		{ name: 'PARAGLIDE_LOCALE', value: locale, url: 'http://localhost:4173' }
-	]);
-}
 
 // Elements (and the document) whose right edge is past the window.
 async function overflowing(page: Page) {
@@ -127,7 +122,7 @@ test.describe('Layout without sideways scroll (mocked API)', () => {
 				}) => {
 					// GIVEN: A user and tasks at the maximum length of every field, in one language.
 					await page.setViewportSize({ width, height: 800 });
-					await chooseLocaleCookie(context, locale);
+					await setLocaleCookie(context, locale);
 					await mockApi(page, {
 						users: [LONGEST_USER],
 						tasks: LONGEST_TASKS,
