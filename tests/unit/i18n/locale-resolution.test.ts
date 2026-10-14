@@ -17,6 +17,7 @@ async function renderedHtml(headers: Record<string, string>) {
 	const event = {
 		request: requestWith(headers),
 		url: new URL('http://localhost/'),
+		locals: {},
 		setHeaders: vi.fn()
 	};
 	const resolve = vi.fn(async (_event: RequestEvent, options?: ResolveOptions) => {

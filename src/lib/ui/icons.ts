@@ -2,11 +2,13 @@ import type { Component } from 'svelte';
 import type { SvelteHTMLElements } from 'svelte/elements';
 import Check from '~icons/iconoir/check';
 import CheckCircle from '~icons/iconoir/check-circle';
+import Computer from '~icons/iconoir/computer';
 import Copy from '~icons/iconoir/copy';
 import EditPencil from '~icons/iconoir/edit-pencil';
 import Filter from '~icons/iconoir/filter';
 import GraphUp from '~icons/iconoir/graph-up';
 import Group from '~icons/iconoir/group';
+import HalfMoon from '~icons/iconoir/half-moon';
 import InfoCircle from '~icons/iconoir/info-circle';
 import List from '~icons/iconoir/list';
 import NavArrowLeft from '~icons/iconoir/nav-arrow-left';
@@ -15,6 +17,7 @@ import Plus from '~icons/iconoir/plus';
 import Refresh from '~icons/iconoir/refresh';
 import Sort from '~icons/iconoir/sort';
 import StatsReport from '~icons/iconoir/stats-report';
+import SunLight from '~icons/iconoir/sun-light';
 import Undo from '~icons/iconoir/undo';
 import WarningCircle from '~icons/iconoir/warning-circle';
 import WarningTriangle from '~icons/iconoir/warning-triangle';
@@ -25,11 +28,13 @@ import Xmark from '~icons/iconoir/xmark';
 export const ICONS = {
 	check: Check,
 	'check-circle': CheckCircle,
+	computer: Computer,
 	copy: Copy,
 	'edit-pencil': EditPencil,
 	filter: Filter,
 	'graph-up': GraphUp,
 	group: Group,
+	'half-moon': HalfMoon,
 	'info-circle': InfoCircle,
 	list: List,
 	'nav-arrow-left': NavArrowLeft,
@@ -38,6 +43,7 @@ export const ICONS = {
 	refresh: Refresh,
 	sort: Sort,
 	'stats-report': StatsReport,
+	'sun-light': SunLight,
 	undo: Undo,
 	'warning-circle': WarningCircle,
 	'warning-triangle': WarningTriangle,

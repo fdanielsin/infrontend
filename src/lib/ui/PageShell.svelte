@@ -4,6 +4,7 @@
 	import Icon from '$lib/ui/Icon.svelte';
 	import type { IconName } from '$lib/ui/icons';
 	import LanguageSwitcher from '$lib/ui/LanguageSwitcher.svelte';
+	import ThemeSwitcher from '$lib/ui/ThemeSwitcher.svelte';
 
 	interface Props extends HTMLAttributes<HTMLElement> {
 		heading: string;
@@ -40,8 +41,9 @@
 >
 	<div class="mx-auto max-w-6xl">
 		<header class="mb-8">
-			<div class="mb-4 flex justify-end">
+			<div class="mb-4 flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
 				<LanguageSwitcher />
+				<ThemeSwitcher />
 			</div>
 			<h1 class="text-2xl font-bold wrap-break-word hyphens-auto text-heading sm:text-4xl">
 				{#if icon}<Icon {icon} size={24} class="inline align-text-bottom" />{/if}

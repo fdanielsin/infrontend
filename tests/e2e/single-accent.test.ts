@@ -381,13 +381,13 @@ test.describe('Statistics tiles (mocked API)', () => {
 		test(`the three tiles share the width of the content, as on the home page, at ${width} px (boundary)`, async ({
 			page
 		}) => {
-			// GIVEN: The statistics page, whose title and language switcher mark the content edges.
+			// GIVEN: The statistics page, whose title and last selector (the theme group, after the language) mark the content edges.
 			await page.setViewportSize({ width, height: 900 });
 			await mockApi(page, { users: [ada], tasks: adaTasks, stats: { users: 5, tasks: 12 } });
 			await page.goto('/stats');
 			await expect(page.locator('[data-stat]')).toHaveCount(3);
 			const heading = (await page.getByRole('heading', { level: 1 }).boundingBox())!;
-			const language = (await page.getByRole('combobox', { name: 'Language' }).boundingBox())!;
+			const selectors = (await page.getByRole('radiogroup', { name: 'Theme' }).boundingBox())!;
 
 			// WHEN: The tiles are measured.
 			const tiles = await page
@@ -396,12 +396,12 @@ test.describe('Statistics tiles (mocked API)', () => {
 					nodes.map((node) => node.getBoundingClientRect()).map(({ x, width }) => ({ x, width }))
 				);
 
-			// THEN: Equal widths, from the left edge of the title to the right edge of the switcher.
+			// THEN: Equal widths, from the left edge of the title to the right edge of the selectors.
 			expect(tiles).toHaveLength(3);
 			for (const tile of tiles) expect(tile.width).toBeCloseTo(tiles[0]!.width, 0);
 			expect(tiles[0]!.x).toBeCloseTo(heading.x, 0);
 			const last = tiles[2]!;
-			expect(last.x + last.width).toBeCloseTo(language.x + language.width, 0);
+			expect(last.x + last.width).toBeCloseTo(selectors.x + selectors.width, 0);
 		});
 	}
 

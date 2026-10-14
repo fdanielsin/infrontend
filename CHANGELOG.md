@@ -4,6 +4,12 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- A "Theme" selector (sun, moon, screen: Light, Dark, System) sits next to the language selector on both
+  pages. The choice is kept in a `theme` cookie and written into the HTML by the server, with no flash
+  at load. The dark palette is not shipped yet: the choice changes no color for now.
+
 ### Changed
 
 - The white of the primary button and of the toasts is named by three color tokens (`on-primary`,

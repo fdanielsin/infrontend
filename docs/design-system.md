@@ -64,6 +64,7 @@ commentaire du jeton. Ratios mesurés (WCAG 1.4.3 texte 4,5:1, 1.4.11 non-texte 
 | `danger` / `-hover`, `danger-soft`                         | red-700 / 900, 100                      | l'unique couleur d'erreur, fond d'erreur                                                        | 5,21:1 ou plus sur blanc, gray-100, red-100, dégradé                                                                                                               |
 | `info`                                                     | gray-800                                | fond du toast d'information                                                                     | blanc dessus 14,7:1 ; jamais la couleur d'une action                                                                                                               |
 | `success-edge`, `danger-edge`, `warning-edge`, `info-edge` | green-900, red-950, amber-900, gray-950 | bord gauche de 4 px d'un toast                                                                  | 3:1 ou plus sur la page (`tests/e2e/icons.test.ts`)                                                                                                                |
+| `accent`                                                   | blue-600                                | bordure du bouton actif du groupe de thème                                                      | 4,27:1 sur la fin du dégradé (valeur du designer, `appearance.md` « Jeu de jetons sombre »)                                                                        |
 | `focus`, `focus-inverse`                                   | blue-700, blanc                         | contour de focus                                                                                | 6,83 blanc, 5,55 indigo-100 ; inverse 4,95 ou plus sur les toasts (succès 4,95, avertissement 5,03, erreur 6,42, info 6,83)                                        |
 | `on-primary`, `on-toast`, `on-toast-hover`                 | blanc, blanc, blanc à 20 %              | texte du bouton principal, texte et contours sur un toast coloré, survol d'un contrôle de toast | mêmes valeurs que `focus-inverse` et que les blancs écrits avant ; `tests/unit/architecture/no-hardcoded-colors.test.ts` refuse toute couleur hors `layout.css`    |
 
@@ -554,6 +555,20 @@ nouvelle langue (« Langue modifiée : Français »), dans la région d'annonce 
 focus reste sur le sélecteur), sans toast : la page vient de changer sous les yeux et un toast
 recouvrait les actions de la liste. Preuve : `tests/e2e/i18n.test.ts`,
 `tests/unit/components/LanguageSwitcher.test.ts`.
+
+### ThemeSwitcher
+
+Trois vrais boutons radio (`name="theme"`) dans un `radiogroup` nommé par son libellé visible
+(« Theme »), après `LanguageSwitcher` dans la rangée d'en-tête de `PageShell` : soleil (`sun-light`,
+« Light »), lune (`half-moon`, « Dark »), écran (`computer`, « System »). Le nom accessible est le
+texte `sr-only` du `<label>`, repris dans `title` ; l'icône est décorative. Un seul arrêt de
+tabulation, les flèches déplacent et choisissent. Position active : fond `primary`, icône
+`on-primary`, bordure 2 px `accent` (pas la couleur de fond seule) ; focus : le contour unique du
+projet, sur le `<label>` (`has-focus-visible`). Cible `size-8`, `size-11` au toucher. Le choix est
+écrit dans le cookie `theme` (`light` ou `dark`, « System » l'efface) et dans `data-theme` de
+`<html>` ; aucune annonce. Tant que la palette sombre n'est pas livrée, le choix ne change que
+l'attribut : le rendu reste clair. Preuve : `tests/unit/components/ThemeSwitcher.test.ts`,
+`tests/e2e/theme-selector.test.ts`.
 
 ### AvailabilityBanner et ApiVersion
 

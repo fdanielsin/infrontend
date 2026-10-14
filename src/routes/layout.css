@@ -50,6 +50,9 @@
 	--color-info-edge: var(--color-gray-950);
 
 	/* Focus: the one outline of the interface (3:1 or more on white, gray-100, blue-100 and the page gradient) */
+	--color-accent: var(
+		--color-blue-600
+	); /* selection edge: the theme group (4.27:1 on the page's end) */
 	--color-focus: var(--color-blue-700); /* 5.55:1 on indigo-100, 6.83:1 on white */
 	--color-focus-inverse: var(--color-white); /* on the colored toasts: 4.95:1 or more */
 

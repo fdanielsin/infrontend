@@ -1,8 +1,10 @@
 import { createContext } from 'svelte';
 import type { Locale } from '$lib/paraglide/runtime';
+import type { ExplicitTheme } from '$lib/theme/theme';
 import { AvailabilityState } from './availability.svelte';
 import { LocaleState } from './locale.svelte';
 import { NotificationState } from './notification.svelte';
+import { ThemeState } from './theme.svelte';
 import { TaskFilterState } from './task-filter.svelte';
 import { TaskOrderState } from './task-order.svelte';
 import { TaskState } from './tasks.svelte';
@@ -10,12 +12,18 @@ import { UserState } from './users.svelte';
 
 export class AppState {
 	readonly locale = new LocaleState();
+	readonly theme: ThemeState;
 	readonly notifications = new NotificationState();
 	readonly availability = new AvailabilityState(this.notifications);
 	readonly taskOrder = new TaskOrderState();
 	readonly taskFilter = new TaskFilterState();
 	readonly tasks = new TaskState(this.notifications);
 	readonly users = new UserState(this.tasks, this.notifications);
+
+	// `theme` is the choice the server rendered from the cookie, null for System.
+	constructor(theme: ExplicitTheme | null = null) {
+		this.theme = new ThemeState(theme);
+	}
 
 	// Stops every timer the state owns. Pending deletions are dropped, not sent.
 	destroy() {

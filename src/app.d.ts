@@ -5,7 +5,10 @@ import 'unplugin-icons/types/svelte';
 declare global {
 	namespace App {
 		// interface Error {}
-		// interface Locals {}
+		interface Locals {
+			// The theme the cookie asks for, null for System.
+			theme: import('$lib/theme/theme').ExplicitTheme | null;
+		}
 		// interface PageData {}
 		// interface PageState {}
 		// interface Platform {}
