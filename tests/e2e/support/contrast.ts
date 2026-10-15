@@ -26,7 +26,7 @@ export function contrast(first: Rgb, second: Rgb): number {
 
 // Resolves any CSS color (the palette is in oklch) to sRGB through a canvas, and walks up from
 // the element's parent to the first opaque background (an outline or a border is drawn against
-// what surrounds the element, not against its own fill); the page gradient is read from its two tokens.
+// what surrounds the element, not against its own fill); the page gradient is read from `--color-page-from` and `--color-page-to`.
 export async function measure(
 	locator: Locator,
 	property: 'outlineColor' | 'color' | 'borderTopColor' | 'borderLeftColor',
@@ -47,11 +47,17 @@ export async function measure(
 			};
 			const rgb = (css: string): [number, number, number] =>
 				resolve(css).slice(0, 3) as [number, number, number];
-			const root = getComputedStyle(document.documentElement);
-			const gradient = [
-				rgb(root.getPropertyValue('--color-blue-50')),
-				rgb(root.getPropertyValue('--color-indigo-100'))
-			];
+			// The two ends of the gradient, as painted for the scheme in force: read through a probe, since the
+			// tokens are `light-dark()` values that only resolve on an element.
+			const painted = (token: string) => {
+				const probe = document.createElement('div');
+				probe.style.setProperty('background-color', `var(${token})`);
+				document.body.append(probe);
+				const color = getComputedStyle(probe).backgroundColor;
+				probe.remove();
+				return rgb(color);
+			};
+			const gradient = [painted('--color-page-from'), painted('--color-page-to')];
 			const backgrounds: [number, number, number][] = [];
 			for (
 				let node: Element | null = origin === 'self' ? element : element.parentElement;
