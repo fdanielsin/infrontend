@@ -367,6 +367,42 @@ describe('"Mark all as done" on the task list (TASK-R22 to R26, screen)', () => 
 			expect(vi.mocked(api.updateTask).mock.calls.map(([id]) => id)).toEqual([1, 2, 20]);
 		});
 
+		async function markThenSwitchToSecondUser() {
+			app.tasks.tasks = [todo(1), todo(2)];
+			serve(app.tasks.tasks);
+			const other = { id: 2, name: 'Bob', email: 'bob@example.com' };
+			const view = renderWithApp(app, TaskFormKeyedUser, { first: user, second: other });
+			const button = view.getByRole('button', { name: COMMAND });
+			button.focus();
+			await fireEvent.click(button);
+			await settle();
+			app.tasks.clear(2);
+			app.tasks.tasks = [{ ...todo(20), user_id: 2 }];
+			await fireEvent.click(view.getByRole('button', { name: 'Select the second user' }));
+			await settle();
+			return view;
+		}
+
+		it('TASK-R25: puts the focus on the heading of the list on the page when Undo is pressed after a change of user (limit)', async () => {
+			const view = await markThenSwitchToSecondUser();
+
+			await fireEvent.click(view.getByRole('button', { name: 'Undo' }));
+			await settle();
+
+			expect(document.activeElement).toBe(heading(view));
+		});
+
+		it('TASK-R25: puts the focus on the heading of the list on the page when the toast leaves after a change of user (limit)', async () => {
+			const view = await markThenSwitchToSecondUser();
+			const dismiss = view.getByRole('button', { name: 'Dismiss notification' });
+			dismiss.focus();
+
+			await fireEvent.click(dismiss);
+			await settle();
+
+			expect(document.activeElement).toBe(heading(view));
+		});
+
 		it('TASK-R25: leaves the focus where it is when the command was activated without the focus (limit)', async () => {
 			const view = open([todo(1), todo(2)]);
 			const other = view.getByLabelText('Show');

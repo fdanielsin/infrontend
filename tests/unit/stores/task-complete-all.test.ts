@@ -614,6 +614,35 @@ describe('mark every task as done (TASK-R22 to R26)', () => {
 			await first;
 		});
 
+		it('TASK-R26: keeps the second user busy when the Undo of the first user ends meanwhile (limit)', async () => {
+			// GIVEN: User 1 marked his task and has an Undo toast; user 2 starts an operation, late.
+			const late = deferred<void>();
+			vi.mocked(api.updateTask).mockImplementation(async (id, body) => {
+				if (id >= 20 && body.completed === true) await late.promise;
+				return { success: true, data: { ...task(id, body.completed ?? false) } };
+			});
+			app.tasks.tasks = [task(1)];
+			await app.tasks.markAllDone();
+			const firstUndo = undoToast()!;
+			app.tasks.clear(2);
+			app.tasks.tasks = [task(20, false, 2)];
+			const second = app.tasks.markAllDone();
+			await vi.waitFor(() => expect(api.updateTask).toHaveBeenCalledTimes(2));
+			vi.mocked(api.getUserTasks).mockResolvedValue({ success: true, data: [task(1, true)] });
+
+			// WHEN: The Undo of user 1 runs to its end, then user 2 activates again.
+			app.notifications.runAction(firstUndo.id);
+			await vi.waitFor(() => expect(api.updateTask).toHaveBeenCalledTimes(3));
+			await vi.waitFor(() => expect(app.notifications.announcement).not.toBeNull());
+			app.tasks.tasks = [task(20, false, 2)];
+			await app.tasks.markAllDone();
+
+			// THEN: His first operation is still the only one: nothing more was sent for him.
+			expect(sent().filter(([id]) => id === 20)).toHaveLength(1);
+			late.resolve();
+			await second;
+		});
+
 		it('saves the tasks of the first user and leaves the list of the second untouched (criterion 21)', async () => {
 			// GIVEN: An operation in flight for user 1.
 			const late = deferred<void>();

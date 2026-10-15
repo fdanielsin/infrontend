@@ -115,6 +115,9 @@ test.describe('Mark all as done: layout and texts (mocked API)', () => {
 				const box = (await locator.boundingBox())!;
 				return box.y + box.height;
 			};
+			// AND: It keeps its own height (a button of 42 px), it is not stretched to the height of a list
+			// with its label above (about 53 px).
+			expect((await command(page).boundingBox())!.height).toBeLessThanOrEqual(46);
 			for (const select of [page.locator('#task-filter'), page.locator('#task-order')]) {
 				expect(
 					Math.abs((await bottom(command(page))) - (await bottom(select)))
@@ -138,6 +141,29 @@ test.describe('Mark all as done: layout and texts (mocked API)', () => {
 		expect(button.height).toBeLessThan(60);
 		expect(await command(page).evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
 		expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
+	});
+});
+
+test.describe('Mark all as done: look (mocked API)', () => {
+	test('TASK-R22: is a secondary button, like the other choices, never the accent of the view (happy path)', async ({
+		page
+	}) => {
+		// GIVEN: The page with a selected user, so that "Add Task" (primary) and "View Statistics"
+		// (a link with the secondary look) are on it.
+		await mockApi(page, { users: [ada], tasks: THREE });
+		await openHomeWithUser(page);
+		const paint = (locator: ReturnType<Page['locator']>) =>
+			locator.evaluate((el) => {
+				const s = getComputedStyle(el);
+				return { background: s.backgroundColor, color: s.color, border: s.borderTopColor };
+			});
+
+		// THEN: The command is painted like a secondary button, and not like the primary one.
+		const commandPaint = await paint(command(page));
+		const secondary = await paint(page.getByRole('link', { name: 'View Statistics' }));
+		const primary = await paint(page.getByRole('button', { name: 'Add Task', exact: true }));
+		expect(commandPaint).toEqual(secondary);
+		expect(commandPaint.background).not.toBe(primary.background);
 	});
 });
 

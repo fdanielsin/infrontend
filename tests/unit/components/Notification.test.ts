@@ -873,6 +873,7 @@ describe('Notification component', () => {
 		let controlRect = { top: 560, bottom: 600, left: 16, right: 200, width: 184, height: 40 };
 
 		beforeEach(() => {
+			controlRect = { top: 560, bottom: 600, left: 16, right: 200, width: 184, height: 40 };
 			window.scrollBy = vi.fn();
 			vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
 				this: HTMLElement

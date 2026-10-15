@@ -217,9 +217,7 @@
 	// The heading of the list on the page: the one of this component, or, when the selected user
 	// changed and this panel is gone, the one of the panel that replaced it.
 	const focusHeading = () =>
-		refs.tasksHeading?.isConnected
-			? refs.tasksHeading
-			: (document.querySelector<HTMLElement>('[data-tasks-heading]') ?? undefined);
+		refs.tasksHeading ?? document.querySelector<HTMLElement>('[data-tasks-heading]') ?? undefined;
 
 	// False once the panel is destroyed (another user was selected): what is left of it moves no focus.
 	let alive = true;
@@ -258,7 +256,7 @@
 	// Undo is done: the command that came back takes the focus, unless the selected user changed.
 	async function focusAfterUndo(userId: number) {
 		await tick();
-		if (alive && userId === user.id && refs.markAllCommand?.isConnected) {
+		if (userId === user.id && refs.markAllCommand?.isConnected) {
 			refs.markAllCommand.focus();
 		} else {
 			focusHeading()?.focus();
@@ -345,7 +343,7 @@
 			{#if remaining > 0}
 				<Button
 					variant="secondary"
-					class="min-h-11 w-full sm:min-h-0 sm:w-auto"
+					class="min-h-11 sm:min-h-0"
 					disabled={editingTaskId !== null}
 					aria-busy={marking}
 					onclick={() => void handleMarkAll()}
