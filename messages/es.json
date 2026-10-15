@@ -68,6 +68,8 @@
 	"tasks_delete_named": "Eliminar {title}",
 	"tasks_deleted_named": "Tarea eliminada: {title}",
 	"tasks_undo_delete": "Deshacer",
+	"tasks_mark_all_done": "Marcar todo como hecho",
+	"tasks_marking_all": "Marcando…",
 	"tasks_marked_all_done": "Todas las tareas marcadas como hechas",
 	"tasks_marked_some_done": "Tareas marcadas como hechas: {count}",
 	"tasks_marked_todo": "Tareas devueltas a pendientes: {count}",

@@ -29,8 +29,11 @@
 	// it fully above the stack, without ever pushing its top out of the window.
 	let stack: HTMLElement | undefined = $state();
 	function keepClearOfStack(event: FocusEvent) {
-		const target = event.target;
-		if (!stack || reservedHeight === 0 || !(target instanceof HTMLElement)) return;
+		if (event.target instanceof HTMLElement) clearOfStack(event.target);
+	}
+
+	function clearOfStack(target: HTMLElement) {
+		if (!stack || reservedHeight === 0) return;
 		if (target.closest('[data-toast]')) {
 			target.scrollIntoView({ block: 'nearest' });
 			return;
@@ -42,6 +45,18 @@
 		const clearance = control.bottom - toasts.top + 8;
 		window.scrollBy({ top: Math.max(0, Math.min(clearance, control.top - 8)) });
 	}
+
+	// A toast arrives while a control already has the focus (a command that stays after a partial
+	// failure, a checkbox whose update was refused): no focus event comes, and the stack may now
+	// cover that control. Once the stack has its size, the control is brought above it.
+	$effect(() => {
+		if (reservedHeight === 0) return;
+		const frame = requestAnimationFrame(() => {
+			const active = document.activeElement;
+			if (active instanceof HTMLElement && active !== document.body) clearOfStack(active);
+		});
+		return () => cancelAnimationFrame(frame);
+	});
 
 	// Where focus was before it entered the toasts: a dismissal gives it back there.
 	let focusOrigin: HTMLElement | null = null;

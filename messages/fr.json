@@ -68,6 +68,8 @@
 	"tasks_delete_named": "Supprimer {title}",
 	"tasks_deleted_named": "Tâche supprimée : {title}",
 	"tasks_undo_delete": "Annuler",
+	"tasks_mark_all_done": "Tout marquer comme terminé",
+	"tasks_marking_all": "Marquage…",
 	"tasks_marked_all_done": "Toutes les tâches sont marquées comme terminées",
 	"tasks_marked_some_done": "Tâches marquées comme terminées : {count}",
 	"tasks_marked_todo": "Tâches remises à faire : {count}",

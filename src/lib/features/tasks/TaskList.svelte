@@ -2,6 +2,8 @@
 	import { flushSync, tick, untrack } from 'svelte';
 	import type { Attachment } from 'svelte/attachments';
 	import { ref } from '$lib/ui/attachments';
+	import { focusIfInToast, focusUndoButton } from '$lib/ui/toast-focus';
+	import Button from '$lib/ui/Button.svelte';
 	import Icon from '$lib/ui/Icon.svelte';
 	import Select from '$lib/ui/Select.svelte';
 	import { m } from '$lib/paraglide/messages';
@@ -72,7 +74,10 @@
 	let savingEdit = $state(false);
 
 	const refs: Partial<
-		Record<'tasksHeading' | 'editForm' | 'editTitleInput' | 'editDescriptionInput', HTMLElement>
+		Record<
+			'tasksHeading' | 'editForm' | 'editTitleInput' | 'editDescriptionInput' | 'markAllCommand',
+			HTMLElement
+		>
 	> = {};
 	const editButtons: Record<number, HTMLElement | undefined> = {};
 
@@ -209,30 +214,53 @@
 		(document.getElementById(`task-${taskId}`) ?? refs.tasksHeading)?.focus();
 	}
 
-	// The row that had the focus is gone: the focus goes to the Undo button of its toast, which
-	// pauses the timer while it stays there (WCAG 2.2.1). The newest toast is the last one.
-	async function focusUndoButton() {
-		await tick();
-		const buttons = document.querySelectorAll<HTMLElement>('[data-toast-action]');
-		const undo = buttons[buttons.length - 1];
-		// Firefox shows no focus ring on a button focused by script after the focused control went
-		// away; `focusVisible` asks for it (ignored where unsupported).
-		if (undo) undo.focus({ focusVisible: true });
-		else refs.tasksHeading?.focus();
-	}
+	// The heading of the list on the page: the one of this component, or, when the selected user
+	// changed and this panel is gone, the one of the panel that replaced it.
+	const focusHeading = () =>
+		refs.tasksHeading ?? document.querySelector<HTMLElement>('[data-tasks-heading]') ?? undefined;
 
-	// The toast leaves with the focus on it: back to the list heading, not to <body>. A focus that
-	// went elsewhere in the meantime stays where it is.
-	function focusHeadingIfInToast() {
-		const active = document.activeElement;
-		if (!active || active === document.body || active.closest('[data-toast]')) {
-			refs.tasksHeading?.focus();
-		}
-	}
+	// False once the panel is destroyed (another user was selected): what is left of it moves no focus.
+	let alive = true;
+	$effect(() => () => {
+		alive = false;
+	});
 
 	async function handleRemoveTask(taskId: number) {
-		tasks.remove(taskId, { onundo: focusRestoredRow, onleave: focusHeadingIfInToast });
-		await focusUndoButton();
+		tasks.remove(taskId, { onundo: focusRestoredRow, onleave: () => focusIfInToast(focusHeading) });
+		await focusUndoButton(focusHeading);
+	}
+
+	// The command sends one request per task; the result is the toast with Undo (TASK-R22 to R26).
+	// `marking` is true only while the tasks are being marked: Undo shows nothing on the command,
+	// which is absent then, since every task is still done.
+	let marking = $state(false);
+
+	async function handleMarkAll() {
+		if (marking || editingTaskId !== null) return;
+		const hadFocus = document.activeElement === refs.markAllCommand;
+		const userId = user.id;
+		marking = true;
+		try {
+			await tasks.markAllDone({
+				onundo: () => void focusAfterUndo(userId),
+				onleave: () => focusIfInToast(focusHeading)
+			});
+		} finally {
+			marking = false;
+		}
+		await tick();
+		if (!alive) return;
+		if (hadFocus && !refs.markAllCommand?.isConnected) await focusUndoButton(focusHeading);
+	}
+
+	// Undo is done: the command that came back takes the focus, unless the selected user changed.
+	async function focusAfterUndo(userId: number) {
+		await tick();
+		if (userId === user.id && refs.markAllCommand?.isConnected) {
+			refs.markAllCommand.focus();
+		} else {
+			focusHeading()?.focus();
+		}
 	}
 
 	// The toggle took the row out of the filter: the focus goes to the row that took its place (else
@@ -277,6 +305,7 @@
 <div>
 	<h3
 		{@attach ref(refs, 'tasksHeading')}
+		data-tasks-heading
 		{@attach revealTasks}
 		tabindex="-1"
 		class="mb-3 font-semibold"
@@ -290,7 +319,7 @@
 			<p class="mt-1 text-sm text-subtle">{m.tasks_empty_hint()}</p>
 		</div>
 	{:else}
-		<div class="mb-3 flex flex-col gap-3 sm:flex-row sm:gap-x-4">
+		<div class="mb-3 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:gap-x-4">
 			<Select
 				id="task-filter"
 				stacked
@@ -310,6 +339,19 @@
 					options={orderOptions}
 					onchange={chooseOrder}
 				/>
+			{/if}
+			{#if remaining > 0}
+				<Button
+					variant="secondary"
+					class="min-h-11 sm:min-h-0"
+					disabled={editingTaskId !== null}
+					aria-busy={marking}
+					onclick={() => void handleMarkAll()}
+					{@attach ref(refs, 'markAllCommand')}
+				>
+					<Icon icon="check" size={20} class="mr-1 inline align-text-bottom" />
+					{marking ? m.tasks_marking_all() : m.tasks_mark_all_done()}
+				</Button>
 			{/if}
 		</div>
 		{#if visibleTasks.length === 0}

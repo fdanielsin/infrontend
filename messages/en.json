@@ -68,6 +68,8 @@
 	"tasks_delete_named": "Delete {title}",
 	"tasks_deleted_named": "Task deleted: {title}",
 	"tasks_undo_delete": "Undo",
+	"tasks_mark_all_done": "Mark all as done",
+	"tasks_marking_all": "Marking…",
 	"tasks_marked_all_done": "All tasks marked as done",
 	"tasks_marked_some_done": "Tasks marked as done: {count}",
 	"tasks_marked_todo": "Tasks marked as to do: {count}",

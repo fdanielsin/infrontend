@@ -44,8 +44,14 @@ type Settled = { id: number; result: ApiResult<unknown> };
 // Marks every task to do as done, and puts them back (TASK-R22 to R26). One request per task: the
 // contract has no route for several.
 export class BulkCompletion {
-	// True while a marking or an Undo is sent: a second one starts nothing (TASK-R26).
-	busy = $state(false);
+	// The users whose marking or Undo is being sent: a second one for the same user starts nothing,
+	// one for another user goes on as usual (TASK-R26).
+	readonly #busyUsers = new SvelteSet<number>();
+
+	// True while any marking or Undo is being sent.
+	get busy() {
+		return this.#busyUsers.size > 0;
+	}
 
 	readonly #list: CompletionList;
 	readonly #notifications: NotificationState;
@@ -61,13 +67,13 @@ export class BulkCompletion {
 	}
 
 	async markAllDone(hooks: CompletionHooks = {}) {
-		if (this.busy) return;
 		const todo = this.#list.tasks().filter((task) => !task.completed);
 		const [first] = todo;
 		if (!first) return;
-		this.busy = true;
+		const userId = first.user_id;
+		if (this.#busyUsers.has(userId)) return;
+		this.#busyUsers.add(userId);
 		try {
-			const userId = first.user_id;
 			const settled = await this.#send(todo, true);
 			const failures = settled.flatMap(({ result }) => (result.success ? [] : [result]));
 			const saved = new SvelteMap<number, Task>();
@@ -91,7 +97,7 @@ export class BulkCompletion {
 			if (failed.length) this.#reportFailure(failed, m.error_mark_all_done());
 			if (saved.size) this.#offerUndo(userId, saved, todo.length, hooks);
 		} finally {
-			this.busy = false;
+			this.#busyUsers.delete(userId);
 		}
 	}
 
@@ -135,8 +141,8 @@ export class BulkCompletion {
 	}
 
 	async #undo(operation: Operation, hooks: CompletionHooks) {
-		if (this.busy) return;
-		this.busy = true;
+		if (this.#busyUsers.has(operation.userId)) return;
+		this.#busyUsers.add(operation.userId);
 		try {
 			const current = await this.#tasksOf(operation.userId);
 			if (!current) {
@@ -172,7 +178,7 @@ export class BulkCompletion {
 				this.#notifications.announce(m.tasks_marked_todo({ count: restored.size }));
 			}
 		} finally {
-			this.busy = false;
+			this.#busyUsers.delete(operation.userId);
 			hooks.onundo?.();
 		}
 	}

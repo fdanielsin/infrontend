@@ -45,6 +45,21 @@ export const STATES: readonly CaptureState[] = [
 		name: 'task-delete-pending',
 		description: 'A task was deleted: the row left, Undo is offered.'
 	},
+	{
+		screen: 'home',
+		name: 'mark-all-sending',
+		description: 'Every task is being marked as done: the command says Marking….'
+	},
+	{
+		screen: 'home',
+		name: 'mark-all-done',
+		description: 'Every task was marked as done: the command is gone, Undo is offered.'
+	},
+	{
+		screen: 'home',
+		name: 'mark-all-partial',
+		description: 'One task was refused: the error, the Undo toast and the command still there.'
+	},
 	{ screen: 'stats', name: 'rest', description: 'The three figures.' },
 	{ screen: 'stats', name: 'empty', description: 'Nothing to count yet.' },
 	{ screen: 'stats', name: 'loading', description: 'The figures are on their way.' },
