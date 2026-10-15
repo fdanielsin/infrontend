@@ -82,7 +82,7 @@ jeu, jamais une inversion : fond gris très sombre sans noir pur, texte blanc ca
 | `page-from` / `page-to`                                         | gray-900 / indigo-950                                       | dégradé                                                                                                                                                                                                                                        |
 | `surface`, `surface-muted`, `surface-hover`, `surface-selected` | gray-800, gray-700, 60 % gray-700 + 40 % gray-600, blue-950 | nom 8,74, e-mail 6,20, « Edit » 5,04 et croix 4,75 sur survol (gray-600 pur donnait 4,17 à « Edit » : mesuré par la QA) ; 14,11 et 10,00 sur sélection                                                                                         |
 | `line`, `disabled`                                              | gray-600, gray-500                                          | décoratif, exempté                                                                                                                                                                                                                             |
-| `control-edge`                                                  | gray-300 (clair : transparent)                              | anneau de 1 px autour de la case à cocher native, dont la bordure du navigateur ne fait que 2,79:1 sur la ligne `surface-muted` sombre : 7,00 sur muted, 5,14 sur hover (3 requis) ; en clair la bordure native fait 4,13 et rien n'est ajouté |
+| `control-edge`                                                  | gray-300 (clair : transparent)                              | anneau de 1 px autour de la case à cocher native, dont la bordure du navigateur ne fait que 2,79:1 sur la ligne `surface-muted` sombre : 7,00 sur muted, 6,20 sur hover (3 requis) ; en clair la bordure native fait 4,13 et rien n'est ajouté |
 | `field-border`                                                  | gray-400                                                    | 5,64 surface ; 3,96 muted ; 6,16 dégradé                                                                                                                                                                                                       |
 | `heading`, `label`, `muted`, `subtle`                           | gray-50, gray-200, gray-300, gray-400                       | 14,07 ; 11,88 ; 9,98 ; 5,64 sur surface (`subtle` jamais sur muted ni hover)                                                                                                                                                                   |
 | `primary` / `-hover`                                            | blue-700 / blue-600                                         | blanc 6,82 / 5,26                                                                                                                                                                                                                              |
@@ -243,7 +243,11 @@ en dur. Seule exception : `main`, cible programmatique (`tabindex="-1"`,
 Un champ invalide a aussi une bordure `danger`.
 
 Sélection et focus sont deux choses (`UserList`) : la sélection est un fond, une barre et une
-coche, le focus est le contour ci-dessus, décalé de 2 px hors de la ligne. Après une sélection
+coche, le focus est le contour ci-dessus (2 px, décalé de 2 px) tracé **dans** la ligne : le bouton de
+sélection a une marge de 4 px (`m-1`, largeur `100% - 0,5rem`) et un padding réduit d'autant (`px-3 py-2` à
+la place de `p-3`, 4 px de moins à gauche), si bien que le texte et la hauteur de la ligne ne changent pas et
+que le contour ne sort pas de la ligne ni ne touche « Edit ». Preuve : `tests/e2e/row-focus-ring.test.ts`
+(contour dans la ligne et à distance de « Edit », 1280 et 320 px, ligne sélectionnée ou non). Après une sélection
 explicite, quand les deux panneaux sont l'un sous l'autre (moins de 48 rem, même seuil que la
 grille), le titre de la liste de tâches est amené dans la fenêtre et reçoit le focus (défilement
 immédiat sous `prefers-reduced-motion`) : le focus quitte la liste volontairement, parce que son
@@ -294,6 +298,13 @@ Règles complémentaires :
 (`ButtonLink`). Sur la page statistiques, les trois tuiles ont la largeur du
 contenu (comme l'accueil) ; les cartes d'état (attente, échec, rien à compter) restent
 étroites et centrées (`max-w-2xl`) pour la longueur de ligne. Preuve : `tests/unit/components/PageShell.test.ts`, `tests/e2e/single-accent.test.ts`.
+
+La page d'erreur de SvelteKit (`routes/+error.svelte`) reprend ce cadre, avec le lien d'évitement
+et sa cible `#main-content` : un titre, un sous-titre et « Retour à l'accueil » (`ButtonLink`, icône
+`nav-arrow-left`). Elle ne dit « introuvable » que pour un 404 (« Page introuvable », « Cette adresse ne
+mène à aucune page ») ; tout autre code donne le texte générique (« Un problème est survenu », « La page
+n'a pas pu être affichée »). Le titre de l'onglet suit, en quatre langues. Textes de l'auteur de la PR,
+sans spec fonctionnelle. Preuve : `tests/unit/components/ErrorPage.test.ts`, `tests/e2e/not-found-page.test.ts`.
 
 ### 320 px
 
@@ -433,7 +444,7 @@ Noms accessibles : `Edit {name} ({email})` et `Delete {name} ({email})`. Sur poi
   fin. Le texte garde la largeur de sa colonne et se coupe n'importe où (`wrap-anywhere`, `min-w-0`).
 - **Survol.** Fond `surface-hover` (`group` sur le `li`, sous `@media (hover: hover)`) et « Edit »
   souligné ; rien sur écran tactile, où les actions restent toujours visibles.
-- **Sélection.** Fond `surface-selected`, barre gauche de 4 px `primary` qui prend la place de 4 px
+- **Sélection.** Fond `surface-selected`, barre gauche de 4 px `accent` qui prend la place de 4 px
   de marge (le texte ne bouge pas), coche. Ce n'est jamais un anneau : le contour de focus (voir
   « Focus ») reste le seul trait entourant la ligne, donc « sélectionné » et « focalisé » se
   distinguent.
@@ -462,8 +473,6 @@ Noms accessibles : `Edit {name} ({email})` et `Delete {name} ({email})`. Sur poi
 - **Pendant 500 ms** après une suppression, les autres boutons « Delete » ignorent les clics (la
   ligne voisine a pris la place du pointeur).
 
-Point connu (mineur) : le contour de focus du bouton de sélection déborde de la ligne de quelques
-pixels à gauche et touche l'icône « Edit » à droite (`r2-1280-en-focus-selection`) ; non corrigé.
 Le contour de la ligne restaurée après « Undo » au clavier est prouvé : `tests/e2e/user-delete.test.ts`
 (« made with the keyboard », assertion `:focus-visible`, trois moteurs).
 
@@ -496,6 +505,11 @@ complet reste dans le DOM. La mesure se refait quand la largeur change. Preuve :
 `<select>` natif étiqueté (libellé visible), utilisé pour la langue et l'ordre
 de tri. Chaque option peut porter son `lang` (WCAG 3.1.2) ; le focus reste sur lui
 après un changement. Natif : navigation clavier et lecteurs d'écran sans code.
+La prop `stacked` met le libellé au-dessus du champ (`flex-col`) : le champ est alors au même
+endroit dans les quatre langues, au lieu de suivre un libellé de largeur variable (le filtre et le
+tri de la liste de tâches, côte à côte dès 640 px et l'un sous l'autre en dessous). Sans elle, libellé
+et champ sont sur une ligne qui passe à la ligne (le sélecteur de langue). Preuve :
+`tests/e2e/filter-layout.test.ts`.
 Règles complémentaires ([dropdown-design](https://designmotionhq.com/patterns/dropdown-design)) pour un menu déroulant sur mesure : un
 déclencheur qui se voit cliquable (caret, survol, cible d'au moins 44 px sur
 tactile), un retournement vers le haut près du bord, la navigation au clavier, une
