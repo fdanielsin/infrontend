@@ -23,6 +23,11 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   states, widths 320, 768 and 1280 px, the four languages, reduced motion) on the simulated API,
   with an index, and fails on any request to a port of the user or of the reference backend.
 
+### Changed
+
+- The CI replays the tests that measure colors on a dark device, and a test measures every contrast pair of the
+  interface in both themes, so that a color that becomes unreadable fails the build.
+
 ## [1.4.0] - 2026-10-14
 
 **À vérifier avant de mettre à jour (de 1.3.0 vers 1.4.0)**
