@@ -2,7 +2,7 @@ import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { announcement } from './support/announcement';
 import { contrast } from './support/contrast';
 import { text } from './support/locale';
-import { ada, adaTasks, mockApi } from './support/mock-api';
+import { ada, adaTasks, grace, mockApi } from './support/mock-api';
 import { canvasLuminance, resolvedTheme, rgbOf } from './support/theme';
 
 // The dark palette (THEME-R01, R05, R07, R09, R11): what the theme is is read from the colors the
@@ -211,6 +211,52 @@ test.describe('Unchecked box (mocked API)', () => {
 			.evaluate((element) => getComputedStyle(element).boxShadow);
 		const painted = ringColors(ring).filter((color) => !/, 0\)$|\/ 0\)$/.test(color));
 		expect(painted, ring).toEqual([]);
+		await context.close();
+	});
+});
+
+test.describe('Row under the pointer (mocked API)', () => {
+	// WCAG 1.4.3: the text of a row reaches 4.5:1 on the row's hover color, in the dark theme too:
+	// "Edit" (action-strong, blue-300) was 4.17:1 on the first dark hover color (gray-600).
+	test('THEME-R08: in the dark theme every text of a task row and of a user row reaches 4.5:1 under the pointer (limit)', async ({
+		browser
+	}) => {
+		const context = await browser.newContext({ colorScheme: 'dark' });
+		const page = await context.newPage();
+		await mockApi(page, { users: [ada, grace], tasks: adaTasks });
+		const hydrated = page.waitForResponse((response) => response.url().includes('/api/v1/'));
+		await page.goto('/');
+		await hydrated;
+		await page.getByRole('button', { name: /^Ada Lovelace [^(]/ }).click();
+		await page.getByRole('heading', { name: 'Tasks for Ada Lovelace' }).waitFor();
+		const rows = [
+			page.locator('li', { has: page.getByRole('checkbox', { name: 'Review', exact: true }) }),
+			page.locator('li', { has: page.getByRole('button', { name: /^Grace Hopper/ }) })
+		];
+		for (const row of rows) {
+			await row.hover();
+			const texts = await row.evaluate((element) => {
+				const fill = getComputedStyle(element).backgroundColor;
+				const found: { text: string; color: string }[] = [];
+				for (const node of element.querySelectorAll('*')) {
+					const own = [...node.childNodes].some(
+						(child) => child.nodeType === Node.TEXT_NODE && child.textContent!.trim() !== ''
+					);
+					if (own) {
+						found.push({
+							text: node.textContent.trim().slice(0, 30),
+							color: getComputedStyle(node).color
+						});
+					}
+				}
+				return { fill, found };
+			});
+			expect(texts.found.length).toBeGreaterThan(1);
+			const fill = await rgbOf(page, texts.fill);
+			for (const { text: label, color } of texts.found) {
+				expect(contrast(await rgbOf(page, color), fill), label).toBeGreaterThanOrEqual(4.5);
+			}
+		}
 		await context.close();
 	});
 });
