@@ -65,15 +65,20 @@ jobs:
   # Only the E2E that mock the API (tests/e2e). The ones that need a real backend
   # (tests/e2e/backend) and the contract check run locally before each merge.
   e2e:
-    name: 'E2E (mocked API, ${{ matrix.browser }})'
+    name: 'E2E (mocked API, ${{ matrix.project }})'
     runs-on: ubuntu-24.04
     needs: [verify]
     strategy:
       fail-fast: false
       matrix:
-        # Chromium only (decision of 2026-10-15); to bring the others back: [chromium, firefox, webkit]
-        # and E2E_ALL_BROWSERS: '1' in the env of the run step.
-        browser: [chromium]
+        # Chromium only (decision of 2026-10-15); to bring the others back, add their projects
+        # (firefox, webkit) and E2E_ALL_BROWSERS: '1' in the env of the run step.
+        # `chromium-dark` is the dark replay of the tests that measure colors (playwright.config.ts).
+        include:
+          - project: chromium
+            browser: chromium
+          - project: chromium-dark
+            browser: chromium
     steps:
       - uses: actions/checkout@v7
 
@@ -91,7 +96,7 @@ jobs:
       - name: 'Run E2E tests'
         env:
           E2E_PORT: '4173'
-        run: bun run test:e2e:mocked -- --project=${{ matrix.browser }}
+        run: bun run test:e2e:mocked -- --project=${{ matrix.project }}
 
   summary:
     name: All checks passed
