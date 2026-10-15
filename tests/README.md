@@ -44,6 +44,13 @@ focus et d'erreurs (`focus-and-errors.test.ts`), de bordures de champs
 et tournent sans backend ; `focus-and-errors.test.ts`, `field-borders.test.ts` et
 `icons.test.ts` mesurent le style calculé avec `e2e/support/contrast.ts` :
 `E2E_PORT=<port> bun run test:e2e:mocked -- accessibility keyboard-focus i18n focus-and-errors field-borders icons page-stability --project=chromium`.
+Rejeu en sombre : le projet Playwright `chromium-dark` (`playwright.config.ts`) rejoue sur un appareil sombre,
+sans cookie `theme`, les fichiers qui mesurent des couleurs (`accessibility`, `single-accent`, `focus-and-errors`,
+`field-borders`, `readable-lists`, `icons`, `keyboard-focus`, `availability`, `task-sorting`), et le fichier
+`theme-replay-guard.test.ts` échoue si la page n'y est pas sombre. `E2E_PORT=<port> bun run test:e2e:mocked --
+--project=chromium-dark` ; la CI le lance à côté de `chromium`. Les paires de contraste du thème
+(`e2e/support/contrast-pairs.ts`, source unique) sont mesurées dans les deux thèmes par `theme-contrast.test.ts` ; un test
+unitaire refuse un jeton de couleur sans paire ni exception motivée, un autre épingle les valeurs claires.
 Aides communes des E2E (`tests/e2e/support/`) : `mock-api.ts` (API simulée), `contrast.ts`
 (contrastes calculés), `keyboard.ts` (touche de tabulation par moteur), `announcement.ts` (région
 d'annonce), `axe.ts` (`expectNoAxeViolations`), `layout.ts` (`horizontalOverflow`) et `locale.ts`
