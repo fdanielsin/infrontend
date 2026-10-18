@@ -89,7 +89,7 @@ test.describe('Contrast pairs (mocked API)', () => {
 // composed over what is behind it (both ends of the page gradient, or the banner's fill).
 test.describe('Secondary buttons under the pointer (mocked API)', () => {
 	for (const theme of ['light', 'dark'] as const) {
-		test(`THEME-R08: in the ${theme} theme the text of a secondary and of a danger button reaches 4.5:1 on its hover fill (limit)`, async ({
+		test(`THEME-R08: in the ${theme} theme the text of the secondary buttons (View Statistics, Mark all as done) and of the danger one (Retry) reaches 4.5:1 on its hover fill (limit)`, async ({
 			browser
 		}) => {
 			const context = await browser.newContext({
@@ -100,10 +100,17 @@ test.describe('Secondary buttons under the pointer (mocked API)', () => {
 			const api = await mockApi(page, { users: [ada] });
 			api.readiness = 503;
 			await page.goto('/');
+			// "Mark all as done" (a secondary button on a card), on a page of its own with a user selected.
+			const second = await context.newPage();
+			await mockApi(second, { users: [ada], tasks: adaTasks });
+			await second.goto('/');
+			await second.getByRole('button', { name: /^Ada Lovelace [^(]/ }).click();
+
 			// The Retry button of the banner is 4.40:1 under the pointer in the LIGHT theme (red-700 on red-100
 			// tinted by 10% of red-700): a defect of the light theme, known and written down in the PR of this
 			// test, not pinned here; it is measured in the dark theme, where it holds.
 			const buttons = [
+				second.getByRole('button', { name: 'Mark all as done' }),
 				page.getByRole('link', { name: 'View Statistics' }),
 				...(theme === 'dark' ? [page.getByRole('button', { name: 'Retry' })] : [])
 			];
