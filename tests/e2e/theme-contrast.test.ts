@@ -106,13 +106,10 @@ test.describe('Secondary buttons under the pointer (mocked API)', () => {
 			await second.goto('/');
 			await second.getByRole('button', { name: /^Ada Lovelace [^(]/ }).click();
 
-			// The Retry button of the banner is 4.40:1 under the pointer in the LIGHT theme (red-700 on red-100
-			// tinted by 10% of red-700): a defect of the light theme, known and written down in the PR of this
-			// test, not pinned here; it is measured in the dark theme, where it holds.
 			const buttons = [
 				second.getByRole('button', { name: 'Mark all as done' }),
 				page.getByRole('link', { name: 'View Statistics' }),
-				...(theme === 'dark' ? [page.getByRole('button', { name: 'Retry' })] : [])
+				page.getByRole('button', { name: 'Retry' })
 			];
 			for (const button of buttons) {
 				await button.hover();

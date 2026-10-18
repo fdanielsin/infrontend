@@ -23,7 +23,7 @@ const SECONDARY_TONE_CLASSES: Record<ButtonTone, string> = {
 	default:
 		'border-action-strong text-action-strong hover:bg-action-strong/10 disabled:border-disabled disabled:text-disabled disabled:hover:bg-transparent',
 	danger:
-		'border-danger text-danger hover:bg-danger/10 disabled:border-disabled disabled:text-disabled disabled:hover:bg-transparent',
+		'border-danger text-danger hover:bg-danger/10 hover:text-danger-hover disabled:border-disabled disabled:text-disabled disabled:hover:bg-transparent disabled:hover:text-disabled',
 	inverse:
 		'border-on-toast text-on-toast hover:bg-on-toast-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-inverse'
 };
